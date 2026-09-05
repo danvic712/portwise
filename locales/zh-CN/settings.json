@@ -1,0 +1,90 @@
+{
+  "ui": {
+    "page": {
+      "eyebrow": "设置 / 每只股票",
+      "title": "把每只股票的边界写清楚。",
+      "description": "按股票调整模型参数。保存后，下一次分析会使用新的收益率、仓位和现金边界。"
+    },
+    "actions": {
+      "save": "保存参数",
+      "saving": "保存中…",
+      "goSetup": "去建立组合"
+    },
+    "workflow": {
+      "eyebrow": "设置流程",
+      "title": "选股票，调整边界，最后一次保存。",
+      "description": "每次只编辑一只股票；这套设置只影响后续的交易参考，不会自动下单，也不会改变已经记录的交易。",
+      "steps": [
+        { "number": "01", "title": "先选一只股票", "description": "每只股票都有自己的参数，不会互相覆盖。" },
+        { "number": "02", "title": "看懂再修改", "description": "比例填写 0 到 1 的小数，例如 0.25 表示 25%。" },
+        { "number": "03", "title": "一次保存这一只", "description": "页面底部一次保存当前股票；新边界用于后续建议，历史交易不会被改写。" }
+      ]
+    },
+    "stocks": {
+      "eyebrow": "我的股票",
+      "title": "选择要调整的股票",
+      "description": "先从你的个人组合中选一只，右侧会显示它自己的模型设置。",
+      "position": "当前持仓",
+      "positionEmpty": "还没有持仓记录",
+      "shareUnit": "股",
+      "cost": "成本",
+      "stockCount": "已配置 {count} 只",
+      "tip": "每只股票的模型设置独立保存，切换股票不会覆盖别人的边界。"
+    },
+    "form": {
+      "eyebrow": "参数手帐",
+      "title": "{stock} 的交易边界",
+      "description": "修改前先看字段下方的说明；系统仍会在保存时做最终校验。",
+      "modelVersion": "模型版本",
+      "modelVersionHint": "用于标记这一版规则，便于之后回看。",
+      "effectiveDate": "生效日期",
+      "effectiveDateHint": "从这一天开始，新的分析会使用这套参数。",
+      "percentHint": "填写 0 到 1 之间的小数。",
+      "ratioRange": "0–1",
+      "numberHint": "具体范围由后端校验。",
+      "footerHint": "保存前先确认比例和金额，系统会做最后校验。",
+      "stockFallback": "当前股票"
+    },
+    "fields": {
+      "strongBuyYieldThreshold": { "label": "强买入收益率阈值", "help": "达到这个收益率时，模型会把机会标为强买入。" },
+      "accumulationYieldThreshold": { "label": "分批加仓收益率阈值", "help": "达到这个收益率时，模型会考虑分批加仓。" },
+      "partialTrimYieldThreshold": { "label": "减仓候选收益率阈值", "help": "收益率进入这个区间后，模型会提示你重新检查。" },
+      "aggressiveTrimYieldThreshold": { "label": "激进减仓收益率阈值", "help": "达到这个边界后，模型会提示更谨慎地处理仓位。" },
+      "strongBuyBudgetRatio": { "label": "强买入预算比例", "help": "强买入时，单次最多使用本期预算的比例。" },
+      "accumulateBudgetRatio": { "label": "分批加仓预算比例", "help": "分批加仓时，单次最多使用本期预算的比例。" },
+      "partialTrimRatio": { "label": "减仓候选比例", "help": "减仓候选时，参考减少的仓位比例。" },
+      "aggressiveTrimRatio": { "label": "激进减仓比例", "help": "激进减仓时，参考减少的仓位比例。" },
+      "maxSecurityWeight": { "label": "单只股票最大权重", "help": "限制单只股票在组合中的最高占比。" },
+      "maxSectorWeight": { "label": "单一行业最大权重", "help": "限制同一行业在组合中的最高占比。" },
+      "cashReserveRatio": { "label": "现金保留比例", "help": "始终留在现金中的比例，不用于建议买入。" },
+      "maxSingleTradeAmount": { "label": "单次交易金额上限", "help": "一次建议最多使用的金额。" },
+      "maxPeriodBudgetAmount": { "label": "单期预算上限", "help": "一个分析周期内最多使用的预算。" },
+      "transactionFeeRatio": { "label": "交易费用比例", "help": "用于估算交易费用的比例。" },
+      "minimumTransactionFeeAmount": { "label": "最低交易费用", "help": "交易费用低于这个金额时，按最低费用估算。" },
+      "tradingLotSize": { "label": "交易单位（股）", "help": "建议股数会按这个单位取整。" }
+    },
+    "groups": {
+      "thresholds": { "title": "收益率边界", "description": "决定什么时候值得买、分批买，或重新检查持仓。" },
+      "ratios": { "title": "预算与仓位", "description": "控制每次使用多少预算，以及单只股票和行业的占比。" },
+      "limits": { "title": "交易限制", "description": "给金额、费用和交易单位设置一个容易检查的上限。" }
+    },
+    "states": {
+      "loading": "正在读取模型设置…",
+      "parametersLoading": "正在读取这只股票的参数…",
+      "readError": "股票列表暂时无法读取。",
+      "parametersReadError": "这只股票的模型参数暂时无法读取。",
+      "recordError": "模型参数保存失败，请检查填写内容。",
+      "noticeTitle": "设置提醒",
+      "successTitle": "已保存",
+      "successMessage": "模型参数已保存，下一次分析将读取新配置。",
+      "emptyTitle": "还没有股票资料",
+      "emptyDescription": "完成首次设置后，才能按股票配置模型参数。",
+      "noParametersTitle": "这只股票还没有模型参数",
+      "noParametersDescription": "请先通过后端初始化或导入模型参数；当前页面不会用默认值覆盖你的设置。",
+      "noSummary": "暂时没有可展示的模型设置。"
+    },
+    "validation": {
+      "invalid": "请先修正参数后再保存。比例必须在 0 到 1 之间，金额和交易单位不能为负数。"
+    }
+  }
+}

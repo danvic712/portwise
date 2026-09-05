@@ -1,61 +1,90 @@
-import { Save } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { CalendarDays, Check, CircleGauge, Info, Save, ShieldCheck, SlidersHorizontal } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
+import { EmptyState, ErrorState } from "@/components/async-state"
 import { PageFrame } from "@/components/page-frame"
-import { PageTitle } from "@/components/page-heading"
-import { EmptyState, ErrorState, LoadingState } from "@/components/async-state"
+import { PageTitle, SectionHeading } from "@/components/page-heading"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Field, FieldDescription, FieldLabel, FieldSet } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { getApiErrorMessage } from "@/lib/api-errors"
+import { interpolate, useLocale } from "@/lib/i18n"
 import { displayStockName } from "@/lib/stock-display"
-import { stockKey, today } from "@/lib/utils"
+import { formatMoney, formatNumber, stockKey, today } from "@/lib/utils"
 import type { SaveStockModelParametersRequest, StockWatchlistItem } from "@/lib/api-types"
 import { getSettingsParameters, getSettingsStocks, updateSettingsParameters } from "@/features/settings/settings.api"
+import { SettingsPageSkeleton, SettingsParameterSkeleton } from "@/features/settings/SettingsSkeleton"
 import "./settings.css"
 
 type NumericKey = Exclude<keyof SaveStockModelParametersRequest, "securityCode" | "exchangeCode" | "modelVersion" | "effectiveFromDate">
-const thresholdFields: Array<{ key: NumericKey; label: string }> = [
-  { key: "strongBuyYieldThreshold", label: "强买入收益率阈值" },
-  { key: "accumulationYieldThreshold", label: "分批加仓收益率阈值" },
-  { key: "partialTrimYieldThreshold", label: "减仓候选收益率阈值" },
-  { key: "aggressiveTrimYieldThreshold", label: "激进减仓收益率阈值" },
+type FieldDefinition = { key: NumericKey; step?: string }
+type ParameterGroupKey = "thresholds" | "ratios" | "limits"
+
+const thresholdFields: FieldDefinition[] = [
+  { key: "strongBuyYieldThreshold" },
+  { key: "accumulationYieldThreshold" },
+  { key: "partialTrimYieldThreshold" },
+  { key: "aggressiveTrimYieldThreshold" },
 ]
-const ratioFields: Array<{ key: NumericKey; label: string }> = [
-  { key: "strongBuyBudgetRatio", label: "强买入预算比例" },
-  { key: "accumulateBudgetRatio", label: "分批加仓预算比例" },
-  { key: "partialTrimRatio", label: "减仓候选比例" },
-  { key: "aggressiveTrimRatio", label: "激进减仓比例" },
-  { key: "maxSecurityWeight", label: "单只股票最大权重" },
-  { key: "maxSectorWeight", label: "单一行业最大权重" },
-  { key: "cashReserveRatio", label: "现金保留比例" },
-  { key: "transactionFeeRatio", label: "交易费用比例" },
+const ratioFields: FieldDefinition[] = [
+  { key: "strongBuyBudgetRatio" },
+  { key: "accumulateBudgetRatio" },
+  { key: "partialTrimRatio" },
+  { key: "aggressiveTrimRatio" },
+  { key: "maxSecurityWeight" },
+  { key: "maxSectorWeight" },
+  { key: "cashReserveRatio" },
+  { key: "transactionFeeRatio" },
 ]
-const limitFields: Array<{ key: NumericKey; label: string; step: string }> = [
-  { key: "maxSingleTradeAmount", label: "单次交易金额上限", step: "0.01" },
-  { key: "maxPeriodBudgetAmount", label: "单期预算上限", step: "0.01" },
-  { key: "minimumTransactionFeeAmount", label: "最低交易费用", step: "0.01" },
-  { key: "tradingLotSize", label: "交易单位（股）", step: "1" },
+const limitFields: FieldDefinition[] = [
+  { key: "maxSingleTradeAmount", step: "0.01" },
+  { key: "maxPeriodBudgetAmount", step: "0.01" },
+  { key: "minimumTransactionFeeAmount", step: "0.01" },
+  { key: "tradingLotSize", step: "1" },
 ]
+const parameterGroups: Array<{ key: ParameterGroupKey; fields: FieldDefinition[]; percent: boolean }> = [
+  { key: "thresholds", fields: thresholdFields, percent: true },
+  { key: "ratios", fields: ratioFields, percent: true },
+  { key: "limits", fields: limitFields, percent: false },
+]
+const numericKeys = new Set<NumericKey>(parameterGroups.flatMap(({ fields }) => fields.map(({ key }) => key)))
+const ratioKeys = new Set<NumericKey>(ratioFields.map(({ key }) => key))
+const skeletonGroups = parameterGroups.map(({ key, fields }) => ({ key, fieldCount: fields.length }))
 
 export function SettingsPage({ onNavigate }: { onNavigate: (path: string) => void }) {
+  const { messages } = useLocale()
+  const copy = messages.settings.ui
   const query = new URLSearchParams(window.location.search)
-  const initialKey = query.get("stock") ?? (query.get("code") && query.get("exchange") ? `${query.get("code")}:${query.get("exchange")}` : null)
+  const initialKey = query.get("stock") && query.get("exchange") ? `${query.get("stock")}:${query.get("exchange")}` : null
+  const readErrorRef = useRef(copy.states.readError)
+  const parameterErrorRef = useRef(copy.states.parametersReadError)
   const [stocks, setStocks] = useState<StockWatchlistItem[]>([])
   const [selectedKey, setSelectedKey] = useState(initialKey ?? "")
   const [parameters, setParameters] = useState<SaveStockModelParametersRequest | null>(null)
+  const [parametersStockKey, setParametersStockKey] = useState("")
   const [loading, setLoading] = useState(true)
+  const [parametersLoading, setParametersLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
+  useEffect(() => {
+    readErrorRef.current = copy.states.readError
+    parameterErrorRef.current = copy.states.parametersReadError
+  }, [copy.states.parametersReadError, copy.states.readError])
+
   const loadStocks = useCallback(async () => {
+    setLoading(true)
+    setError(null)
     try {
       const list = await getSettingsStocks()
       setStocks(list)
       setSelectedKey((current) => current && list.some((stock) => stockKey(stock) === current) ? current : list[0] ? stockKey(list[0]) : "")
     } catch (loadError) {
-      setError(getApiErrorMessage(loadError, "股票列表暂时无法读取。"))
+      setError(getApiErrorMessage(loadError, readErrorRef.current))
     } finally {
       setLoading(false)
     }
@@ -63,18 +92,28 @@ export function SettingsPage({ onNavigate }: { onNavigate: (path: string) => voi
 
   const loadParameters = useCallback(async (signal?: AbortSignal) => {
     const stock = stocks.find((item) => stockKey(item) === selectedKey)
-    if (!stock) return
+    if (!stock) {
+      setParameters(null)
+      setParametersStockKey("")
+      setParametersLoading(false)
+      return
+    }
+
+    setParametersLoading(true)
     setParameters(null)
+    setParametersStockKey("")
+    setError(null)
     setMessage(null)
     try {
       const result = await getSettingsParameters(stock.securityCode, stock.exchangeCode, signal)
-      if (result && !signal?.aborted) {
+      if (!signal?.aborted) {
         setParameters(result)
+        setParametersStockKey(selectedKey)
       }
     } catch (loadError) {
-      if (!signal?.aborted) {
-        setError(getApiErrorMessage(loadError, "模型参数暂时无法读取。"))
-      }
+      if (!signal?.aborted) setError(getApiErrorMessage(loadError, parameterErrorRef.current))
+    } finally {
+      if (!signal?.aborted) setParametersLoading(false)
     }
   }, [selectedKey, stocks])
 
@@ -82,6 +121,7 @@ export function SettingsPage({ onNavigate }: { onNavigate: (path: string) => voi
     const timeoutId = window.setTimeout(() => { void loadStocks() }, 0)
     return () => window.clearTimeout(timeoutId)
   }, [loadStocks])
+
   useEffect(() => {
     const controller = new AbortController()
     const timeoutId = window.setTimeout(() => { void loadParameters(controller.signal) }, 0)
@@ -91,39 +131,155 @@ export function SettingsPage({ onNavigate }: { onNavigate: (path: string) => voi
     }
   }, [loadParameters])
 
+  const selectedStock = stocks.find((stock) => stockKey(stock) === selectedKey)
+  const activeParameters = parametersStockKey === selectedKey ? parameters : null
+  const invalidParameters = activeParameters ? hasInvalidParameters(activeParameters) : false
+
+  function changeStock(stock: StockWatchlistItem) {
+    const nextKey = stockKey(stock)
+    if (nextKey === selectedKey) return
+    setSelectedKey(nextKey)
+    setParametersLoading(true)
+    setParameters(null)
+    setParametersStockKey("")
+    setError(null)
+    setMessage(null)
+    const nextUrl = new URL(window.location.href)
+    nextUrl.searchParams.set("stock", stock.securityCode)
+    nextUrl.searchParams.set("exchange", stock.exchangeCode)
+    window.history.replaceState({}, "", `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`)
+  }
+
   function updateValue(key: keyof SaveStockModelParametersRequest, value: string) {
-    setParameters((current) => current ? { ...current, [key]: key === "modelVersion" || key === "securityCode" || key === "exchangeCode" || key === "effectiveFromDate" ? value : Number(value) || 0 } : current)
+    setParameters((current) => current ? {
+      ...current,
+      [key]: key === "modelVersion" || key === "securityCode" || key === "exchangeCode" || key === "effectiveFromDate" ? value : value === "" ? 0 : Number(value),
+    } : current)
   }
 
   async function save() {
-    if (!parameters) return
+    if (!activeParameters) return
+    if (hasInvalidParameters(activeParameters)) {
+      setError(copy.validation.invalid)
+      setMessage(null)
+      return
+    }
+
     setSaving(true)
     setError(null)
     setMessage(null)
     try {
-      await updateSettingsParameters(parameters)
-      setMessage("模型参数已保存，下一次分析将读取新配置。")
+      const saved = await updateSettingsParameters(activeParameters)
+      setParameters(saved)
+      setMessage(copy.states.successMessage)
     } catch (saveError) {
-      setError(getApiErrorMessage(saveError, "模型参数保存失败，请检查阈值顺序和比例范围。"))
+      setError(getApiErrorMessage(saveError, copy.states.recordError))
     } finally {
       setSaving(false)
     }
   }
 
-  if (loading) return <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="pending"><LoadingState label="正在读取模型设置…" /></PageFrame>
-  if (error && !stocks.length) return <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="unknown"><ErrorState message={error} onRetry={() => window.location.reload()} /></PageFrame>
-  if (!stocks.length) return <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="unknown"><EmptyState title="还没有股票资料" description="完成首次设置后，才能按股票配置模型参数。" action={<Button onClick={() => onNavigate("/setup")}>去建立组合</Button>} /></PageFrame>
+  if (loading) {
+    return <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="pending" contentClassName="settings-page-wrap"><SettingsPageSkeleton label={copy.states.loading} groups={skeletonGroups} /></PageFrame>
+  }
+
+  if (error && !stocks.length) {
+    return <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="unknown" contentClassName="settings-page-wrap"><ErrorState message={error} onRetry={() => void loadStocks()} /></PageFrame>
+  }
+
+  if (!stocks.length) {
+    return <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="unknown" contentClassName="settings-page-wrap"><EmptyState title={copy.states.emptyTitle} description={copy.states.emptyDescription} action={<Button onClick={() => onNavigate("/setup")}>{copy.actions.goSetup}</Button>} /></PageFrame>
+  }
+
+  const stockLabel = selectedStock ? `${displayStockName(selectedStock)} · ${selectedStock.securityCode}` : copy.form.stockFallback
 
   return (
-    <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="unknown">
-      <PageTitle eyebrow="SETTINGS / PER-STOCK MODEL" title="每只股票，自己的边界。" description="这些参数由后端验证并保存；比例使用 0 到 1 的小数表达，例如 0.25 表示 25%。" actions={<Button onClick={() => void save()} disabled={!parameters || saving}><Save data-icon="inline-start" />{saving ? "保存中…" : "保存参数"}</Button>} />
-      {error && <Alert variant="destructive" style={{ marginBottom: 16 }}><AlertTitle>设置提醒</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-      {message && <Alert style={{ marginBottom: 16 }}><AlertTitle>已完成</AlertTitle><AlertDescription>{message}</AlertDescription></Alert>}
-      <section className="surface settings-card"><div className="settings-stock-tabs" role="tablist" aria-label="选择股票参数"><span className="eyebrow" style={{ alignSelf: "center", margin: "0 8px 0 0", whiteSpace: "nowrap" }}>SELECT STOCK</span>{stocks.map((stock) => <Button key={stockKey(stock)} variant="ghost" className={`settings-stock-tab ${selectedKey === stockKey(stock) ? "settings-stock-tab-active" : ""}`} type="button" onClick={() => setSelectedKey(stockKey(stock))} role="tab" aria-selected={selectedKey === stockKey(stock)}>{stock.securityCode} · {stock.exchangeCode} · {displayStockName(stock)}</Button>)}</div>{parameters ? <div className="form-grid"><div className="field"><label htmlFor="model-version">模型版本</label><Input id="model-version" value={parameters.modelVersion} onChange={(event) => updateValue("modelVersion", event.target.value)} /></div><div className="field"><label htmlFor="effective-date">生效日期</label><Input id="effective-date" type="date" value={parameters.effectiveFromDate || today()} onChange={(event) => updateValue("effectiveFromDate", event.target.value)} /></div><ParameterGroup title="收益率阈值" fields={thresholdFields} parameters={parameters} onChange={updateValue} percent /><ParameterGroup title="预算与仓位比例" fields={ratioFields} parameters={parameters} onChange={updateValue} percent /><ParameterGroup title="交易限制" fields={limitFields} parameters={parameters} onChange={updateValue} /></div> : <EmptyState title="这只股票还没有模型参数" description="请先通过后端初始化或导入模型参数；当前页面不会用默认值覆盖你的模型设置。" />}</section>
+    <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="unknown" contentClassName="settings-page-wrap">
+      <PageTitle
+        eyebrow={copy.page.eyebrow}
+        title={copy.page.title}
+        description={copy.page.description}
+      />
+
+      {error && <Alert variant="destructive" className="settings-feedback"><AlertTitle>{copy.states.noticeTitle}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+      {message && <Alert className="settings-feedback"><Check size={17} aria-hidden="true" /><div><AlertTitle>{copy.states.successTitle}</AlertTitle><AlertDescription>{message}</AlertDescription></div></Alert>}
+
+      <Card className="settings-workflow-card">
+        <CardHeader className="settings-workflow-header">
+          <SectionHeading label={copy.workflow.eyebrow} title={copy.workflow.title} description={copy.workflow.description} />
+          <span className="settings-workflow-sticker" aria-hidden="true"><SlidersHorizontal size={19} /></span>
+        </CardHeader>
+        <CardContent className="settings-workflow-steps">
+          {copy.workflow.steps.map((step) => <div className="settings-workflow-step" key={step.number}><span>{step.number}</span><div><strong>{step.title}</strong><p>{step.description}</p></div></div>)}
+        </CardContent>
+      </Card>
+
+      <div className="settings-layout">
+        <Card className="settings-stocks-card">
+          <CardHeader className="settings-card-header">
+            <SectionHeading label={copy.stocks.eyebrow} title={copy.stocks.title} description={copy.stocks.description} />
+            <Badge variant="accent">{interpolate(copy.stocks.stockCount, { count: stocks.length })}</Badge>
+          </CardHeader>
+          <CardContent className="settings-stock-list" role="tablist" aria-label={copy.stocks.title}>
+            {stocks.map((stock) => {
+              const key = stockKey(stock)
+              const holding = stock.holding
+              const isSelected = selectedKey === key
+              return <Button key={key} variant="ghost" className={`settings-stock-item ${isSelected ? "settings-stock-item-active" : ""}`} type="button" onClick={() => changeStock(stock)} role="tab" aria-selected={isSelected} aria-controls="settings-parameter-editor">
+                <span className="settings-stock-avatar" aria-hidden="true">{displayStockName(stock).slice(0, 2)}</span>
+                <span className="settings-stock-copy"><strong>{displayStockName(stock)}</strong><small>{stock.securityCode} · {stock.exchangeCode}</small></span>
+                <span className="settings-stock-meta"><span>{copy.stocks.position}</span><strong>{holding ? `${formatNumber(holding.heldShares, 0)} ${copy.stocks.shareUnit}` : copy.stocks.positionEmpty}</strong>{holding && <small>{copy.stocks.cost} {formatMoney(holding.averageCostPerShare)}</small>}</span>
+              </Button>
+            })}
+          </CardContent>
+          <CardFooter className="settings-stock-footer"><ShieldCheck size={16} aria-hidden="true" /><span>{copy.stocks.tip}</span></CardFooter>
+        </Card>
+
+        <Card className="settings-editor-card" id="settings-parameter-editor" data-loading={parametersLoading ? "true" : "false"} aria-busy={parametersLoading}>
+          <CardHeader className="settings-card-header settings-editor-header">
+            <SectionHeading label={copy.form.eyebrow} title={interpolate(copy.form.title, { stock: stockLabel })} description={copy.form.description} />
+            {selectedStock && <div className="settings-editor-stamp"><span>{selectedStock.exchangeCode}</span><strong>{selectedStock.securityCode}</strong></div>}
+          </CardHeader>
+          {parametersLoading ? <SettingsParameterSkeleton label={copy.states.parametersLoading} groups={skeletonGroups} /> : activeParameters ? <>
+            <CardContent className="settings-editor-content settings-editor-content-ready" key={selectedKey}>
+              <FieldSet className="settings-identity-grid">
+                <Field>
+                  <FieldLabel htmlFor="model-version">{copy.form.modelVersion}</FieldLabel>
+                  <Input id="model-version" value={activeParameters.modelVersion} onChange={(event) => updateValue("modelVersion", event.target.value)} />
+                  <FieldDescription>{copy.form.modelVersionHint}</FieldDescription>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="effective-date">{copy.form.effectiveDate}</FieldLabel>
+                  <div className="settings-date-field"><CalendarDays size={16} aria-hidden="true" /><Input id="effective-date" type="date" value={activeParameters.effectiveFromDate || today()} onChange={(event) => updateValue("effectiveFromDate", event.target.value)} /></div>
+                  <FieldDescription>{copy.form.effectiveDateHint}</FieldDescription>
+                </Field>
+              </FieldSet>
+
+              {parameterGroups.map((group) => <section className="settings-group" key={group.key}>
+                <div className="settings-group-heading"><SectionHeading label={group.key === "thresholds" ? "01" : group.key === "ratios" ? "02" : "03"} title={copy.groups[group.key].title} description={copy.groups[group.key].description} /><CircleGauge size={20} aria-hidden="true" /></div>
+                <FieldSet className="settings-field-grid">
+                  {group.fields.map((field) => <Field key={field.key}>
+                    <FieldLabel htmlFor={field.key}>{copy.fields[field.key].label}</FieldLabel>
+                    <div className="settings-input-wrap"><Input id={field.key} type="number" min="0" max={group.percent ? "1" : undefined} step={field.step ?? "0.01"} value={String(activeParameters[field.key])} onChange={(event) => updateValue(field.key, event.target.value)} aria-invalid={group.percent && (activeParameters[field.key] < 0 || activeParameters[field.key] > 1) ? true : undefined} /><span>{group.percent ? copy.form.ratioRange : ""}</span></div>
+                    <FieldDescription>{copy.fields[field.key].help}</FieldDescription>
+                  </Field>)}
+                </FieldSet>
+              </section>)}
+            </CardContent>
+            <CardFooter className="settings-editor-footer settings-editor-footer-ready" key={selectedKey}>
+              <div className="settings-editor-hint"><Info size={16} aria-hidden="true" /><span>{invalidParameters ? copy.validation.invalid : copy.form.footerHint}</span></div>
+              <div className="settings-editor-actions"><span className="settings-footer-stock">{stockLabel}</span><Button onClick={() => void save()} disabled={!parameters || parametersLoading || saving || invalidParameters}><Save data-icon="inline-start" />{saving ? copy.actions.saving : copy.actions.save}</Button></div>
+            </CardFooter>
+          </> : <CardContent className="settings-empty-parameters"><EmptyState title={copy.states.noParametersTitle} description={copy.states.noParametersDescription} /></CardContent>}
+        </Card>
+      </div>
     </PageFrame>
   )
 }
 
-function ParameterGroup({ title, fields, parameters, onChange, percent = false }: { title: string; fields: Array<{ key: NumericKey; label: string; step?: string }>; parameters: SaveStockModelParametersRequest; onChange: (key: keyof SaveStockModelParametersRequest, value: string) => void; percent?: boolean }) {
-  return <div className="settings-group form-grid-wide"><h3>{title}</h3><div className="form-grid">{fields.map((field) => <div className="field" key={field.key}><label htmlFor={field.key}>{field.label}</label><Input id={field.key} type="number" min="0" max={percent ? "1" : undefined} step={field.step ?? "0.01"} value={String(parameters[field.key])} onChange={(event) => onChange(field.key, event.target.value)} /><span className="field-help">{percent ? "请输入 0 到 1 之间的小数。" : "由后端验证数值范围。"}</span></div>)}</div></div>
+function hasInvalidParameters(parameters: SaveStockModelParametersRequest) {
+  return Array.from(numericKeys).some((key) => {
+    const value = parameters[key]
+    return typeof value !== "number" || !Number.isFinite(value) || value < 0 || (ratioKeys.has(key) && value > 1) || (key === "tradingLotSize" && value <= 0)
+  })
 }

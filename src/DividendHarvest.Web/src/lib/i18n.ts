@@ -6,12 +6,14 @@ import enDividendStrategy from "../../../../locales/en-US/dividend-strategy.json
 import enPortfolio from "../../../../locales/en-US/portfolio.json"
 import enSetup from "../../../../locales/en-US/setup.json"
 import enStocks from "../../../../locales/en-US/stocks.json"
+import enSettings from "../../../../locales/en-US/settings.json"
 import zhCommon from "../../../../locales/zh-CN/common.json"
 import zhBudget from "../../../../locales/zh-CN/budget.json"
 import zhDividendStrategy from "../../../../locales/zh-CN/dividend-strategy.json"
 import zhPortfolio from "../../../../locales/zh-CN/portfolio.json"
 import zhSetup from "../../../../locales/zh-CN/setup.json"
 import zhStocks from "../../../../locales/zh-CN/stocks.json"
+import zhSettings from "../../../../locales/zh-CN/settings.json"
 
 export type Locale = "zh-CN" | "en-US"
 
@@ -32,6 +34,9 @@ type LocaleMessages = {
   stocks: {
     ui: typeof zhStocks.ui
   }
+  settings: {
+    ui: typeof zhSettings.ui
+  }
 }
 
 const catalogs: Record<Locale, LocaleMessages> = {
@@ -42,6 +47,7 @@ const catalogs: Record<Locale, LocaleMessages> = {
     portfolio: { ui: zhPortfolio.ui },
     setup: { ui: zhSetup.ui },
     stocks: { ui: zhStocks.ui },
+    settings: { ui: zhSettings.ui },
   },
   "en-US": {
     common: enCommon,
@@ -50,6 +56,7 @@ const catalogs: Record<Locale, LocaleMessages> = {
     portfolio: { ui: enPortfolio.ui },
     setup: { ui: enSetup.ui },
     stocks: { ui: enStocks.ui },
+    settings: { ui: enSettings.ui },
   },
 }
 

@@ -1,5 +1,5 @@
 import { ArrowUpRight, Check, CircleDollarSign, RefreshCw, Sparkles } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { ErrorState, LoadingState } from "@/components/async-state"
 import { PageFrame } from "@/components/page-frame"
@@ -33,6 +33,7 @@ const entryTypeDefinitions: Array<{ code: EntryType; direction: "inflow" | "outf
 export function BudgetPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { messages } = useLocale()
   const copy = messages.budget.ui
+  const readErrorRef = useRef(copy.states.readError)
   const [summary, setSummary] = useState<BudgetSummary | null>(null)
   const [stocks, setStocks] = useState<StockWatchlistItem[]>([])
   const [entryType, setEntryType] = useState<EntryType>("budget_deposit")
@@ -45,6 +46,10 @@ export function BudgetPage({ onNavigate }: { onNavigate: (path: string) => void 
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
+  useEffect(() => {
+    readErrorRef.current = copy.states.readError
+  }, [copy.states.readError])
+
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -53,11 +58,11 @@ export function BudgetPage({ onNavigate }: { onNavigate: (path: string) => void 
       setSummary(budget)
       setStocks(watchlist)
     } catch (loadError) {
-      setError(getApiErrorMessage(loadError, copy.states.readError))
+      setError(getApiErrorMessage(loadError, readErrorRef.current))
     } finally {
       setLoading(false)
     }
-  }, [copy.states.readError])
+  }, [])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void load() }, 0)

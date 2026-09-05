@@ -1,5 +1,5 @@
 import { AlertCircle, ChevronRight, Clock3, Database, RefreshCw, Save, ShieldCheck } from "lucide-react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { PageFrame } from "@/components/page-frame"
 import { SectionHeading } from "@/components/page-heading"
@@ -26,6 +26,7 @@ type RecommendationsPageProps = {
 export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageProps) {
   const { messages } = useLocale()
   const copy = messages.dividendStrategy.ui.overview
+  const readUnavailableRef = useRef(copy.messages.readUnavailable)
   const [stocks, setStocks] = useState<StockWatchlistItem[]>([])
   const [recommendation, setRecommendation] = useState<PortfolioRecommendationResult | null>(null)
   const [budget, setBudget] = useState<BudgetSummary | null>(null)
@@ -35,13 +36,17 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
   const [savingSnapshot, setSavingSnapshot] = useState(false)
   const [snapshotMessage, setSnapshotMessage] = useState<string | null>(null)
 
+  useEffect(() => {
+    readUnavailableRef.current = copy.messages.readUnavailable
+  }, [copy.messages.readUnavailable])
+
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     const [watchlistResult, recommendationResult, budgetResult] = await Promise.allSettled([getWatchlist(), getRecommendations(), getBudgetSummary()])
 
     if (watchlistResult.status === "rejected") {
-      setError(getApiErrorMessage(watchlistResult.reason, copy.messages.readUnavailable))
+      setError(getApiErrorMessage(watchlistResult.reason, readUnavailableRef.current))
       setLoading(false)
       return
     }
@@ -63,7 +68,7 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
     }
 
     setLoading(false)
-  }, [copy.messages.readUnavailable])
+  }, [])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void load() }, 0)

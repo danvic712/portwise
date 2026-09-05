@@ -1,0 +1,90 @@
+{
+  "ui": {
+    "page": {
+      "eyebrow": "SETTINGS / PER STOCK",
+      "title": "Give every stock a clear boundary.",
+      "description": "Adjust model parameters per stock. The next analysis will use the new yield, position, and cash limits."
+    },
+    "actions": {
+      "save": "Save parameters",
+      "saving": "Saving…",
+      "goSetup": "Build my portfolio"
+    },
+    "workflow": {
+      "eyebrow": "SETTINGS FLOW",
+      "title": "Choose a stock, tune its boundaries, then save once.",
+      "description": "Edit one stock at a time. These settings shape future trading references; they never place orders or rewrite recorded trades.",
+      "steps": [
+        { "number": "01", "title": "Choose one stock", "description": "Each stock has its own parameters, so changes stay local." },
+        { "number": "02", "title": "Read before editing", "description": "Use decimals from 0 to 1 for ratios; 0.25 means 25%." },
+        { "number": "03", "title": "Save this set once", "description": "The bottom action saves this stock's boundaries; future references use them and recorded trades stay unchanged." }
+      ]
+    },
+    "stocks": {
+      "eyebrow": "MY STOCKS",
+      "title": "Choose a stock to adjust",
+      "description": "Pick one stock from your portfolio and see its own model settings on the right.",
+      "position": "Current holding",
+      "positionEmpty": "No holding recorded",
+      "shareUnit": "shares",
+      "cost": "Cost",
+      "stockCount": "{count} configured",
+      "tip": "Each stock keeps its own model settings, so switching never overwrites another stock's boundaries."
+    },
+    "form": {
+      "eyebrow": "PARAMETER NOTEBOOK",
+      "title": "Trading boundaries for {stock}",
+      "description": "Read the note below each field before editing. The backend still performs the final validation when you save.",
+      "modelVersion": "Model version",
+      "modelVersionHint": "Marks this rule set so you can review it later.",
+      "effectiveDate": "Effective date",
+      "effectiveDateHint": "New analyses use this set from this date onward.",
+      "percentHint": "Use a decimal between 0 and 1.",
+      "ratioRange": "0–1",
+      "numberHint": "The backend validates the exact range.",
+      "footerHint": "Review ratios and amounts before saving; the system performs a final check.",
+      "stockFallback": "this stock"
+    },
+    "fields": {
+      "strongBuyYieldThreshold": { "label": "Strong-buy yield threshold", "help": "At this yield, the model can mark the opportunity as a strong buy." },
+      "accumulationYieldThreshold": { "label": "Accumulation yield threshold", "help": "At this yield, the model can consider a staged add." },
+      "partialTrimYieldThreshold": { "label": "Partial-trim yield threshold", "help": "In this range, the model asks you to review the position again." },
+      "aggressiveTrimYieldThreshold": { "label": "Aggressive-trim yield threshold", "help": "At this boundary, the model suggests handling the position more carefully." },
+      "strongBuyBudgetRatio": { "label": "Strong-buy budget ratio", "help": "The share of this period’s budget available for a strong buy." },
+      "accumulateBudgetRatio": { "label": "Accumulation budget ratio", "help": "The share of this period’s budget available for a staged add." },
+      "partialTrimRatio": { "label": "Partial-trim ratio", "help": "The reference portion to reduce for a partial trim." },
+      "aggressiveTrimRatio": { "label": "Aggressive-trim ratio", "help": "The reference portion to reduce for an aggressive trim." },
+      "maxSecurityWeight": { "label": "Maximum stock weight", "help": "Caps the highest share this stock can have in the portfolio." },
+      "maxSectorWeight": { "label": "Maximum sector weight", "help": "Caps the highest share the same sector can have in the portfolio." },
+      "cashReserveRatio": { "label": "Cash reserve ratio", "help": "The portion kept in cash and excluded from suggested buys." },
+      "maxSingleTradeAmount": { "label": "Maximum single-trade amount", "help": "The most one suggested trade can use." },
+      "maxPeriodBudgetAmount": { "label": "Maximum period budget", "help": "The most budget one analysis period can use." },
+      "transactionFeeRatio": { "label": "Transaction fee ratio", "help": "The ratio used when estimating transaction fees." },
+      "minimumTransactionFeeAmount": { "label": "Minimum transaction fee", "help": "Fees below this amount use the minimum estimate." },
+      "tradingLotSize": { "label": "Trading lot size (shares)", "help": "Suggested share counts are rounded to this unit." }
+    },
+    "groups": {
+      "thresholds": { "title": "Yield boundaries", "description": "Decide when it is worth buying, adding in stages, or reviewing the position." },
+      "ratios": { "title": "Budget and position", "description": "Control how much budget is used and how much weight a stock or sector can take." },
+      "limits": { "title": "Trading limits", "description": "Keep amounts, fees, and share units inside clear, easy-to-check limits." }
+    },
+    "states": {
+      "loading": "Reading model settings…",
+      "parametersLoading": "Reading this stock’s parameters…",
+      "readError": "The stock list is temporarily unavailable.",
+      "parametersReadError": "This stock’s model parameters are temporarily unavailable.",
+      "recordError": "The model parameters could not be saved. Check the fields and try again.",
+      "noticeTitle": "Settings notice",
+      "successTitle": "Saved",
+      "successMessage": "The model parameters were saved. The next analysis will use the new settings.",
+      "emptyTitle": "No stock data yet",
+      "emptyDescription": "Complete first-time setup before configuring model parameters per stock.",
+      "noParametersTitle": "This stock has no model parameters yet",
+      "noParametersDescription": "Initialize or import its model parameters from the backend first. This page will not overwrite your settings with defaults.",
+      "noSummary": "There are no model settings to show yet."
+    },
+    "validation": {
+      "invalid": "Fix the parameters before saving. Ratios must be between 0 and 1; amounts and lot sizes cannot be negative."
+    }
+  }
+}

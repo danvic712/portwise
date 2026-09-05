@@ -30,7 +30,7 @@
 .stock-action-summary-copy h3 em { color: var(--accent-strong); font-style: normal; }
 .stock-action-summary-add .stock-action-summary-copy h3 em { color: var(--attention-strong); }
 .stock-action-summary-reduce .stock-action-summary-copy h3 em { color: var(--coral); }
-.stock-action-summary-copy p { margin: 4px 0 0; overflow: hidden; color: var(--muted-foreground); font-size: 10px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+.stock-action-summary-copy p { margin: 4px 0 0; color: var(--muted-foreground); font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
 .stock-action-summary-zone { min-width: 112px; padding-left: 13px; border-left: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border)); text-align: right; }
 .stock-action-summary-zone span, .stock-action-summary-zone strong { display: block; }
 .stock-action-summary-zone span { color: var(--muted-foreground); font-size: 9px; }

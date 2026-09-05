@@ -135,7 +135,7 @@
 .portfolio-page-wrap .portfolio-stock-position > small { display: block; }
 .portfolio-page-wrap .portfolio-stock-context-copy > span,
 .portfolio-page-wrap .portfolio-stock-position > span { color: var(--muted-foreground); font-size: 10px; line-height: 1.35; }
-.portfolio-page-wrap .portfolio-stock-context-copy > strong { overflow: hidden; margin-top: 2px; color: var(--foreground); font-size: 15px; font-weight: 750; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.portfolio-page-wrap .portfolio-stock-context-copy > strong { margin-top: 2px; color: var(--foreground); font-size: 15px; font-weight: 750; line-height: 1.25; overflow-wrap: anywhere; }
 .portfolio-page-wrap .portfolio-stock-context-copy > small,
 .portfolio-page-wrap .portfolio-stock-position > small { margin-top: 3px; color: var(--muted-foreground); font-size: 9px; line-height: 1.4; }
 .portfolio-page-wrap .portfolio-stock-position { min-width: 118px; padding-left: 14px; border-left: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border)); text-align: right; }

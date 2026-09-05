@@ -35,8 +35,15 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<StockDataSyncRunResult | null>(null)
   const stocksRef = useRef<StockWatchlistItem[]>([])
+  const readErrorRef = useRef(copy.states.readError)
+  const analysisErrorRef = useRef(copy.states.analysisError)
   const detailStageRef = useRef<HTMLDivElement>(null)
   const [detailMinHeight, setDetailMinHeight] = useState<number | null>(null)
+
+  useEffect(() => {
+    readErrorRef.current = copy.states.readError
+    analysisErrorRef.current = copy.states.analysisError
+  }, [copy.states.analysisError, copy.states.readError])
 
   const applyStocks = useCallback((list: StockWatchlistItem[]) => {
     stocksRef.current = list
@@ -51,11 +58,11 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
       const list = await getStocks()
       applyStocks(list)
     } catch (loadError) {
-      setError(getApiErrorMessage(loadError, copy.states.readError))
+      setError(getApiErrorMessage(loadError, readErrorRef.current))
     } finally {
       if (!preserveView) setLoading(false)
     }
-  }, [applyStocks, copy.states.readError])
+  }, [applyStocks])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void loadStocks() }, 0)
@@ -86,12 +93,12 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
       if (!signal?.aborted) {
         setAnalysis(null)
         setParameters(null)
-        setDetailError(getApiErrorMessage(detailLoadError, copy.states.analysisError))
+        setDetailError(getApiErrorMessage(detailLoadError, analysisErrorRef.current))
       }
     } finally {
       if (!signal?.aborted) setDetailLoading(false)
     }
-  }, [copy.states.analysisError, selectedKey])
+  }, [selectedKey])
 
   useEffect(() => {
     if (detailLoading || detailMinHeight === null) return
@@ -246,7 +253,7 @@ function StockDetail({ analysis, parameters, onNavigate }: { analysis: StockAnal
       <Separator />
       <section className="stock-detail-section">
         <SectionHeading label={copy.detail.parametersLabel} title={copy.detail.parametersTitle} description={copy.detail.parametersDescription} />
-        {parameters ? <div className="parameter-grid">{parameterEntries(parameters, copy.detail.parameterNames).map(([label, value]) => <div className="parameter-item" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div> : <EmptyState title={copy.detail.missingParametersTitle} description={copy.detail.missingParametersDescription} action={<Button variant="outline" onClick={() => onNavigate(`/settings?stock=${encodeURIComponent(`${analysis.securityCode}:${analysis.exchangeCode}`)}`)}>{copy.actions.configure}</Button>} />}
+        {parameters ? <div className="parameter-grid">{parameterEntries(parameters, copy.detail.parameterNames).map(([label, value]) => <div className="parameter-item" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div> : <EmptyState title={copy.detail.missingParametersTitle} description={copy.detail.missingParametersDescription} action={<Button variant="outline" onClick={() => onNavigate(`/settings?stock=${encodeURIComponent(analysis.securityCode)}&exchange=${encodeURIComponent(analysis.exchangeCode)}`)}>{copy.actions.configure}</Button>} />}
         <div className="note-box">{analysis.explanation || copy.states.explanationFallback}</div>
       </section>
     </>

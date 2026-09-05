@@ -114,7 +114,7 @@
   color: var(--accent-strong);
   font-size: 10px;
   font-weight: 700;
-  white-space: nowrap;
+  line-height: 1.35;
 }
 
 .d-pulse-stock-add .d-pulse-stock-action strong { color: var(--attention-strong); }
@@ -255,7 +255,7 @@
 .overview-skeleton-loading-mark svg { animation: overview-loading-book 1.8s ease-in-out infinite; }
 .overview-skeleton-loading-copy { display: grid; gap: 3px; min-width: 0; }
 .overview-skeleton-loading-copy > span:first-child { color: var(--muted-foreground); font-size: 10px; font-weight: 750; letter-spacing: .06em; }
-.overview-skeleton-loading-copy strong { overflow: hidden; color: var(--foreground); font-size: 13px; font-weight: 650; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+.overview-skeleton-loading-copy strong { color: var(--foreground); font-size: 13px; font-weight: 650; line-height: 1.45; overflow-wrap: anywhere; }
 .overview-skeleton-loading-dots { display: inline-flex; gap: 4px; height: 5px; align-items: center; }
 .overview-skeleton-loading-dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); animation: overview-loading-dot 1.15s ease-in-out infinite; }
 .overview-skeleton-loading-dots i:nth-child(2) { animation-delay: 120ms; }
@@ -529,7 +529,7 @@
 .overview-page .d-position-hero strong,
 .overview-page .d-position-hero span,
 .overview-page .d-position-hero b {
-  white-space: nowrap;
+  line-height: 1.35;
 }
 
 .overview-page .d-position-hero b {
@@ -605,7 +605,7 @@
   border-radius: 12px;
   box-shadow: 0 3px 0 color-mix(in srgb, var(--accent-strong) 24%, transparent);
   font-size: 11px;
-  white-space: nowrap;
+  line-height: 1.35;
 }
 
 @media (max-width: 1100px) {
