@@ -1,17 +1,136 @@
-# dividend-harvest
+# Dividend Harvest
 
-## Runtime configuration
+Dividend Harvest 是一个面向个人 A 股长期投资者的私人工具。它把股票资料、股息事实、收盘行情、持仓和预算放在同一个组合上下文中，用规则透明的方式给出“现在是否适合观察、分批买入或减仓”的参考。
 
-运行时配置位于 Host 项目目录：
+> 本项目只提供可解释的研究和模拟记录，不预测股价、不自动下单、不构成投资建议。
 
-- `src/DividendHarvest/appsettings.json`：本地开发默认配置。
-- `src/DividendHarvest/appsettings.Production.json`：生产环境配置，SQLite 默认写入 `/app/data/dividend-harvest.db`。
+## 项目定位
 
-ASP.NET Core 会在 `Production` 环境下自动加载 `appsettings.Production.json`；如使用环境变量部署，环境变量仍可覆盖文件中的值。
+这个项目优先解决三个问题：
 
-## FTShare MCP
+1. 让不熟悉量化模型的用户知道“当前发生了什么”和“下一步可以做什么”；
+2. 用 TTM 实际股息、股息可靠性和价格区域生成每只股票的分批交易参考；
+3. 保存个人的持仓、交易和现金流水，让建议能结合自己的实际情况，而不是只看一个股息率。
 
-首次建账通过后端 FTShare MCP Adapter 获取 A 股股票基础资料。请在生产配置文件中填写 MCP 地址，或通过环境变量覆盖；不需要在代码、镜像或 Git 中保存 FTShare key：
+当前版本只支持中国 A 股、CNY 和单用户单组合场景，不包含账户体系、多人协作、自动交易或云端托管。
+
+## 已实现能力
+
+- 首次设置时一次添加多只 A 股，可录入已有持仓、核心仓、目标股数和平均成本；
+- 建账先保存股票和组合，FTShare 资料同步进入后台任务，不阻塞用户进入系统；
+- 通过 FTShare MCP Adapter 获取股票基础资料、行情、股息事件和财务快照；
+- 按交易日自动同步全部关注股票，也可以在股票资料页手动触发同步；
+- 使用 TTM 实际每股股息计算股息率，并结合可靠性检查、价格区域、预算和核心仓生成参考；
+- 支持多只股票独立配置模型参数，同时在组合层汇总预算、持仓和建议；
+- 提供今日决策、股票资料、资金预算、交易记录和设置页面；
+- 提供中英文切换、日间/夜间/跟随系统主题、加载骨架屏、404 页面和全局错误页面；
+- 提供 Swagger、Serilog、API Versioning、原生健康检查和 SQLite 持久化。
+
+## 运行架构
+
+前端和后端构建为一个 ASP.NET Core 镜像，由同一个 Host 提供静态页面和 API：
+
+```text
+Browser
+  │
+  ▼
+ASP.NET Core Host
+  ├── React + shadcn/ui 风格前端（构建到 wwwroot）
+  ├── Controllers / API v1
+  ├── Application AppService + FluentValidation
+  ├── Domain 规则与股息交易模型
+  └── Infrastructure
+       ├── EF Core + SQLite（/app/data）
+       └── FTShare MCP Adapter
+```
+
+数据访问只经过 `IUow`，数据库实体位于 Domain，EF Core Fluent API 配置位于 Infrastructure。控制器只负责 HTTP 参数绑定、调用应用服务和返回响应，不包含业务逻辑。
+
+## 快速运行：Docker
+
+### 构建镜像
+
+在项目根目录执行：
+
+```bash
+docker build -t dividend-harvest:local .
+```
+
+### 启动实例
+
+SQLite 数据库位于容器内的 `/app/data`，建议挂载 volume 或宿主机目录：
+
+```bash
+docker run --name dividend-harvest \
+  --rm \
+  -p 8080:8080 \
+  -v dividend-harvest-data:/app/data \
+  -e ASPNETCORE_ENVIRONMENT=Production \
+  -e FtShare__McpEndpoint="https://<ftshare-mcp-endpoint>/mcp" \
+  dividend-harvest:local
+```
+
+启动后访问：
+
+- 应用：http://127.0.0.1:8080/
+- Swagger：http://127.0.0.1:8080/swagger
+- 存活检查：http://127.0.0.1:8080/healthz
+- 就绪检查：http://127.0.0.1:8080/readyz
+
+项目适合部署在私有网络中。`/app/data` 是唯一需要持久化的应用数据目录；容器被删除后，如果没有挂载 volume，SQLite 数据也会随之删除。
+
+## 本地开发
+
+### 环境要求
+
+- .NET SDK 10；
+- Node.js `24.16.x`；
+- pnpm `11.x`；
+- Docker（仅在使用容器运行时需要）。
+
+### 运行后端
+
+```bash
+dotnet run \
+  --project src/DividendHarvest/DividendHarvest.csproj \
+  -- \
+  --urls http://127.0.0.1:5050
+```
+
+后端启动时会自动创建或补齐 SQLite 数据库结构。默认数据库文件为项目运行目录下的 `dividend-harvest.db`；生产配置默认使用 `/app/data/dividend-harvest.db`。
+
+### 运行前端开发服务器
+
+另开终端：
+
+```bash
+cd src/DividendHarvest.Web
+corepack enable
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+开发服务器默认地址为 http://127.0.0.1:4173，并将 `/api`、`/healthz` 和 `/readyz` 代理到 `http://127.0.0.1:5050`。前端生产构建会输出到 `src/DividendHarvest/wwwroot`，Docker 构建会自动执行这一步。
+
+## 配置
+
+ASP.NET Core 按默认规则加载 `appsettings.json` 和当前环境对应的 `appsettings.{Environment}.json`，环境变量会覆盖文件中的值。生产配置文件只保存非敏感默认值。
+
+常用配置：
+
+| 环境变量 | 用途 | 默认值 |
+| --- | --- | --- |
+| `ASPNETCORE_ENVIRONMENT` | ASP.NET Core 环境 | `Production`（容器中建议显式设置） |
+| `ConnectionStrings__Default` | SQLite 连接字符串 | `Data Source=dividend-harvest.db` |
+| `FtShare__McpEndpoint` | FTShare MCP Streamable HTTP 地址 | 空 |
+| `FtShare__RequestTimeoutSeconds` | 单次 MCP 请求超时 | `30` |
+| `FtShare__MaxRetryCount` | MCP 请求最大重试次数 | `2` |
+| `FtShare__RetryDelayMilliseconds` | 重试间隔 | `250` |
+| `DailySync__Enabled` | 是否启用每日同步 | `true` |
+| `DailySync__LocalTime` | 每日同步时间 | `18:00` |
+| `DailySync__TimeZoneId` | 每日同步时区 | `Asia/Shanghai` |
+
+FTShare 工具名称和参数名也可以通过 `FtShare__*` 配置覆盖：
 
 ```text
 FtShare__McpEndpoint=https://<ftshare-mcp-endpoint>/mcp
@@ -21,9 +140,106 @@ FtShare__StockDividendEventsToolName=get_stock_dividend_events
 FtShare__StockFinancialSnapshotsToolName=get_stock_financial_snapshots
 FtShare__SecurityCodeArgumentName=security_code
 FtShare__ExchangeCodeArgumentName=exchange_code
-FtShare__RequestTimeoutSeconds=30
-FtShare__MaxRetryCount=2
-FtShare__RetryDelayMilliseconds=250
 ```
 
-Adapter 使用 Streamable HTTP；股票代码和交易所参数会按项目的 `security_code`、`exchange_code` canonical 字段发送，返回资料会规范化为 A 股、CNY 数据。
+不要把 FTShare key、MCP 凭证或任何个人数据写入源代码、`appsettings*.json`、Dockerfile、镜像层或 Git。若 MCP 部署需要认证，应在 MCP 网关或运行环境的密钥管理中注入，应用仓库只保存 endpoint 和非敏感默认配置。
+
+未配置或暂时无法连接 FTShare 时，首次建账仍然可以完成；股票资料同步会在后台记录失败并等待下一次手动或交易日同步，不应阻塞用户建立组合。
+
+## 页面与路由
+
+前端使用轻卡通理财手帐风格，面向不熟悉投资术语的小白用户。页面路由由前端应用统一处理：
+
+| 路由 | 用途 |
+| --- | --- |
+| `/setup` | 首次建立组合和添加关注股票 |
+| `/overview` | 今日决策、组合状态和下一步提示 |
+| `/stocks` | 股票资料、行情、股息、财务和模型结果 |
+| `/budget` | 组合预算与现金流水 |
+| `/portfolio` | 持仓摘要和模拟交易记录 |
+| `/settings` | 每只股票独立的模型参数 |
+| `/404` | 未知前端路由 |
+| `/error` | 全局初始化或 API 读取失败 |
+
+根路径 `/` 会进入 `/overview`。首次运行且尚未建立组合时会进入 `/setup`。未知路径和全局错误分别归一到 `/404` 与 `/error`，恢复成功后返回 `/overview`。
+
+## API 入口
+
+API 使用 URL Segment 版本号，当前版本为 `v1`，完整接口和请求模型以 Swagger 为准。
+
+| API | 用途 |
+| --- | --- |
+| `GET /api/v1/setup/status` | 查询是否已完成首次设置 |
+| `POST /api/v1/setup` | 建立组合、保存多只股票和可选初始持仓 |
+| `GET /api/v1/stocks` | 获取关注股票和持仓摘要 |
+| `POST /api/v1/stocks/sync` | 手动触发全部股票资料同步 |
+| `GET /api/v1/stocks/{securityCode}/{exchangeCode}/analysis` | 获取单只股票分析与交易参考 |
+| `GET /api/v1/stocks/{securityCode}/{exchangeCode}/model-parameters` | 获取当前生效模型参数 |
+| `POST /api/v1/stocks/model-parameters` | 保存单只股票模型参数 |
+| `POST /api/v1/stocks/{securityCode}/{exchangeCode}/price-observations/sync` | 同步单只股票行情 |
+| `POST /api/v1/stocks/{securityCode}/{exchangeCode}/dividend-events/sync` | 同步单只股票股息事件 |
+| `POST /api/v1/stocks/{securityCode}/{exchangeCode}/financial-snapshots/sync` | 同步单只股票财务快照 |
+| `GET /api/v1/budgets/summary` | 获取预算摘要 |
+| `POST /api/v1/budgets/entries` | 记录现金流水 |
+| `POST /api/v1/portfolio/trades` | 记录模拟交易并更新持仓 |
+| `GET /api/v1/recommendations` | 获取组合级建议 |
+| `POST /api/v1/recommendations/snapshots` | 保存一次建议快照 |
+
+## 数据与模型口径
+
+- 股票代码以文本保存，支持 `000001` 等带前导零的代码；对外使用 `security_code + exchange_code`；
+- 默认模型股息为最近十二个月已经实施的常规现金股息，即 TTM DPS；
+- 价格区域使用每只股票独立配置的收益率阈值；连续两个有效交易日确认后，才驱动操作建议；
+- `available_budget_amount` 是扣除现金储备后的可用预算，不等于现金流水的实际余额；
+- `core_shares` 是希望长期保留的核心仓，卫星仓用于阶段性分批操作；
+- 数据不足、来源失败、股息取消或可靠性检查未通过时，系统应降低建议强度或停止生成买入股数。
+
+完整模型规则、字段口径和验收用例见：
+
+- [股息收益与分批交易参考模型](docs/dividend-harvest-quant-model.md)
+- [股息策略研究摘要](docs/dividend-strategy-research.md)
+- [应用架构设计](docs/architecture-design.md)
+
+## 项目结构
+
+```text
+DividendHarvest/
+├── src/
+│   ├── DividendHarvest/                 # ASP.NET Core Host、Controller、配置、健康检查
+│   ├── DividendHarvest.Application/     # AppService、Contracts、DTO、验证、异常与本地化
+│   ├── DividendHarvest.Domain/          # Entity、领域规则、量化模型和领域代码
+│   ├── DividendHarvest.Infrastructure/  # EF Core、Uow/Repository、SQLite、FTShare Adapter
+│   └── DividendHarvest.Web/             # React、shadcn/ui 风格组件、页面 feature 和 API 调用
+├── tests/
+│   ├── DividendHarvest.Domain.Tests/         # xUnit 领域单元测试
+│   └── DividendHarvest.Application.Tests/    # xUnit + Moq 应用层单元测试
+├── locales/                              # zh-CN / en-US 多语言资源
+├── docs/                                 # 架构、模型和研究文档
+├── Dockerfile                            # 前后端单镜像构建
+└── DividendHarvest.slnx
+```
+
+前端 feature 按页面组织自己的页面、API、样式和骨架屏；公共 Header、Footer、页面框架和 shadcn/ui 基础组件位于 `src/DividendHarvest.Web/src/components`。后端按 Domain、Application、Infrastructure、Host 分层，接口统一放在各层的 `Contracts` 文件夹。
+
+## 测试与质量检查
+
+运行后端测试：
+
+```bash
+dotnet test DividendHarvest.slnx
+```
+
+运行前端检查：
+
+```bash
+cd src/DividendHarvest.Web
+pnpm run typecheck
+pnpm run lint
+pnpm run build
+```
+
+当前单元测试只覆盖 Domain 和 Application，使用 xUnit；Application 测试使用 Moq 模拟 Uow、Repository、Provider 和调度器。UI 页面验收还应在浏览器中检查目标分辨率、加载态、空态、错误态、夜间主题和中英文切换，构建成功不等于视觉验收完成。
+
+## 许可
+
+本项目使用 [MIT License](LICENSE)。
