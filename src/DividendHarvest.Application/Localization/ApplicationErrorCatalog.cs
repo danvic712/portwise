@@ -66,10 +66,12 @@ public sealed class ApplicationErrorCatalog : IApplicationErrorCatalog
             using var document = JsonDocument.Parse(stream);
             EnsureNoDuplicateProperties(document.RootElement, resourceName);
             var domainDefinitions = new Dictionary<string, ApplicationErrorDefinition>(StringComparer.Ordinal);
+            var hasUiSection = false;
             foreach (var property in document.RootElement.EnumerateObject())
             {
                 if (property.NameEquals(UiPropertyName))
                 {
+                    hasUiSection = true;
                     continue;
                 }
 
@@ -81,6 +83,11 @@ public sealed class ApplicationErrorCatalog : IApplicationErrorCatalog
 
             if (domainDefinitions.Count == 0)
             {
+                if (hasUiSection)
+                {
+                    continue;
+                }
+
                 throw new InvalidOperationException(
                     $"Embedded application locale resource '{resourceName}' is empty.");
             }

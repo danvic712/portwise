@@ -4,6 +4,7 @@ WORKDIR /workspace/src/DividendHarvest.Web
 COPY src/DividendHarvest.Web/package.json src/DividendHarvest.Web/pnpm-lock.yaml ./
 RUN corepack enable && pnpm install --frozen-lockfile
 COPY src/DividendHarvest.Web/ ./
+COPY locales/ /workspace/locales/
 RUN pnpm build
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS backend-build

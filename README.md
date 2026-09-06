@@ -53,8 +53,10 @@ ASP.NET Core Host
 在项目根目录执行：
 
 ```bash
-docker build -t dividend-harvest:local .
+docker build -t danvic712/dividend-harvest .
 ```
+
+镜像采用多阶段构建：先构建 React 前端，再发布 ASP.NET Core 后端。根目录的 `locales/` 会同时纳入前端构建和后端嵌入式资源；其中前端 UI 文案和后端应用错误定义共用同一套中英文语言文件。
 
 ### 启动实例
 
@@ -67,7 +69,7 @@ docker run --name dividend-harvest \
   -v dividend-harvest-data:/app/data \
   -e ASPNETCORE_ENVIRONMENT=Production \
   -e FtShare__McpEndpoint="https://<ftshare-mcp-endpoint>/mcp" \
-  dividend-harvest:local
+  danvic712/dividend-harvest
 ```
 
 启动后访问：
@@ -78,6 +80,62 @@ docker run --name dividend-harvest \
 - 就绪检查：http://127.0.0.1:8080/readyz
 
 项目适合部署在私有网络中。`/app/data` 是唯一需要持久化的应用数据目录；容器被删除后，如果没有挂载 volume，SQLite 数据也会随之删除。
+
+## GitHub Actions
+
+仓库包含两个独立的 GitHub Actions workflow：
+
+- [`build-and-test.yml`](.github/workflows/build-and-test.yml)：在分支推送和 Pull Request 时运行，使用 pnpm/NuGet 缓存，依次构建前端、还原并构建 .NET 解决方案，然后执行全部后端测试；
+- [`docker-build-and-push.yml`](.github/workflows/docker-build-and-push.yml)：只在推送 Git tag 时运行，构建同时支持 `linux/amd64` 和 `linux/arm64` 的镜像，并同时推送到 Docker Hub 和 GitHub Container Registry。
+
+Docker 镜像 workflow 需要在 GitHub 仓库的 Settings → Secrets and variables → Actions 中配置：
+
+| Secret | 用途 |
+| --- | --- |
+| `DOCKERHUB_USERNAME` | Docker Hub 用户名 |
+| `DOCKERHUB_TOKEN` | Docker Hub Access Token |
+
+GitHub Container Registry 使用 workflow 自动提供的 `GITHUB_TOKEN`，不需要额外创建 Secret；仓库权限必须允许 Actions 写入 Packages。
+
+发布镜像时推送一个 tag 即可：
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+该 tag 会发布为以下镜像，并同时更新各自的 `latest`：
+
+```text
+danvic712/dividend-harvest:v0.1.0
+ghcr.io/danvic712/dividend-harvest:v0.1.0
+```
+
+### Azure App Service 持久化配置
+
+Linux 自定义容器默认不会持久化文件系统。将 App Service 的持久化存储开关打开后，应用可以把 SQLite 数据库放在 `/home` 下；本项目通过 `ConnectionStrings__Default` 覆盖默认的 `/app/data` 路径：
+
+| App Service 应用设置 | 值 |
+| --- | --- |
+| `WEBSITES_ENABLE_APP_SERVICE_STORAGE` | `true` |
+| `WEBSITES_PORT` | `8080` |
+| `ASPNETCORE_ENVIRONMENT` | `Production` |
+| `ConnectionStrings__Default` | `Data Source=/home/dividend-harvest.db` |
+
+也可以使用 Azure CLI 配置：
+
+```bash
+az webapp config appsettings set \
+  --resource-group <resource-group> \
+  --name <app-name> \
+  --settings \
+    WEBSITES_ENABLE_APP_SERVICE_STORAGE=true \
+    WEBSITES_PORT=8080 \
+    ASPNETCORE_ENVIRONMENT=Production \
+    'ConnectionStrings__Default=Data Source=/home/dividend-harvest.db'
+```
+
+`WEBSITES_PORT=8080` 对应镜像的 `EXPOSE 8080`。Azure 官方建议将需要持久化的文件写入 `/home`；但 App Service Linux 的 `/home` 属于共享存储，SQLite 可能受到文件锁限制，建议保持单实例使用并做好备份。需要多实例或更高并发时，应改用 Azure Database 等托管数据库。[Azure 自定义容器文档](https://learn.microsoft.com/zh-cn/azure/app-service/configure-custom-container)
 
 ## 本地开发
 
