@@ -326,6 +326,14 @@ button { cursor: pointer; }
 
 /* Production dashboard follows the approved Variant D editorial layout. */
 .app-frame { position: relative; overflow: clip; }
+.app-frame-status::before { display: none; }
+
+@media (min-width: 761px) {
+  .app-frame-wide .page-wrap,
+  .app-frame-wide .app-footer { width: min(100% - clamp(48px, 6vw, 96px), 1780px); margin-inline: auto; }
+  .app-frame-wide .page-wrap { padding-inline: 0; }
+  .app-frame-wide .app-footer { padding-inline: 0; }
+}
 .app-frame::before { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(color-mix(in srgb, var(--foreground) 3%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--foreground) 3%, transparent) 1px, transparent 1px); background-size: 56px 56px; mask-image: linear-gradient(to bottom, rgb(0 0 0 / 0.42), transparent 58%); content: ""; }
 .topbar, .page-wrap, .app-footer { position: relative; z-index: 1; }
 .d-watchlist { margin-top: 12px; }

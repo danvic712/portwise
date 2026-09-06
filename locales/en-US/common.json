@@ -51,7 +51,32 @@
       "connecting": "Connecting to your local portfolio…",
       "preparingSetup": "Preparing first-time setup…",
       "setupCompleteSync": "Portfolio created. Stock data is syncing in the background.",
-      "setupCompleteDeferred": "Portfolio created. Background sync was not queued; it will retry on the next manual or trading-day sync."
+      "setupCompleteDeferred": "Portfolio created. Background sync was not queued; it will retry on the next manual or trading-day sync.",
+      "notFound": {
+        "eyebrow": "This page wandered off",
+        "title": "This notebook page is missing.",
+        "description": "The address may have moved, or this page may not belong to your money notebook yet. Let’s return to today’s decision and continue from somewhere familiar.",
+        "noteLabel": "You can do this first",
+        "note": "Your portfolio, holdings, and trade notes are not changed when a page is missing.",
+        "illustrationLabel": "Page note",
+        "illustrationHint": "A missing page does not affect saved data.",
+        "actions": {
+          "goOverview": "Back to today",
+          "goBack": "Go back"
+        }
+      },
+      "applicationError": {
+        "eyebrow": "This read did not finish",
+        "title": "Take a breath. Your data is still here.",
+        "description": "The system could not finish reading this time. Try once more, or return to today’s decision without changing anything you have already saved.",
+        "noteLabel": "What happened",
+        "illustrationLabel": "Needs another look",
+        "illustrationHint": "This is a read issue; your records are not changed automatically.",
+        "actions": {
+          "retry": "Try again",
+          "goOverview": "Back to today"
+        }
+      }
     },
     "disclaimer": "For personal research and simulated records only. Not investment advice and never places orders automatically.",
     "researchOnly": "Research only",

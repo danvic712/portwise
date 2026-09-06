@@ -228,10 +228,6 @@
 
 @media (min-width: 761px) {
   .app-frame-overview .d-header { width: 100%; margin-inline: 0; padding-inline: clamp(24px, 3vw, 72px); }
-  .app-frame-overview .page-wrap,
-  .app-frame-overview .app-footer { width: min(100% - clamp(48px, 6vw, 96px), 1780px); margin-inline: auto; }
-  .app-frame-overview .page-wrap { padding-inline: 0; }
-  .app-frame-overview .app-footer { padding-inline: 0; }
 }
 
 /* Plain-language hierarchy for users who do not know the model vocabulary. */

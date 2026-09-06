@@ -51,7 +51,32 @@
       "connecting": "正在连接本地组合…",
       "preparingSetup": "正在准备首次设置…",
       "setupCompleteSync": "组合已建立，股票资料正在后台同步。",
-      "setupCompleteDeferred": "组合已建立；本次后台同步未入队，系统会在下一次手动或交易日同步时重试。"
+      "setupCompleteDeferred": "组合已建立；本次后台同步未入队，系统会在下一次手动或交易日同步时重试。",
+      "notFound": {
+        "eyebrow": "这页暂时找不到",
+        "title": "这张手帐页走丢了。",
+        "description": "这个地址可能已经换了位置，或者这张页面还没有加入你的理财手帐。先回到今日决策，我们从熟悉的地方继续。",
+        "noteLabel": "可以先这样做",
+        "note": "你的组合、持仓和交易记录不会因为找不到页面而改变。",
+        "illustrationLabel": "页面便签",
+        "illustrationHint": "找不到页面，不影响已经保存的资料。",
+        "actions": {
+          "goOverview": "回到今日决策",
+          "goBack": "返回上一页"
+        }
+      },
+      "applicationError": {
+        "eyebrow": "这次读取没有完成",
+        "title": "先别急，资料还在。",
+        "description": "系统刚才没有顺利完成这次读取。你可以再试一次；如果仍然失败，先回到今日决策也不会丢失已经保存的内容。",
+        "noteLabel": "发生了什么",
+        "illustrationLabel": "需要再看一眼",
+        "illustrationHint": "这是一次读取问题，不会自动修改你的记录。",
+        "actions": {
+          "retry": "再试一次",
+          "goOverview": "回到今日决策"
+        }
+      }
     },
     "disclaimer": "仅供个人研究与模拟记录，不构成投资建议，也不会自动下单。",
     "researchOnly": "仅供研究",
