@@ -21,6 +21,10 @@
     <PackageReference Include="Asp.Versioning.OpenApi" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="DividendHarvest.Host.Tests" />
+  </ItemGroup>
+
   <!-- SpaProxy is only referenced in Debug: auto-starts the Vite dev server and reverse-proxies non-API requests via ASPNETCORE_HOSTINGSTARTUPASSEMBLIES. Not referenced in Release/Publish. -->
   <ItemGroup Condition="'$(Configuration)' == 'Debug'">
     <PackageReference Include="Microsoft.AspNetCore.SpaProxy" />

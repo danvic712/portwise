@@ -9,5 +9,6 @@
     <Project Path="tests/DividendHarvest.Application.Tests/DividendHarvest.Application.Tests.csproj" />
     <Project Path="tests/DividendHarvest.Domain.Tests/DividendHarvest.Domain.Tests.csproj" />
     <Project Path="tests/DividendHarvest.Infrastructure.Tests/DividendHarvest.Infrastructure.Tests.csproj" />
+    <Project Path="tests/DividendHarvest.Host.Tests/DividendHarvest.Host.Tests.csproj" />
   </Folder>
 </Solution>

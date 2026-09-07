@@ -151,11 +151,11 @@ src/
     │   └── PortfolioController.cs
     ├── Background/                     # ASP.NET Core 后台调度
     │   ├── DailyStockDataSyncHostedService.cs
-    │   ├── DailyStockDataSyncRunner.cs
+    │   ├── StockDataSyncRunner.cs
     │   ├── StockDataSyncBackgroundService.cs
     │   └── StockDataSyncTaskQueue.cs
     ├── Contracts/                      # Host 层可替换边界
-    │   ├── IDailyStockDataSyncRunner.cs
+    │   ├── IStockDataSyncRunner.cs
     │   └── IHttpErrorRenderer.cs
     ├── Diagnostics/                    # 隐私感知的 Activity 诊断上下文
     │   ├── ActivityDiagnosticContext.cs
@@ -187,7 +187,7 @@ Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfo
 
 `Stocks` 同时承载交易日同步编排，因为该编排只围绕关注股票的外部事实更新；交易日同步通过 `IStockFactSyncAppService.SyncAsync` 一次传递单只股票的规范化引用，并消费包含资料、行情、股息、财务结果和逐类失败的 `StockFactSyncResult`。如果未来出现多个互不相关的调度任务，再单独引入 `Operations` 模块。`StockModelParameterAppService` 归入 `DividendStrategy`，因为模型参数是分析和组合建议的输入，而不是持仓或现金流水本身。
 
-各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddDividendHarvestApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddDividendHarvestInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddDividendHarvestHost`。Host 另提供 `HostServiceCollectionExtensions.AddDividendHarvest(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库 migration 统一放在 `WebApplicationExtensions`；定时同步和 Setup 后台同步都通过 `DailyStockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器内部串行化执行，避免两个同步任务同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
+各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddDividendHarvestApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddDividendHarvestInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddDividendHarvestHost`。Host 另提供 `HostServiceCollectionExtensions.AddDividendHarvest(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库 migration 统一放在 `WebApplicationExtensions`；手动、每日定时和 Setup 后台同步都通过 `StockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器统一串行化执行、run ID、诊断上下文和取消语义，避免不同入口同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
 
 公共基础能力也遵循相同的组合边界：Swagger/Serilog 注册在 `HostServiceCollectionExtensions`，Swagger UI、Serilog HTTP 请求日志中间件和其他 `WebApplication` 行为在 `WebApplicationExtensions`；Application 的 Mapperly 映射定义集中在 `Mapping/ApplicationMapper.cs`，由构建期生成实际映射代码。
 
@@ -459,7 +459,7 @@ PortfolioRecommendationAppService ────┴──> PortfolioAllocationAppS
                                       (直接使用同一分析结果写入快照)
 ```
 
-Host 的 `DailyStockDataSyncHostedService` 按 `DailySync:LocalTime` 和 `DailySync:TimeZoneId` 调度，默认使用上海时间每日 18:00，并跳过周末；A 股法定节假日由数据源实际返回结果决定，重复快照通过事实同步用例幂等处理。`StockDataSyncBackgroundService` 监听有界队列，在 Setup 提交后执行一次即时后台同步；它与每日同步共享 `DailyStockDataSyncRunner` 的串行闸门。生产环境可以通过 `DailySync:Enabled=false` 关闭定时调度，但 Setup 后的一次性队列同步和手动接口仍然可用；后台异常只记录安全的运行摘要，详细的逐项失败仍由手动同步接口返回，后续运行会重试。
+Host 的 `DailyStockDataSyncHostedService` 按 `DailySync:LocalTime` 和 `DailySync:TimeZoneId` 调度，默认使用上海时间每日 18:00，并跳过周末；A 股法定节假日由数据源实际返回结果决定，重复快照通过事实同步用例幂等处理。`StockDataSyncBackgroundService` 监听有界队列，在 Setup 提交后执行一次即时后台同步；它与每日调度和 HTTP 手动同步共享 `StockDataSyncRunner` 的串行闸门。runner 为每次实际执行生成 run ID，并统一记录触发来源、结果和失败摘要。生产环境可以通过 `DailySync:Enabled=false` 关闭定时调度，但 Setup 后的一次性队列同步和手动接口仍然可用；后台单次失败不会终止 hosted service，详细的逐项失败仍由手动同步接口返回，后续运行会重试。
 
 ### 8.11 交易记录与持仓成本
 

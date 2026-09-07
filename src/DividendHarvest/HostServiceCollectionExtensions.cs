@@ -1,17 +1,17 @@
+using Asp.Versioning;
 using DividendHarvest.Application;
 using DividendHarvest.Application.Contracts;
 using DividendHarvest.Background;
 using DividendHarvest.Configuration;
-using DividendHarvest.ExceptionHandling;
-using DividendHarvest.HealthChecks;
 using DividendHarvest.Contracts;
 using DividendHarvest.Diagnostics;
-using Asp.Versioning;
+using DividendHarvest.ExceptionHandling;
+using DividendHarvest.HealthChecks;
+using DividendHarvest.Infrastructure;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.Builder;
-using DividendHarvest.Infrastructure;
 using Serilog;
 using Serilog.Enrichers.Span;
 using ApplicationDiagnosticContext = DividendHarvest.Application.Contracts.IDiagnosticContext;
@@ -68,7 +68,7 @@ public static class HostServiceCollectionExtensions
                 }));
         services.Configure<DailySyncOptions>(
             configuration.GetSection(DailySyncOptions.SectionName));
-        services.AddSingleton<IDailyStockDataSyncRunner, DailyStockDataSyncRunner>();
+        services.AddSingleton<IStockDataSyncRunner, StockDataSyncRunner>();
         services.AddSingleton<StockDataSyncTaskQueue>();
         services.AddSingleton<IStockDataSyncScheduler>(serviceProvider =>
             serviceProvider.GetRequiredService<StockDataSyncTaskQueue>());

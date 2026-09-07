@@ -1,6 +1,7 @@
+using Asp.Versioning;
 using DividendHarvest.Application.Contracts;
 using DividendHarvest.Application.Dtos;
-using Asp.Versioning;
+using DividendHarvest.Contracts;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DividendHarvest.Controllers;
@@ -15,7 +16,7 @@ public sealed class StocksController(
     IStockDividendEventAppService stockDividendEventAppService,
     IStockRecommendationAppService stockRecommendationAppService,
     IStockFinancialSnapshotAppService stockFinancialSnapshotAppService,
-    IStockDailyDataSyncAppService stockDailyDataSyncAppService)
+    IStockDataSyncRunner stockDataSyncRunner)
     : ControllerBase
 {
     [HttpGet]
@@ -30,8 +31,11 @@ public sealed class StocksController(
     public async Task<ActionResult<StockDataSyncRunResult>> SyncStocks(
         CancellationToken cancellationToken)
     {
-        var result = await stockDailyDataSyncAppService.SyncAsync(cancellationToken);
-        return Ok(result);
+        var execution = await stockDataSyncRunner.RunAsync(
+            StockDataSyncTrigger.Manual,
+            cancellationToken);
+        Response.Headers["X-Sync-Run-Id"] = execution.RunId;
+        return Ok(execution.Result);
     }
 
     [HttpGet("{securityCode}/{exchangeCode}/model-parameters")]

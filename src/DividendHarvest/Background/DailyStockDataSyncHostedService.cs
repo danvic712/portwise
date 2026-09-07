@@ -1,6 +1,3 @@
-using DividendHarvest.Application.Contracts;
-using DividendHarvest.Application.Diagnostics;
-using DividendHarvest.Application.Exceptions;
 using DividendHarvest.Application.Stocks;
 using DividendHarvest.Configuration;
 using DividendHarvest.Contracts;
@@ -9,11 +6,10 @@ using Microsoft.Extensions.Options;
 namespace DividendHarvest.Background;
 
 public sealed class DailyStockDataSyncHostedService(
-    IDailyStockDataSyncRunner syncRunner,
+    IStockDataSyncRunner syncRunner,
     IOptions<DailySyncOptions> options,
     TimeProvider timeProvider,
-    ILogger<DailyStockDataSyncHostedService> logger,
-    IDiagnosticContext diagnosticContext) : BackgroundService
+    ILogger<DailyStockDataSyncHostedService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -53,43 +49,17 @@ public sealed class DailyStockDataSyncHostedService(
 
     private async Task RunSyncAsync(CancellationToken cancellationToken)
     {
-        var runId = Guid.NewGuid().ToString("N");
-        using var diagnosticScope = diagnosticContext.BeginScope(new DiagnosticScope(
-            "daily_stock_data_sync",
-            CorrelationId: runId,
-            RunId: runId));
-
         try
         {
-            var result = await syncRunner.RunAsync(cancellationToken);
-            logger.LogInformation(
-                "Daily stock data synchronization finished. RunId: {RunId}, attempted: {Attempted}, completed: {Completed}, failed: {Failed}.",
-                runId,
-                result.AttemptedStockCount,
-                result.FullyCompletedStockCount,
-                result.PartiallyFailedStockCount);
+            await syncRunner.RunAsync(StockDataSyncTrigger.Scheduled, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             return;
         }
-        catch (ApplicationExceptionBase exception)
+        catch (Exception)
         {
-            var causeType = exception.InnerException?.GetType().Name ?? exception.GetType().Name;
-            logger.LogError(
-                "Daily stock data synchronization failed. RunId: {RunId}, error code: {ErrorCode}, cause type: {CauseType}.",
-                runId,
-                exception.ErrorCode,
-                causeType);
-        }
-        catch (Exception exception)
-        {
-            var causeType = exception.InnerException?.GetType().Name ?? exception.GetType().Name;
-            logger.LogError(
-                "Daily stock data synchronization failed. RunId: {RunId}, exception type: {ExceptionType}, cause type: {CauseType}.",
-                runId,
-                exception.GetType().Name,
-                causeType);
+            // The shared runner records the failure with its run ID. Keep scheduling future runs.
         }
     }
 

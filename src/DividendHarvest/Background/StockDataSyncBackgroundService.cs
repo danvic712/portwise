@@ -1,15 +1,10 @@
-using DividendHarvest.Application.Contracts;
-using DividendHarvest.Application.Diagnostics;
-using DividendHarvest.Application.Exceptions;
 using DividendHarvest.Contracts;
 
 namespace DividendHarvest.Background;
 
 internal sealed class StockDataSyncBackgroundService(
     StockDataSyncTaskQueue taskQueue,
-    IDailyStockDataSyncRunner syncRunner,
-    ILogger<StockDataSyncBackgroundService> logger,
-    IDiagnosticContext diagnosticContext) : BackgroundService
+    IStockDataSyncRunner syncRunner) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -28,43 +23,17 @@ internal sealed class StockDataSyncBackgroundService(
 
     private async Task RunSyncAsync(CancellationToken cancellationToken)
     {
-        var runId = Guid.NewGuid().ToString("N");
-        using var diagnosticScope = diagnosticContext.BeginScope(new DiagnosticScope(
-            "stock_data_sync",
-            CorrelationId: runId,
-            RunId: runId));
-
         try
         {
-            var result = await syncRunner.RunAsync(cancellationToken);
-            logger.LogInformation(
-                "Background stock data synchronization finished. RunId: {RunId}, attempted: {Attempted}, completed: {Completed}, failed: {Failed}.",
-                runId,
-                result.AttemptedStockCount,
-                result.FullyCompletedStockCount,
-                result.PartiallyFailedStockCount);
+            await syncRunner.RunAsync(StockDataSyncTrigger.Setup, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             return;
         }
-        catch (ApplicationExceptionBase exception)
+        catch (Exception)
         {
-            var causeType = exception.InnerException?.GetType().Name ?? exception.GetType().Name;
-            logger.LogError(
-                "Background stock data synchronization failed. RunId: {RunId}, error code: {ErrorCode}, cause type: {CauseType}.",
-                runId,
-                exception.ErrorCode,
-                causeType);
-        }
-        catch (Exception exception)
-        {
-            var causeType = exception.InnerException?.GetType().Name ?? exception.GetType().Name;
-            logger.LogError(
-                "Background stock data synchronization failed. RunId: {RunId}, exception type: {ExceptionType}, cause type: {CauseType}.",
-                runId,
-                exception.GetType().Name,
-                causeType);
+            // The shared runner records the failure with its run ID. Keep processing queued runs.
         }
     }
 }
