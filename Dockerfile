@@ -20,8 +20,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
 WORKDIR /app
 ENV ASPNETCORE_HTTP_PORTS=8080
 ENV DOTNET_EnableDiagnostics=0
-RUN mkdir -p /app/data
+RUN mkdir -p /app/data /app/logs
 COPY --from=backend-build /app/publish ./
-VOLUME ["/app/data"]
+VOLUME ["/app/data", "/app/logs"]
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "DividendHarvest.dll"]

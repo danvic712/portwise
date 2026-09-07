@@ -10,11 +10,10 @@ using Asp.Versioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Builder;
 using DividendHarvest.Infrastructure;
 using Serilog;
-using Swashbuckle.AspNetCore.SwaggerGen;
+using Serilog.Enrichers.Span;
 using ApplicationDiagnosticContext = DividendHarvest.Application.Contracts.IDiagnosticContext;
 
 namespace DividendHarvest;
@@ -39,13 +38,13 @@ public static class HostServiceCollectionExtensions
             loggerConfiguration
                 .ReadFrom.Configuration(configuration)
                 .ReadFrom.Services(serviceProvider)
-                .Enrich.FromLogContext());
+                .Enrich.FromLogContext()
+                .Enrich.WithSpan());
         services.AddProblemDetails();
-        services.AddSingleton<ApplicationDiagnosticContext, SerilogDiagnosticContext>();
+        services.AddSingleton<ApplicationDiagnosticContext, ActivityDiagnosticContext>();
         services.AddSingleton<IHttpErrorRenderer, ProblemDetailsErrorRenderer>();
         services.AddExceptionHandler<ApplicationExceptionHandler>();
         services.AddControllers();
-        services.AddEndpointsApiExplorer();
         services
             .AddApiVersioning(options =>
             {
@@ -59,9 +58,14 @@ public static class HostServiceCollectionExtensions
             {
                 options.GroupNameFormat = "'v'VVV";
                 options.SubstituteApiVersionInUrl = true;
-            });
-        services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
-        services.AddSwaggerGen();
+            })
+            .AddOpenApi(options => options.Document.AddDocumentTransformer(
+                (document, _, _) =>
+                {
+                    document.Info.Title = "Dividend Harvest API";
+                    document.Info.Description = "A 股股息交易参考 API。";
+                    return Task.CompletedTask;
+                }));
         services.Configure<DailySyncOptions>(
             configuration.GetSection(DailySyncOptions.SectionName));
         services.AddSingleton<IDailyStockDataSyncRunner, DailyStockDataSyncRunner>();

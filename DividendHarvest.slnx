@@ -1,8 +1,12 @@
 <Solution>
-  <Project Path="src/DividendHarvest.Domain/DividendHarvest.Domain.csproj" />
-  <Project Path="src/DividendHarvest.Application/DividendHarvest.Application.csproj" />
-  <Project Path="src/DividendHarvest.Infrastructure/DividendHarvest.Infrastructure.csproj" />
-  <Project Path="src/DividendHarvest/DividendHarvest.csproj" />
-  <Project Path="tests/DividendHarvest.Domain.Tests/DividendHarvest.Domain.Tests.csproj" />
-  <Project Path="tests/DividendHarvest.Application.Tests/DividendHarvest.Application.Tests.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/DividendHarvest.Application/DividendHarvest.Application.csproj" />
+    <Project Path="src/DividendHarvest.Domain/DividendHarvest.Domain.csproj" />
+    <Project Path="src/DividendHarvest.Infrastructure/DividendHarvest.Infrastructure.csproj" />
+    <Project Path="src/DividendHarvest/DividendHarvest.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DividendHarvest.Application.Tests/DividendHarvest.Application.Tests.csproj" />
+    <Project Path="tests/DividendHarvest.Domain.Tests/DividendHarvest.Domain.Tests.csproj" />
+  </Folder>
 </Solution>

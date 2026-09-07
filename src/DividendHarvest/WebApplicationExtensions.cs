@@ -4,6 +4,7 @@ using DividendHarvest.Infrastructure.Contracts;
 using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using ApplicationDiagnosticContext = DividendHarvest.Application.Contracts.IDiagnosticContext;
@@ -19,18 +20,7 @@ public static class WebApplicationExtensions
         app.UseSerilogRequestLogging();
         app.UseDefaultFiles();
         app.UseStaticFiles();
-        app.UseSwagger();
-        app.UseSwaggerUI(options =>
-        {
-            foreach (var description in app.DescribeApiVersions())
-            {
-                options.SwaggerEndpoint(
-                    $"/swagger/{description.GroupName}/swagger.json",
-                    $"Dividend Harvest API {description.GroupName}");
-            }
-
-            options.RoutePrefix = "swagger";
-        });
+        app.MapOpenApiEndpoints();
         app.MapControllers();
         app.MapFallbackToFile("index.html");
         app.MapHealthChecks("/healthz", new HealthCheckOptions
@@ -40,6 +30,28 @@ public static class WebApplicationExtensions
         app.MapHealthChecks("/readyz", new HealthCheckOptions
         {
             Predicate = check => check.Tags.Contains("ready")
+        });
+
+        return app;
+    }
+
+    private static WebApplication MapOpenApiEndpoints(this WebApplication app)
+    {
+        app.MapOpenApi().WithDocumentPerVersion();
+
+        var apiVersionDescriptionProvider = app.Services
+            .GetRequiredService<IApiVersionDescriptionProvider>();
+
+        app.UseSwaggerUI(options =>
+        {
+            foreach (var description in apiVersionDescriptionProvider.ApiVersionDescriptions)
+            {
+                options.SwaggerEndpoint(
+                    $"/openapi/{description.GroupName}.json",
+                    $"Dividend Harvest API {description.GroupName}");
+            }
+
+            options.RoutePrefix = "swagger";
         });
 
         return app;

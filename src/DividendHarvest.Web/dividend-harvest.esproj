@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.5277448">
+  <PropertyGroup>
+    <!-- The JavaScript SDK hard-codes npm for its automatic dependency restore.
+         This project uses pnpm through packageManager/Corepack instead. -->
+    <ShouldRunNpmInstall>false</ShouldRunNpmInstall>
+    <ShouldRunNpmAudit>false</ShouldRunNpmAudit>
+    <PackageJsonDirectory>$(MSBuildProjectDirectory)/</PackageJsonDirectory>
+    <StartupCommand>pnpm run dev</StartupCommand>
+    <JavaScriptTestRoot>src\</JavaScriptTestRoot>
+    <JavaScriptTestFramework>Vitest</JavaScriptTestFramework>
+    <!-- The ASP.NET Core Host owns the production frontend build. -->
+    <ShouldRunBuildScript>false</ShouldRunBuildScript>
+    <!-- Keep JavaScript SDK output outside the Host bin directory on macOS. -->
+    <BuildOutputFolder>$(MSBuildProjectDirectory)/dist</BuildOutputFolder>
+  </PropertyGroup>
+</Project>

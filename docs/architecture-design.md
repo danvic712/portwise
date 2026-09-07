@@ -156,8 +156,9 @@ src/
     ├── Contracts/                      # Host 层可替换边界
     │   ├── IDailyStockDataSyncRunner.cs
     │   └── IHttpErrorRenderer.cs
-    ├── Diagnostics/                    # 隐私感知的 Serilog 诊断上下文
-    │   └── SerilogDiagnosticContext.cs
+    ├── Diagnostics/                    # 隐私感知的 Activity 诊断上下文
+    │   ├── ActivityDiagnosticContext.cs
+    │   └── DividendHarvestActivitySource.cs
     ├── ExceptionHandling/              # 异常编排与 ProblemDetails 输出
     │   ├── ApplicationExceptionHandler.cs
     │   └── ProblemDetailsErrorRenderer.cs
@@ -181,7 +182,7 @@ Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfo
 
 前端公共页面框架由 `SiteHeader`、`SiteFooter`、`PageFrame`、`PageTitle`、`SectionHeading` 和 `site-navigation` 组成，禁止使用 `app-shell` 作为公共组件名称；所有页面通过 `PageFrame` 复用框架，页面专属状态与布局留在对应 feature。`index.css` 只承载 token、reset 和跨页面共享原子样式；今日决策页的布局、等待态、就绪态、骨架屏、装饰和响应式样式统一位于 `features/recommendations/recommendations.css`。交互控件优先使用 `src/components/ui` 中的 shadcn/ui 原语，feature 样式只负责业务变体与布局。
 
-前端使用 Node `24.16.0` 与 pnpm `11.19.0` 构建静态资源，输出到 Host 的 `wwwroot/`；该目录是构建产物并保持本地生成，不提交源代码仓库。根目录 `Dockerfile` 使用 Node Alpine、.NET SDK Alpine 和 ASP.NET Core Alpine 三阶段构建：前两阶段只负责编译，最终镜像只保留 .NET publish 输出，因此不会携带 Node、pnpm、源码或测试依赖。单镜像构建流程必须先完成前端构建，再执行 ASP.NET Core publish；开发预览使用 Vite proxy 将 `/api` 转发到本地 Host。
+前端使用 Node `24.16.0` 与 pnpm `12.3.4` 构建静态资源，输出到 Host 的 `wwwroot/`；该目录是构建产物并保持本地生成，不提交源代码仓库。根目录 `Dockerfile` 使用 Node Alpine、.NET SDK Alpine 和 ASP.NET Core Alpine 三阶段构建：前两阶段只负责编译，最终镜像只保留 .NET publish 输出，因此不会携带 Node、pnpm、源码或测试依赖。单镜像构建流程必须先完成前端构建，再执行 ASP.NET Core publish；开发预览使用 Vite proxy 将 `/api` 转发到本地 Host。
 
 `Stocks` 同时承载交易日同步编排，因为该编排只围绕关注股票的外部事实更新；交易日同步通过 `IStockFactSyncAppService.SyncAsync` 一次传递单只股票的规范化引用，并消费包含资料、行情、股息、财务结果和逐类失败的 `StockFactSyncResult`。如果未来出现多个互不相关的调度任务，再单独引入 `Operations` 模块。`StockModelParameterAppService` 归入 `DividendStrategy`，因为模型参数是分析和组合建议的输入，而不是持仓或现金流水本身。
 
@@ -310,6 +311,7 @@ SetupAppService
 - `DividendHarvestDbContext` 位于 Infrastructure 根目录；`EFRepository<TEntity>` 和 `EFUow` 位于 `Infrastructure/Repositories/`，均为 Infrastructure 内部实现，避免 Host/Application 绕过 `IUow` 直接访问 DbContext。
 - `DatabaseLifecycle` 位于 Infrastructure 根目录，负责数据库连接检查、`EnsureCreated` 和 SQLite 兼容升级；它与 `EFUow` 分离，避免业务事务抽象承担宿主生命周期职责。
 - Host 的 `/healthz`、`/readyz` 使用 ASP.NET Core 原生 Health Checks；数据库健康检查通过 Infrastructure 的 `IDatabaseLifecycle.CanConnectAsync` 实现。健康检查是运行状态入口，不属于业务 API 版本范围。
+- 数据库健康检查刻意手写为 `DatabaseHealthCheck : IHealthCheck` 而不是使用官方 `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore` 包的 `AddDbContextCheck<TContext>()`：`DividendHarvestDbContext` 是 Infrastructure 内部类型（`internal sealed`），Host 只能通过 `IDatabaseLifecycle` 这个 Infrastructure Contract 访问数据库连通性；引入 `AddDbContextCheck<TContext>()` 需要把 `DbContext` 类型暴露给 Host，会破坏“Host/Application 不直接访问 DbContext”的封装边界。这是明确的架构取舍，不是遗漏标准实现。
 - Host 的启动建库只能通过 Infrastructure 的 `IDatabaseLifecycle.EnsureCreatedAsync`，不直接解析 DbContext，也不让 `IUow` 承担数据库生命周期职责。
 - `DatabaseLifecycle.EnsureCreatedAsync` 在 SQLite 启动时执行幂等的兼容升级，为既有 `/app/data` 数据库补齐新增字段、默认值和现金流水幂等唯一索引；未来新增表结构必须沿用可回放的迁移/升级步骤，不能只修改 Fluent Configuration。
 - 数据库通过 Docker volume 持久化到 `/app/data`；镜像本身不保存用户数据。
@@ -487,11 +489,18 @@ FTShare 连接、协议、配置和超时失败先由 Adapter 转换为 Infrastr
 
 ### 10.1 Swagger 与 OpenAPI
 
-Host 使用 Swashbuckle 生成 OpenAPI 文档并提供 Swagger UI。当前业务接口统一使用 URL path 版本 `/api/v1/...`，未带版本号的业务 URL 不会隐式映射到默认版本；`/swagger` 用于浏览和调用 Controller 接口，`/swagger/v1/swagger.json` 用于获取 v1 机器可读的 OpenAPI 文档。Swagger 按 `IApiVersionDescriptionProvider` 动态生成版本文档，未来增加 v2 时新增对应的 `[ApiVersion(2.0)]` Controller/Action 和 `v2` 文档分组，不修改既有 v1 合约。Swagger 的服务注册集中在 `HostServiceCollectionExtensions`，middleware 集中在 `WebApplicationExtensions`，不在 `Program.cs` 或 Controller 中重复配置。
+Host 使用 .NET 原生的 `Microsoft.AspNetCore.OpenApi`（`AddOpenApi`/`MapOpenApi`）生成 OpenAPI 文档，并通过 `Asp.Versioning.OpenApi` 与 API Versioning 集成，按版本生成独立文档；`Swashbuckle.AspNetCore.SwaggerUI` 只承担交互式 UI 渲染，不再负责文档生成。当前业务接口统一使用 URL path 版本 `/api/v1/...`，未带版本号的业务 URL 不会隐式映射到默认版本；`/swagger` 用于浏览和调用 Controller 接口，`/openapi/v1.json` 用于获取 v1 机器可读的 OpenAPI 文档。`app.MapOpenApi().WithDocumentPerVersion()` 按 `IApiVersionDescriptionProvider` 动态生成版本文档，未来增加 v2 时新增对应的 `[ApiVersion(2.0)]` Controller/Action，不需要修改文档生成逻辑，也不修改既有 v1 合约。OpenAPI 与 Swagger UI 的服务注册集中在 `HostServiceCollectionExtensions`，middleware 集中在 `WebApplicationExtensions`，不在 `Program.cs` 或 Controller 中重复配置。
 
 ### 10.2 Serilog
 
-Host 使用 Serilog 接管 ASP.NET Core 和应用的 `ILogger<T>` 日志，配置来源为 `appsettings.json` 与 `appsettings.Production.json`，默认输出到容器标准输出。`UseSerilogRequestLogging` 记录 HTTP 请求摘要，业务日志使用结构化属性；请求体、Authorization、FTShare 凭据和原始外部响应不得写入日志。请求、后台同步和 FTShare 调用通过统一诊断上下文写入受控的关联字段。
+Host 使用 Serilog 接管 ASP.NET Core 和应用的 `ILogger<T>` 日志，配置来源为 `appsettings.json`、`appsettings.Development.json`/`appsettings.Production.json`。`WriteTo` 同时配置 `Console` 和 `File` 两个 sink：`Console` 输出到标准输出（本地终端或容器标准输出，供实时观察和容器日志采集）；`File` 按天滚动写入进程工作目录下的 `logs/dividend-harvest-{Date}.log`（`retainedFileCountLimit: 31`，只保留最近 31 天），供本地排查历史问题和无容器日志采集设施时兜底查阅。`logs/` 目录已在 `.gitignore` 中排除，不提交任何运行日志文件；容器部署时 `logs/` 通过 Docker `VOLUME` 声明持久化到宿主机，与 `data/` 卷同一约定。`UseSerilogRequestLogging` 记录 HTTP 请求摘要，业务日志使用结构化属性；请求体、Authorization、FTShare 凭据和原始外部响应不得写入日志（对 Console 和 File 两个 sink 同样生效）。请求、后台同步和 FTShare 调用通过统一诊断上下文写入受控的关联字段。
+
+`Program.cs` 采用 Serilog 官方推荐的两阶段初始化模式，避免"Host 尚未构建完成前发生的致命错误没有任何日志"的问题：
+
+- 第一阶段：在 `WebApplication.CreateBuilder` 之前，用 `new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger()` 赋值给静态的 `Log.Logger`。这个 Bootstrap Logger 只写控制台，不依赖 `appsettings.json` 或 DI 容器，能捕获配置加载、DI 注册等 Host 构建阶段本身的异常。
+- 第二阶段：`HostServiceCollectionExtensions.AddDividendHarvestHost` 中的 `services.AddSerilog((serviceProvider, loggerConfiguration) => loggerConfiguration.ReadFrom.Configuration(configuration).ReadFrom.Services(serviceProvider)...)` 在 Host 构建完成、DI 容器可用后，读取完整的 `appsettings.*.json` 配置和已注册服务，替换掉 `Log.Logger` 为完整配置的 Logger（默认 `preserveStaticLogger: false`）。
+- `Program.cs` 的 `WebApplication.CreateBuilder` 到 `app.RunDividendHarvestAsync()` 整体包裹在 `try/catch/finally` 中：`catch` 分支排除 EF Core 设计时工具触发的 `HostAbortedException`（正常控制流，不应记为致命错误），其余异常统一 `Log.Fatal` 记录后返回非零退出码；`finally` 分支调用 `await Log.CloseAndFlushAsync()`，保证进程退出前把所有已缓冲的日志事件写出，不因为控制台缓冲或异步 sink 未刷新而丢失最后一批日志。
+- 新增或修改 Host 启动流程时，不得绕过这个 try/catch/finally 结构直接调用 `app.RunAsync()`，否则会重新引入“启动失败但看不到任何日志”的问题。
 
 ### 10.3 Mapperly
 
@@ -499,12 +508,26 @@ Application 使用 Riok.Mapperly 生成编译期映射代码，统一的映射�
 
 ### 10.4 API Versioning
 
-- 使用 `Asp.Versioning.Mvc` 和 `Asp.Versioning.Mvc.ApiExplorer` 为 Controller API 提供版本元数据与 OpenAPI 分组。
+- 使用 `Asp.Versioning.Mvc`、`Asp.Versioning.Mvc.ApiExplorer` 和 `Asp.Versioning.OpenApi` 为 Controller API 提供版本元数据、OpenAPI 分组与按版本生成的原生 OpenAPI 文档。
 - 当前业务 API 为 v1，Controller 使用 `[ApiVersion(1.0)]`，路由使用 `api/v{version:apiVersion}/...`；调用方必须显式携带 `/api/v1/...`。
 - 当前前端已接入 v1 Controller API；前端构建产物写入 Host 的 `wwwroot`，由同一个 ASP.NET Core Host 通过 `UseDefaultFiles`、`UseStaticFiles` 和 `MapFallbackToFile("index.html")` 提供。此次接入属于 v1 合约冻结前的实现，不是对已发布 v1 合约的静默变更；之后面向调用方的破坏性修改必须进入 v2。
+- 本地开发使用 .NET 官方标准的 `Microsoft.AspNetCore.SpaProxy` 集成前端 dev server（详见 10.6 节），取代早期手工维护 Vite proxy + 双终端的方式；发布产物不受影响，仍然是纯静态文件。
 - Host 使用 `UrlSegmentApiVersionReader`，不假设缺失版本时自动使用默认版本，并通过 `ReportApiVersions` 返回支持/弃用版本信息。
-- 健康检查、Swagger UI 和 Swagger JSON 使用自身的基础路径，不强行套用业务 API 版本。
+- 健康检查、Swagger UI 和 `/openapi/{version}.json` 使用自身的基础路径，不强行套用业务 API 版本。
 - 新增破坏性合约时增加 v2 版本元数据和对应文档分组；v1 只在明确的弃用策略下变更，不能静默改变响应语义。
+
+### 10.5 项目构建、包管理与代码风格
+
+- 根目录 `Directory.Build.props` 统一收敛所有项目共用的编译属性（`TargetFramework`、`ImplicitUsings`、`Nullable`、`TreatWarningsAsErrors` 等）；各 `.csproj` 不得重复声明这些属性，新增项目直接继承根配置，只保留项目专属设置（如 `OutputType`、专属 `PackageReference`）。
+- 根目录 `Directory.Packages.props` 启用 Central Package Management（`ManagePackageVersionsCentrally=true`），是全仓库第三方包版本的唯一来源；各 `.csproj` 的 `PackageReference` 不得携带 `Version` 属性。新增或升级依赖时只修改 `Directory.Packages.props` 中的 `PackageVersion`，禁止在单个项目里覆盖版本，避免同一个包在不同项目中出现版本漂移。
+- 根目录 `.editorconfig` 是 C# 代码风格的唯一声明来源，覆盖缩进、file-scoped namespace、Allman 括号风格、`var` 使用偏好、可空引用类型诊断级别以及接口 `I` 前缀、PascalCase/camelCase 等命名规则；新增项目和文件默认继承该配置，不得在项目内新增局部 `.editorconfig` 覆盖风格规则。当前未开启 `EnforceCodeStyleInBuild`，规则只在 IDE 内联提示和 `dotnet format` 中生效，不会让 `dotnet build` 失败；如果后续需要把风格规则升级为构建期强制检查，必须先确认存量代码全部符合规则再开启该选项，并同步更新本节说明。
+
+### 10.6 本地启动与前端构建集成
+
+- `src/DividendHarvest/Properties/launchSettings.json` 是 Host 本地启动的唯一 profile 来源，提供 `http` profile（`applicationUrl=http://localhost:5276`，`ASPNETCORE_ENVIRONMENT=Development`），供 `dotnet run --launch-profile http` 和 IDE 运行配置下拉框使用；该 profile 同时设置 `DOTNET_USE_POLLING_FILE_WATCHER=1`，兼容 macOS 上当前 .NET 10.0.0 的 `FileSystemWatcher` 启动递归问题，避免 Host 卡在 `WebApplication.CreateBuilder` 阶段；这是 .NET Web 项目模板的标准文件，缺失会导致手动 `dotnet run` 在没有显式设置环境变量时以 `Production` 环境启动，从而绕过开发期配置和异常页面。
+- `appsettings.Development.json` 是 `Development` 环境的配置覆盖（当前只覆盖 Serilog 最低日志级别为 `Debug`），与 `appsettings.json`、`appsettings.Production.json` 一起构成完整的三段式环境配置；新增只在本地开发环境需要的配置项时优先放入这个文件，不要污染 `appsettings.json` 的默认值。
+- 本地开发使用 .NET 官方标准的 `Microsoft.AspNetCore.SpaProxy` 集成前端：`DividendHarvest.csproj` 仅在 `Debug` 配置下引用 `Microsoft.AspNetCore.SpaProxy` 包，并声明 `SpaRoot`（`../DividendHarvest.Web/`）、`SpaProxyServerUrl`（`http://127.0.0.1:4173`）、`SpaProxyLaunchCommand`（`pnpm run dev`）；同时通过 `dividend-harvest.esproj`（`Microsoft.VisualStudio.JavaScript.Sdk`）以 `ReferenceOutputAssembly=false` 挂入 Host，使 Rider 识别前端项目与标准 `.NET Launch Settings Profile`。`Properties/launchSettings.json` 的 `http` profile 设置了 `ASPNETCORE_HOSTINGSTARTUPASSEMBLIES=Microsoft.AspNetCore.SpaProxy`，Host 地址为 `http://localhost:5276`。执行 `dotnet run --launch-profile http` 或 Rider 的 `DividendHarvest: http` 配置时，SpaProxy 通过 `IHostingStartup` 自动注入的 `IStartupFilter` 检测 Vite dev server 是否就绪，未就绪则自动执行 `SpaProxyLaunchCommand` 拉起，并把非 API 请求反向代理到 dev server；开发者只需要一条命令即可完成前后端联调。还原、构建、运行（CI、Dockerfile、`BuildFrontend` Target、SpaProxy dev server）全部统一使用 pnpm，不引入 npm。`WebApplicationExtensions` 的中间件管道不需要为此做任何区分（Development/Production 都是同一套 `UseDefaultFiles`/`UseStaticFiles`/`MapFallbackToFile`），SpaProxy 的转发逻辑完全由 `IStartupFilter` 在管道最前面完成。Release/Publish 不引用 SpaProxy 包，发布产物仍是纯静态文件。
+- 前端（`src/DividendHarvest.Web`）与 Host 项目在构建上保持独立：CI（`build-and-test.yml`）和 Dockerfile 分别用 `pnpm install`/`pnpm build` 显式构建前端后再构建/发布 Host，这是为了避免在只安装 .NET SDK、没有 Node.js/pnpm 的构建环境（例如 Docker 后端构建阶段镜像）上因为隐式触发前端构建而失败。`DividendHarvest.csproj` 额外提供一个默认关闭的 `BuildFrontend` MSBuild Target（`BeforeTargets="Build;Publish"`），只有显式传入 `-p:BuildFrontend=true` 执行 `dotnet build`/`dotnet publish` 时才会自动执行 `pnpm install`/`pnpm build` 并把产物写入 Host 的 `wwwroot`，用于本地一次性生成前后端产物；CI 和 Docker 流程不依赖也不触发这个 Target。</replace>
 
 ## 11. Exception 设计
 
@@ -521,14 +544,16 @@ Host 的 `ApplicationExceptionHandler` 只负责识别 Application 异常、调�
 
 新增错误时，只需在 `ApplicationErrorCodes` 添加稳定码、在每个受支持语言的对应领域 JSON 中定义它、通过 `ApplicationErrors` 选择结构化参数工厂并补充 Application 单元测试。缺少错误码定义、重复定义、跨语言状态码/占位符不一致、非法状态码或空文本应在目录加载时直接失败，而不是运行到请求时才产生隐性回退。
 
-### 11.1 隐私感知的诊断上下文
+### 11.1 基于 Activity 的隐私感知诊断上下文
 
-`IDiagnosticContext` 位于 `Application/Contracts/`，Host 使用 `SerilogDiagnosticContext` 实现，并在 `HostServiceCollectionExtensions` 中注册。它只允许写入固定的安全字段：
+`IDiagnosticContext` 位于 `Application/Contracts/`，Host 使用基于 `System.Diagnostics.Activity`（W3C Trace Context 官方标准）的 `ActivityDiagnosticContext` 实现，并在 `HostServiceCollectionExtensions` 中注册。`DividendHarvestActivitySource`（`Diagnostics/DividendHarvestActivitySource.cs`）是 Host 唯一的 `ActivitySource`，静态构造函数注册一个基础 `ActivityListener`（`ActivitySamplingResult.AllDataAndRecorded`），使 Activity 在没有接入完整 OpenTelemetry SDK/导出器时也能被创建和记录；这样系统既能立即获得标准化的分布式追踪基础设施，也不需要为当前的单进程 Host 引入额外的 Exporter 依赖，未来接入 OpenTelemetry Collector/导出器时只需要替换或追加 `ActivityListener`/`TracerProvider`，不需要改动业务代码里 `IDiagnosticContext` 的调用方式。
+
+`ActivityDiagnosticContext.BeginScope` 为每个 `DiagnosticScope` 启动一个 `Activity`（`ActivitySource.StartActivity`），仍然只允许写入固定的安全字段，并同时作为 Activity Tag 和 Serilog `LogContext` 属性写入：
 
 - `diagnostic_operation`、`correlation_id`、`run_id`、`error_code`、`severity`；其中操作只允许 `http_request`、`http_error`、`daily_stock_data_sync`、`stock_data_sync` 和 `ftshare_mcp`。
 - A 股 `security_code`、`exchange_code` 和有限集合的 `data_kind`（`profile`、`market`、`dividend`、`financial`）。
 
-`WebApplicationExtensions` 为每个 HTTP 请求创建 correlation scope 并返回 `X-Correlation-Id`；Application 异常响应同时返回 `trace_id`。`DailyStockDataSyncHostedService` 为每次交易日同步创建独立 run scope；`FtShareStockDataProvider` 为每次资料、行情、股息和财务 MCP 调用追加股票引用和数据类型。诊断上下文不接受任意字典，超过长度、包含不允许字符或不在有限集合中的值会被丢弃；内部日志最多记录异常类型和 cause type，不记录异常消息，避免把请求正文、持仓数量、认证信息、FTShare key、原始响应和内部异常文本带入日志或 ProblemDetails。
+Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 `Activity` 的 `TraceId`/`SpanId`/`ParentId` 注入结构化日志，不需要手工维护 correlation id 的生成和传播；ASP.NET Core 自身也会为每个 HTTP 请求创建 Activity，`HttpContext.TraceIdentifier` 因此天然是 W3C 格式的 trace id。`WebApplicationExtensions` 仍然为每个 HTTP 请求开启一个 `http_request` scope 并返回 `X-Correlation-Id` 响应头；Application 异常响应同时返回 `trace_id`。`DailyStockDataSyncHostedService` 为每次交易日同步创建独立 run scope；`FtShareStockDataProvider` 为每次资料、行情、股息和财务 MCP 调用追加股票引用和数据类型；这些嵌套 scope 产生的 Activity 会按照 `Activity.Current` 自动形成父子关系，构成一次请求内的完整调用链。诊断上下文仍然不接受任意字典，超过长度、包含不允许字符或不在有限集合中的值会被丢弃；内部日志最多记录异常类型和 cause type，不记录异常消息，避免把请求正文、持仓数量、认证信息、FTShare key、原始响应和内部异常文本带入日志、Activity Tag 或 ProblemDetails。
 
 ## 12. 测试策略
 
