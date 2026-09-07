@@ -131,6 +131,8 @@ dist
 # .NET build output
 **/bin/
 **/obj/
+# dotnet-ef may materialize its design-time build host from an MSBuild path containing a literal backslash.
+**/bin\\*/
 *.user
 *.suo
 

@@ -76,14 +76,14 @@ public static class WebApplicationExtensions
         return app;
     }
 
-    public static async Task InitializeDividendHarvestDatabaseAsync(
+    public static async Task MigrateDividendHarvestDatabaseAsync(
         this WebApplication app,
         CancellationToken cancellationToken = default)
     {
         await using var scope = app.Services.CreateAsyncScope();
         var databaseLifecycle = scope.ServiceProvider
             .GetRequiredService<IDatabaseLifecycle>();
-        await databaseLifecycle.EnsureCreatedAsync(cancellationToken);
+        await databaseLifecycle.MigrateAsync(cancellationToken);
     }
 
     public static async Task RunDividendHarvestAsync(
@@ -91,7 +91,7 @@ public static class WebApplicationExtensions
         CancellationToken cancellationToken = default)
     {
         app.UseDividendHarvest();
-        await app.InitializeDividendHarvestDatabaseAsync(cancellationToken);
+        await app.MigrateDividendHarvestDatabaseAsync(cancellationToken);
         await app.RunAsync(cancellationToken);
     }
 }

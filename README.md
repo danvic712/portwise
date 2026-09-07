@@ -154,7 +154,17 @@ az webapp config appsettings set \
 dotnet run --project src/DividendHarvest/DividendHarvest.csproj --launch-profile http
 ```
 
-后端启动时会自动创建或补齐 SQLite 数据库结构。默认数据库文件为项目运行目录下的 `dividend-harvest.db`；生产配置默认使用 `/app/data/dividend-harvest.db`。本地开发配置来自 `appsettings.json` + `appsettings.Development.json`（更详细的日志级别），生产环境使用 `appsettings.Production.json`。
+后端启动时会自动应用待执行的 EF Core migration，并在空 SQLite 数据库中创建完整结构。默认数据库文件为项目运行目录下的 `dividend-harvest.db`；生产配置默认使用 `/app/data/dividend-harvest.db`。本地开发配置来自 `appsettings.json` + `appsettings.Development.json`（更详细的日志级别），生产环境使用 `appsettings.Production.json`。
+
+修改 EF Core 模型后，先还原仓库固定版本的工具，再从 Infrastructure 项目生成 migration：
+
+```bash
+dotnet tool restore
+dotnet ef migrations add <MigrationName> \
+  --project src/DividendHarvest.Infrastructure/DividendHarvest.Infrastructure.csproj \
+  --startup-project src/DividendHarvest.Infrastructure/DividendHarvest.Infrastructure.csproj \
+  --output-dir Migrations
+```
 
 需要一次性生成前后端产物（不经过 Docker）时，可以在 `dotnet build`/`dotnet publish` 时显式开启前端构建：
 

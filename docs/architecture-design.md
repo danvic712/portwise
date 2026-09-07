@@ -134,7 +134,8 @@ src/
 │   │   ├── EFRepository.cs
 │   │   └── EFUow.cs
 │   ├── InfrastructureServiceCollectionExtensions.cs
-│   ├── DatabaseLifecycle.cs             # 数据库创建、兼容升级和连接检查
+│   ├── Migrations/                     # EF Core 可追踪数据库迁移
+│   ├── DatabaseLifecycle.cs            # 数据库迁移和连接检查
 │   ├── DividendHarvestDbContext.cs     # EF Core DbContext
 │   ├── Exceptions/                     # Infrastructure Adapter 异常
 │   │   └── FtShareProviderException.cs
@@ -186,7 +187,7 @@ Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfo
 
 `Stocks` 同时承载交易日同步编排，因为该编排只围绕关注股票的外部事实更新；交易日同步通过 `IStockFactSyncAppService.SyncAsync` 一次传递单只股票的规范化引用，并消费包含资料、行情、股息、财务结果和逐类失败的 `StockFactSyncResult`。如果未来出现多个互不相关的调度任务，再单独引入 `Operations` 模块。`StockModelParameterAppService` 归入 `DividendStrategy`，因为模型参数是分析和组合建议的输入，而不是持仓或现金流水本身。
 
-各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddDividendHarvestApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddDividendHarvestInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddDividendHarvestHost`。Host 另提供 `HostServiceCollectionExtensions.AddDividendHarvest(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库初始化统一放在 `WebApplicationExtensions`；定时同步和 Setup 后台同步都通过 `DailyStockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器内部串行化执行，避免两个同步任务同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
+各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddDividendHarvestApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddDividendHarvestInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddDividendHarvestHost`。Host 另提供 `HostServiceCollectionExtensions.AddDividendHarvest(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库 migration 统一放在 `WebApplicationExtensions`；定时同步和 Setup 后台同步都通过 `DailyStockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器内部串行化执行，避免两个同步任务同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
 
 公共基础能力也遵循相同的组合边界：Swagger/Serilog 注册在 `HostServiceCollectionExtensions`，Swagger UI、Serilog HTTP 请求日志中间件和其他 `WebApplication` 行为在 `WebApplicationExtensions`；Application 的 Mapperly 映射定义集中在 `Mapping/ApplicationMapper.cs`，由构建期生成实际映射代码。
 
@@ -309,11 +310,11 @@ SetupAppService
 - `EFUow.CommitAsync` 统一调用 `SaveChangesAsync`；数据库更新失败在 Infrastructure 转换为 Domain 的 `UnitOfWorkCommitException`，并只标记可识别的 SQLite 唯一约束失败；Application 不引用 `DbUpdateException`。
 - 一个用例的多个实体写入在一次提交中完成；Repository 不提前提交，也不把可延迟执行的查询对象交给调用方。
 - `DividendHarvestDbContext` 位于 Infrastructure 根目录；`EFRepository<TEntity>` 和 `EFUow` 位于 `Infrastructure/Repositories/`，均为 Infrastructure 内部实现，避免 Host/Application 绕过 `IUow` 直接访问 DbContext。
-- `DatabaseLifecycle` 位于 Infrastructure 根目录，负责数据库连接检查、`EnsureCreated` 和 SQLite 兼容升级；它与 `EFUow` 分离，避免业务事务抽象承担宿主生命周期职责。
+- `DatabaseLifecycle` 位于 Infrastructure 根目录，负责数据库连接检查和执行 EF Core migration；它与 `EFUow` 分离，避免业务事务抽象承担宿主生命周期职责。
 - Host 的 `/healthz`、`/readyz` 使用 ASP.NET Core 原生 Health Checks；数据库健康检查通过 Infrastructure 的 `IDatabaseLifecycle.CanConnectAsync` 实现。健康检查是运行状态入口，不属于业务 API 版本范围。
 - 数据库健康检查刻意手写为 `DatabaseHealthCheck : IHealthCheck` 而不是使用官方 `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore` 包的 `AddDbContextCheck<TContext>()`：`DividendHarvestDbContext` 是 Infrastructure 内部类型（`internal sealed`），Host 只能通过 `IDatabaseLifecycle` 这个 Infrastructure Contract 访问数据库连通性；引入 `AddDbContextCheck<TContext>()` 需要把 `DbContext` 类型暴露给 Host，会破坏“Host/Application 不直接访问 DbContext”的封装边界。这是明确的架构取舍，不是遗漏标准实现。
-- Host 的启动建库只能通过 Infrastructure 的 `IDatabaseLifecycle.EnsureCreatedAsync`，不直接解析 DbContext，也不让 `IUow` 承担数据库生命周期职责。
-- `DatabaseLifecycle.EnsureCreatedAsync` 在 SQLite 启动时执行幂等的兼容升级，为既有 `/app/data` 数据库补齐新增字段、默认值和现金流水幂等唯一索引；未来新增表结构必须沿用可回放的迁移/升级步骤，不能只修改 Fluent Configuration。
+- Host 启动时只能通过 Infrastructure 的 `IDatabaseLifecycle.MigrateAsync` 应用待执行 migration，不直接解析 DbContext，也不让 `IUow` 承担数据库生命周期职责。
+- `Migrations/` 保存由当前模型生成的初始 schema 及后续可审查、可回放的结构变更；未来修改表结构时必须生成新的 EF Core migration，不能只修改 Fluent Configuration。
 - 数据库通过 Docker volume 持久化到 `/app/data`；镜像本身不保存用户数据。
 
 ## 7. Domain Models 与 Fluent 配置
