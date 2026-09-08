@@ -3,7 +3,7 @@
     "status_code": 400,
     "title": "股票同步请求无效",
     "detail": "{message}",
-    "validation_message": null
+    "validation_message": "请检查请求字段后重试。"
   },
   "stock_data_provider_unavailable": {
     "status_code": 503,
@@ -36,6 +36,14 @@
     "detail": "股票 {securityCode}（{exchangeCode}）尚未配置到关注列表。"
   },
   "ui": {
+    "identity": {
+      "pendingName": "待同步 {securityCode}",
+      "exchange": {
+        "SSE": "沪市",
+        "SZSE": "深市",
+        "BSE": "北市"
+      }
+    },
     "page": {
       "eyebrow": "STOCK LIBRARY / SOURCE DATA",
       "title": "股票资料，保持可追溯。",

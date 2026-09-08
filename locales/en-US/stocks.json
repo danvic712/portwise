@@ -36,6 +36,14 @@
     "detail": "Stock {securityCode} ({exchangeCode}) is not configured in the watchlist."
   },
   "ui": {
+    "identity": {
+      "pendingName": "Pending sync {securityCode}",
+      "exchange": {
+        "SSE": "Shanghai",
+        "SZSE": "Shenzhen",
+        "BSE": "Beijing"
+      }
+    },
     "page": {
       "eyebrow": "STOCK LIBRARY / SOURCE DATA",
       "title": "Keep every stock traceable.",

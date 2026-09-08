@@ -46,7 +46,7 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
     const [watchlistResult, recommendationResult, budgetResult] = await Promise.allSettled([getWatchlist(), getRecommendations(), getBudgetSummary()])
 
     if (watchlistResult.status === "rejected") {
-      setError(getApiErrorMessage(watchlistResult.reason, readUnavailableRef.current))
+      setError(getApiErrorMessage(watchlistResult.reason, readUnavailableRef.current, messages.common.ui.errors))
       setLoading(false)
       return
     }
@@ -68,7 +68,7 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
     }
 
     setLoading(false)
-  }, [])
+  }, [messages.common.ui.errors])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void load() }, 0)
@@ -90,7 +90,7 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
       await createRecommendationSnapshot()
       setSnapshotMessage(copy.messages.saveSuccess)
     } catch (snapshotError) {
-      setSnapshotMessage(getApiErrorMessage(snapshotError, copy.messages.saveFailed))
+      setSnapshotMessage(getApiErrorMessage(snapshotError, copy.messages.saveFailed, messages.common.ui.errors))
     } finally {
       setSavingSnapshot(false)
     }
@@ -103,7 +103,7 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
   return (
     <PageFrame currentPath="/overview" onNavigate={onNavigate} lastUpdated={lastUpdated ? formatDateTime(lastUpdated) : null} dataState={hasCompleteRecommendation ? "synced" : "pending"}>
       <div className="overview-page">
-        <div className="d-breadcrumb"><span>{copy.breadcrumb.myStocks}</span><ChevronRight size={13} /><strong>{selectedStock ? displayStockName(selectedStock) : copy.breadcrumb.todayDecision}</strong><span>{selectedStock ? `${selectedStock.securityCode}.${selectedStock.exchangeCode} · ${copy.breadcrumb.aShareReference}` : copy.breadcrumb.aShareReference}</span></div>
+        <div className="d-breadcrumb"><span>{copy.breadcrumb.myStocks}</span><ChevronRight size={13} /><strong>{selectedStock ? displayStockName(selectedStock, messages.stocks.ui.identity.pendingName) : copy.breadcrumb.todayDecision}</strong><span>{selectedStock ? `${selectedStock.securityCode}.${selectedStock.exchangeCode} · ${copy.breadcrumb.aShareReference}` : copy.breadcrumb.aShareReference}</span></div>
         {notice && <Alert variant="attention" className="d-inline-alert"><AlertTitle>{copy.messages.noticeTitle}</AlertTitle><AlertDescription>{notice}</AlertDescription></Alert>}
         {error && <Alert variant="destructive" className="d-inline-alert"><AlertTitle>{copy.messages.errorTitle}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
         <DailyNotebookHeader
@@ -115,16 +115,16 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
             <Button variant="secondary" size="sm" className="d-notebook-tool" onClick={() => void saveSnapshot()} disabled={savingSnapshot}><Save data-icon="inline-start" />{savingSnapshot ? copy.actions.savingSnapshot : copy.actions.saveSnapshot}</Button>
           </> : undefined}
         />
-        <StockSelector stocks={stocks} recommendations={recommendation?.stocks ?? []} selectedKey={selectedKey} onSelect={(stock) => setSelectedKey(stockKey(stock))} labels={{ kicker: copy.stockSelector.kicker, title: copy.stockSelector.title, description: interpolate(copy.stockSelector.description, { count: stocks.length }), selectionHint: copy.stockSelector.selectionHint, pending: copy.stockSelector.pending, listLabel: copy.stockSelector.listLabel, sectorUnset: copy.stockSelector.sectorUnset, signals: copy.stockSelector.signals }} />
+        <StockSelector stocks={stocks} recommendations={recommendation?.stocks ?? []} selectedKey={selectedKey} onSelect={(stock) => setSelectedKey(stockKey(stock))} labels={{ kicker: copy.stockSelector.kicker, title: copy.stockSelector.title, description: interpolate(copy.stockSelector.description, { count: stocks.length }), selectionHint: copy.stockSelector.selectionHint, pending: copy.stockSelector.pending, listLabel: copy.stockSelector.listLabel, sectorUnset: copy.stockSelector.sectorUnset, signals: copy.stockSelector.signals, recommendationLabels: { label: copy.stockSelector.signals, headline: copy.decision.headlines, signalTitle: copy.decision.signalTitles }, pendingName: messages.stocks.ui.identity.pendingName }} />
         {readyRecommendation ? <>
-          <ReadyPortfolioPulse recommendation={readyRecommendation} budget={budget} labels={copy} />
+          <ReadyPortfolioPulse recommendation={readyRecommendation} budget={budget} labels={copy} pendingName={messages.stocks.ui.identity.pendingName} />
           {snapshotMessage && <p className="form-message d-inline-message">{snapshotMessage}</p>}
           {selectedRecommendation && selectedRecommendationReady ? <>
             <ReadyGuidance recommendation={selectedRecommendation} labels={copy} />
             <RecommendationDecision recommendation={selectedRecommendation} onRecord={(direction) => onNavigate(`/portfolio?stock=${encodeURIComponent(stockKey(selectedRecommendation.analysis))}&direction=${direction}`)} />
-          </> : selectedStock ? <PendingDecisionView selectedStock={selectedStock} message={copy.messages.recommendationPending} labels={copy} onRefresh={() => void load()} onNavigate={onNavigate} budget={budget} /> : <EmptyState title={copy.messages.emptyStockTitle} description={copy.messages.emptyStockDescription} action={<Button onClick={() => onNavigate("/stocks")}>{copy.actions.viewStockData}</Button>} />}
+          </> : selectedStock ? <PendingDecisionView selectedStock={selectedStock} message={copy.messages.recommendationPending} labels={copy} pendingName={messages.stocks.ui.identity.pendingName} onRefresh={() => void load()} onNavigate={onNavigate} budget={budget} /> : <EmptyState title={copy.messages.emptyStockTitle} description={copy.messages.emptyStockDescription} action={<Button onClick={() => onNavigate("/stocks")}>{copy.actions.viewStockData}</Button>} />}
           <section className="analysis-section"><SectionHeading label={copy.ready.compositionLabel} title={copy.ready.compositionTitle} description={copy.ready.compositionDescription} /><div className="decision-support"><div className="support-tile"><span>{copy.ready.startingBudget}</span><strong>{formatMoney(readyRecommendation.startingAvailableBudgetAmount)}</strong></div><div className="support-tile"><span>{copy.ready.suggestedShares}</span><strong>{formatNumber(readyRecommendation.stocks.reduce((total, item) => total + item.suggestedBuyShares + item.suggestedSellShares, 0), 0)} {copy.ready.sharesUnit}</strong></div><div className="support-tile"><span>{copy.ready.calculationTime}</span><strong>{formatDateTime(readyRecommendation.computedAt)}</strong></div></div></section>
-        </> : <PendingDecisionView selectedStock={selectedStock} message={null} labels={copy} onRefresh={() => void load()} onNavigate={onNavigate} budget={budget} />}
+        </> : <PendingDecisionView selectedStock={selectedStock} message={null} labels={copy} pendingName={messages.stocks.ui.identity.pendingName} onRefresh={() => void load()} onNavigate={onNavigate} budget={budget} />}
       </div>
     </PageFrame>
   )
@@ -136,7 +136,7 @@ function DailyNotebookHeader({ dataState, labels, lastUpdated, actions }: { data
 
   return (
     <section className={`d-notebook-header d-notebook-header-${dataState}`} aria-labelledby="daily-notebook-title">
-      <div className="d-notebook-index" aria-hidden="true"><span>D</span><small>NOTE</small></div>
+      <div className="d-notebook-index" aria-hidden="true"><span>D</span><small>{labels.indexNote}</small></div>
       <div className="d-notebook-copy">
         <div className="d-kicker"><span>—</span><span>{labels.masthead.kicker}</span><i /></div>
         <h1 id="daily-notebook-title">{labels.masthead.title}</h1>
@@ -155,7 +155,7 @@ function DailyNotebookHeader({ dataState, labels, lastUpdated, actions }: { data
 
 function ReadyGuidance({ recommendation, labels }: { recommendation: StockRecommendationResult; labels: OverviewCopy }) {
   const { analysis } = recommendation
-  const presentation = recommendationPresentation(analysis.recommendationCode, { label: labels.stockSelector.signals })
+  const presentation = recommendationPresentation(analysis.recommendationCode, { label: labels.stockSelector.signals, headline: labels.decision.headlines, signalTitle: labels.decision.signalTitles })
   const actionShares = presentation.isSell ? recommendation.suggestedSellShares : recommendation.suggestedBuyShares
   const kind = presentation.kind
   const guidance = {
@@ -188,7 +188,7 @@ function ReadyGuidance({ recommendation, labels }: { recommendation: StockRecomm
   )
 }
 
-function ReadyPortfolioPulse({ recommendation, budget, labels }: { recommendation: PortfolioRecommendationResult; budget: BudgetSummary | null; labels: OverviewCopy }) {
+function ReadyPortfolioPulse({ recommendation, budget, labels, pendingName }: { recommendation: PortfolioRecommendationResult; budget: BudgetSummary | null; labels: OverviewCopy; pendingName: string }) {
   return (
     <section className="surface d-portfolio-pulse" aria-labelledby="portfolio-pulse-title">
       <div className="d-pulse-top">
@@ -206,22 +206,22 @@ function ReadyPortfolioPulse({ recommendation, budget, labels }: { recommendatio
       <div className="d-pulse-stock-list" role="list" aria-label={labels.stockSelector.listLabel}>
         {recommendation.stocks.map((item) => {
           const ready = hasAnalysisData(item.analysis)
-          const presentation = ready ? recommendationPresentation(item.analysis.recommendationCode, { label: labels.stockSelector.signals }) : null
+          const presentation = ready ? recommendationPresentation(item.analysis.recommendationCode, { label: labels.stockSelector.signals, headline: labels.decision.headlines, signalTitle: labels.decision.signalTitles }) : null
           const tone = presentation?.tone ?? "hold"
           const shares = presentation?.isSell ? item.suggestedSellShares : item.suggestedBuyShares
           const status = presentation?.label ?? labels.stockSelector.pending
           const action = ready
             ? shares > 0 ? `${presentation?.isSell ? labels.decision.sell : labels.decision.buy} ${formatNumber(shares, 0)} ${labels.ready.sharesUnit}` : labels.decision.hold
             : labels.pending.syncLabel
-          return <div key={stockKey(item.analysis)} className={`d-pulse-stock d-pulse-stock-${tone}`} role="listitem"><span className="d-pulse-stock-dot" /><div className="d-pulse-stock-copy"><strong>{analysisDisplayName(item.analysis)}</strong><span>{item.analysis.securityCode}.{item.analysis.exchangeCode}</span></div><div className="d-pulse-stock-action"><strong>{status}</strong><small>{action}</small></div></div>
+          return <div key={stockKey(item.analysis)} className={`d-pulse-stock d-pulse-stock-${tone}`} role="listitem"><span className="d-pulse-stock-dot" /><div className="d-pulse-stock-copy"><strong>{analysisDisplayName(item.analysis, pendingName)}</strong><span>{item.analysis.securityCode}.{item.analysis.exchangeCode}</span></div><div className="d-pulse-stock-action"><strong>{status}</strong><small>{action}</small></div></div>
         })}
       </div>
     </section>
   )
 }
 
-function PendingDecisionView({ selectedStock, message, labels, onRefresh, onNavigate, budget }: { selectedStock?: StockWatchlistItem; message: string | null; labels: OverviewCopy; onRefresh: () => void; onNavigate: (path: string) => void; budget: BudgetSummary | null }) {
-  const stockName = selectedStock ? displayStockName(selectedStock) : labels.pending.stockFallback
+function PendingDecisionView({ selectedStock, message, labels, pendingName, onRefresh, onNavigate, budget }: { selectedStock?: StockWatchlistItem; message: string | null; labels: OverviewCopy; pendingName: string; onRefresh: () => void; onNavigate: (path: string) => void; budget: BudgetSummary | null }) {
+  const stockName = selectedStock ? displayStockName(selectedStock, pendingName) : labels.pending.stockFallback
   return <div className="d-pending-workspace">
     <div className="d-pending-workspace-head">
       <div className="d-kicker"><span>01</span><span>{labels.pending.actionKicker}</span><i /></div>

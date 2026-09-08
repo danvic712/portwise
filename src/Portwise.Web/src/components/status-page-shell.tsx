@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { useLocale } from "@/lib/i18n"
 
 import "./status-page.css"
 
@@ -46,6 +47,7 @@ export function StatusPageShell({
   secondaryAction,
   onNavigate,
 }: StatusPageShellProps) {
+  const { messages } = useLocale()
   const PrimaryIcon = primaryAction.icon
   const SecondaryIcon = secondaryAction?.icon
 
@@ -89,7 +91,7 @@ export function StatusPageShell({
             <span className="status-page-art-ring status-page-art-ring-two" aria-hidden="true" />
             <span className="status-page-art-tape" aria-hidden="true" />
             <span className="status-page-code" aria-hidden="true">{code}</span>
-            <span className="status-page-art-sticker" aria-hidden="true">{tone === "calm" ? "嗯" : "先歇一下"}</span>
+            <span className="status-page-art-sticker" aria-hidden="true">{tone === "calm" ? messages.common.ui.statusSticker.calm : messages.common.ui.statusSticker.attention}</span>
           </CardContent>
           <CardFooter className="status-page-illustration-footer">
             <span className="status-page-footer-dot" aria-hidden="true" />

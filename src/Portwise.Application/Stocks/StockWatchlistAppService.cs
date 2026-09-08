@@ -33,7 +33,7 @@ public sealed class StockWatchlistAppService(IUow uow) : IStockWatchlistAppServi
                 return item with
                 {
                     SecurityName = string.IsNullOrWhiteSpace(item.SecurityName)
-                        ? $"待同步 {security.SecurityCode}"
+                        ? string.Empty
                         : item.SecurityName
                 };
             })

@@ -3,7 +3,7 @@ import { ArrowDownRight, ArrowRight, Check, Clock3, Coins, ShieldCheck, Target, 
 import { PriceLadder, PriceZoneBoard } from "@/components/price-ladder"
 import { Button } from "@/components/ui/button"
 import { interpolate, useLocale } from "@/lib/i18n"
-import { currentPriceZoneLabel, recommendationPresentation } from "@/lib/recommendation-display"
+import { currentPriceZoneLabel, localizeRecommendationExplanation, recommendationPresentation } from "@/lib/recommendation-display"
 import { analysisDisplayName } from "@/lib/stock-display"
 import { formatMoney, formatNumber, formatPercent } from "@/lib/utils"
 import type { StockRecommendationResult } from "@/lib/api-types"
@@ -13,11 +13,11 @@ export function RecommendationDecision({ recommendation, onRecord }: { recommend
   const copy = messages.dividendStrategy.ui.overview
   const decisionCopy = copy.decision
   const { analysis } = recommendation
-  const presentation = recommendationPresentation(analysis.recommendationCode, { headline: decisionCopy.headlines, signalTitle: decisionCopy.signalTitles })
+  const presentation = recommendationPresentation(analysis.recommendationCode, { label: copy.stockSelector.signals, headline: decisionCopy.headlines, signalTitle: decisionCopy.signalTitles })
   const actionShares = presentation.isSell ? recommendation.suggestedSellShares : recommendation.suggestedBuyShares
   const headline = presentation.headline
   const currentZone = currentPriceZoneLabel(analysis, { strong_buy: decisionCopy.priceZones.strongBuy, accumulate: decisionCopy.priceZones.accumulate, hold: decisionCopy.priceZones.hold, partial_trim: decisionCopy.priceZones.partialTrim, aggressive_trim: decisionCopy.priceZones.aggressiveTrim })
-  const securityName = analysisDisplayName(analysis)
+  const securityName = analysisDisplayName(analysis, messages.stocks.ui.identity.pendingName)
   const actionLabel = actionShares > 0
     ? `${presentation.isSell ? decisionCopy.sell : decisionCopy.buy} ${formatNumber(actionShares, 0)} ${copy.ready.sharesUnit}`
     : decisionCopy.hold
@@ -32,7 +32,7 @@ export function RecommendationDecision({ recommendation, onRecord }: { recommend
             <div><strong>{securityName}</strong><span>{analysis.securityCode}.{analysis.exchangeCode} · {decisionCopy.stockReference}</span></div>
           </div>
           <h2 className="d-story-title">{headline.lead}<span>{headline.accent}</span></h2>
-          <p className="d-hero-copy">{analysis.explanation || decisionCopy.fallbackExplanation}</p>
+          <p className="d-hero-copy">{localizeRecommendationExplanation(analysis.explanation, decisionCopy.explanations, decisionCopy.priceZones, decisionCopy.fallbackExplanation)}</p>
           <div className="d-action-row">
             <div className="d-action-amount">
               <div className="d-action-icon"><ArrowDownRight size={17} /></div>

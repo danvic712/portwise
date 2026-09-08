@@ -4,10 +4,10 @@ import { interpolate, type OverviewCopy } from "@/lib/i18n"
 import { currentPriceZoneLabel, recommendationPresentation } from "@/lib/recommendation-display"
 import type { StockAnalysisResult } from "@/lib/api-types"
 
-type StockActionLabels = Pick<OverviewCopy["decision"], "actionLabel" | "headlines" | "signalTitles" | "priceZones" | "inZone">
+type StockActionLabels = Pick<OverviewCopy["decision"], "actionLabel" | "headlines" | "signalTitles" | "priceZones" | "inZone"> & { recommendationLabels: Record<string, string> }
 
 export function StockActionSummary({ analysis, labels }: { analysis: StockAnalysisResult; labels: StockActionLabels }) {
-  const presentation = recommendationPresentation(analysis.recommendationCode, { headline: labels.headlines, signalTitle: labels.signalTitles })
+  const presentation = recommendationPresentation(analysis.recommendationCode, { label: labels.recommendationLabels, headline: labels.headlines, signalTitle: labels.signalTitles })
   const tone = presentation.tone
   const headline = presentation.headline
   const zone = currentPriceZoneLabel(analysis, labels.priceZones)

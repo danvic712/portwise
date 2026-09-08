@@ -235,6 +235,6 @@ public sealed class StockAnalysisAppService(
         Security security,
         AShareReference reference)
         => string.IsNullOrWhiteSpace(security.SecurityName)
-            ? $"待同步 {reference.SecurityCode}"
+            ? string.Empty
             : security.SecurityName;
 }

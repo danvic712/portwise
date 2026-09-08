@@ -1,5 +1,6 @@
 {
   "ui": {
+    "startStamp": "开始",
     "eyebrow": "首次设置 · 私人工作区",
     "titleLineOne": "先把你的",
     "titleLineTwo": "组合放进来。",
@@ -39,7 +40,7 @@
     "status_code": 400,
     "title": "建账请求无效",
     "detail": "{message}",
-    "validation_message": null
+    "validation_message": "请检查请求字段后重试。"
   },
   "setup_already_completed": {
     "status_code": 409,

@@ -7,9 +7,9 @@ type RecommendationLabelKey = "strongBuy" | "accumulate" | "partialTrim" | "aggr
 type RecommendationHeadlineKey = "strongBuy" | "accumulate" | "trim" | "reEvaluate" | "noAction" | "default"
 
 export type RecommendationDisplayLabels = {
-  label?: Record<string, string>
-  headline?: Record<string, { lead: string; accent: string }>
-  signalTitle?: Record<string, string>
+  label: Record<string, string>
+  headline: Record<string, { lead: string; accent: string }>
+  signalTitle: Record<string, string>
 }
 
 export type RecommendationPresentation = {
@@ -24,7 +24,7 @@ export type RecommendationPresentation = {
   signalTitle: string
 }
 
-type PriceZoneLabels = Record<string, { label: string; copy: string }>
+export type PriceZoneLabels = Record<string, { label: string; copy: string }>
 
 export type PriceZone = {
   code: string
@@ -34,41 +34,37 @@ export type PriceZone = {
   className: string
 }
 
-const defaultLabels: Record<RecommendationLabelKey, string> = {
-  strongBuy: "强买入",
-  accumulate: "分批加仓",
-  partialTrim: "减仓候选",
-  aggressiveTrim: "激进减仓",
-  reEvaluate: "需要复核",
-  hold: "暂不操作",
-  unknown: "等待数据",
-}
+export function localizeRecommendationExplanation(
+  explanation: string | null | undefined,
+  explanations: Record<string, string>,
+  priceZones: Record<string, string>,
+  fallback: string,
+) {
+  if (!explanation) {
+    return fallback
+  }
 
-const defaultHeadlines: Record<RecommendationHeadlineKey, { lead: string; accent: string }> = {
-  strongBuy: { lead: "可以", accent: "试买" },
-  accumulate: { lead: "可以", accent: "加仓" },
-  trim: { lead: "考虑", accent: "减仓" },
-  reEvaluate: { lead: "需要", accent: "复核" },
-  noAction: { lead: "暂不", accent: "动作" },
-  default: { lead: "先", accent: "观察" },
-}
+  return explanation
+    .split("|")
+    .map((part) => {
+      const [code, parameter] = part.split(":", 2)
+      const template = explanations[code]
+      if (!template) {
+        return fallback
+      }
 
-const defaultSignalTitles: Record<RecommendationHeadlineKey, string> = {
-  strongBuy: "价格进入试探区间",
-  accumulate: "收益率回到可接受区间",
-  trim: "收益率偏低，先保护仓位",
-  reEvaluate: "资料需要重新确认",
-  noAction: "当前没有需要执行的动作",
-  default: "等待收益率重新抬升",
+      return template.replace("{zone}", parameter ? priceZones[parameter] ?? parameter : "")
+    })
+    .join(" ")
 }
 
 export function recommendationPresentation(
   code: string | null | undefined,
-  labels: RecommendationDisplayLabels = {},
+  labels: RecommendationDisplayLabels,
 ): RecommendationPresentation {
   const normalizedCode = code?.trim().toLowerCase() ?? ""
   const classification = classifyRecommendation(normalizedCode)
-  const headline = labels.headline?.[classification.headlineKey] ?? defaultHeadlines[classification.headlineKey]
+  const headline = labels.headline[classification.headlineKey]
 
   return {
     code: normalizedCode,
@@ -77,9 +73,9 @@ export function recommendationPresentation(
     isSell: classification.kind === "trim",
     labelKey: classification.labelKey,
     headlineKey: classification.headlineKey,
-    label: labels.label?.[classification.labelKey] ?? defaultLabels[classification.labelKey],
+    label: labels.label[classification.labelKey],
     headline,
-    signalTitle: labels.signalTitle?.[classification.headlineKey] ?? defaultSignalTitles[classification.headlineKey],
+    signalTitle: labels.signalTitle[classification.headlineKey],
   }
 }
 
@@ -97,29 +93,23 @@ export function hasAnalysisData(
 
 export function getPriceZones(
   analysis: Pick<StockAnalysisResult, "strongBuyPrice" | "accumulatePrice" | "closePrice" | "partialTrimPrice" | "aggressiveTrimPrice">,
-  labels?: PriceZoneLabels,
+  labels: PriceZoneLabels,
 ): PriceZone[] {
   return [
-    { code: "strong_buy", label: labels?.strongBuy?.label ?? "重点买入", price: analysis.strongBuyPrice, copy: labels?.strongBuy?.copy ?? "估值和收益率同时有吸引力，可买入较大一部分。", className: "zone-buy" },
-    { code: "accumulate", label: labels?.accumulate?.label ?? "分批加仓", price: analysis.accumulatePrice, copy: labels?.accumulate?.copy ?? "接近目标区间，建议买入小部分，保留现金。", className: "zone-accumulate" },
-    { code: "hold", label: labels?.hold?.label ?? "观察持有", price: analysis.closePrice, copy: labels?.hold?.copy ?? "已有仓位可继续持有，新资金暂缓。", className: "zone-hold" },
-    { code: "partial_trim", label: labels?.partialTrim?.label ?? "减仓候选", price: analysis.partialTrimPrice, copy: labels?.partialTrim?.copy ?? "收益率偏低，仅在偏离目标较多时考虑减仓。", className: "zone-trim" },
-    { code: "aggressive_trim", label: labels?.aggressiveTrim?.label ?? "激进减仓", price: analysis.aggressiveTrimPrice, copy: labels?.aggressiveTrim?.copy ?? "只在仓位与规则都允许时考虑。", className: "zone-aggressive" },
+    { code: "strong_buy", label: labels.strongBuy.label, price: analysis.strongBuyPrice, copy: labels.strongBuy.copy, className: "zone-buy" },
+    { code: "accumulate", label: labels.accumulate.label, price: analysis.accumulatePrice, copy: labels.accumulate.copy, className: "zone-accumulate" },
+    { code: "hold", label: labels.hold.label, price: analysis.closePrice, copy: labels.hold.copy, className: "zone-hold" },
+    { code: "partial_trim", label: labels.partialTrim.label, price: analysis.partialTrimPrice, copy: labels.partialTrim.copy, className: "zone-trim" },
+    { code: "aggressive_trim", label: labels.aggressiveTrim.label, price: analysis.aggressiveTrimPrice, copy: labels.aggressiveTrim.copy, className: "zone-aggressive" },
   ]
 }
 
 export function currentPriceZoneLabel(
   analysis: Pick<StockAnalysisResult, "priceZoneCode">,
-  labels?: Record<string, string>,
+  labels: Record<string, string>,
 ) {
   const code = analysis.priceZoneCode ?? ""
-  return labels?.[code] ?? ({
-    strong_buy: "重点买入",
-    accumulate: "分批加仓",
-    hold: "观察持有",
-    partial_trim: "减仓候选",
-    aggressive_trim: "激进减仓",
-  }[code] ?? "待确认")
+  return labels[code] ?? labels.pending
 }
 
 function classifyRecommendation(code: string): Omit<RecommendationPresentation, "code" | "isSell" | "label" | "headline" | "signalTitle"> {

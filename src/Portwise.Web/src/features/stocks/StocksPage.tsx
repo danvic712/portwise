@@ -15,7 +15,7 @@ import { Separator } from "@/components/ui/separator"
 import { getApiErrorMessage } from "@/lib/api-errors"
 import { interpolate, useLocale } from "@/lib/i18n"
 import { displayStockName, exchangeLabel } from "@/lib/stock-display"
-import { hasAnalysisData } from "@/lib/recommendation-display"
+import { hasAnalysisData, localizeRecommendationExplanation } from "@/lib/recommendation-display"
 import { formatDate, formatDateTime, formatMoney, formatPercent, stockKey } from "@/lib/utils"
 import type { StockAnalysisResult, StockDataSyncRunResult, StockModelParameterSet, StockWatchlistItem } from "@/lib/api-types"
 import { getModelParameters, getStockAnalysis, getStocks, syncStocks } from "@/features/stocks/stocks.api"
@@ -59,11 +59,11 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
       const list = await getStocks()
       applyStocks(list)
     } catch (loadError) {
-      setError(getApiErrorMessage(loadError, readErrorRef.current))
+      setError(getApiErrorMessage(loadError, readErrorRef.current, messages.common.ui.errors))
     } finally {
       if (!preserveView) setLoading(false)
     }
-  }, [applyStocks])
+  }, [applyStocks, messages.common.ui.errors])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void loadStocks() }, 0)
@@ -94,12 +94,12 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
       if (!signal?.aborted) {
         setAnalysis(null)
         setParameters(null)
-        setDetailError(getApiErrorMessage(detailLoadError, analysisErrorRef.current))
+        setDetailError(getApiErrorMessage(detailLoadError, analysisErrorRef.current, messages.common.ui.errors))
       }
     } finally {
       if (!signal?.aborted) setDetailLoading(false)
     }
-  }, [selectedKey])
+  }, [messages.common.ui.errors, selectedKey])
 
   useEffect(() => {
     if (detailLoading || detailMinHeight === null) return
@@ -125,7 +125,7 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
       setSyncResult(await syncStocks())
       await loadStocks({ preserveView: true })
     } catch (syncError) {
-      setError(getApiErrorMessage(syncError, copy.states.syncError))
+      setError(getApiErrorMessage(syncError, copy.states.syncError, messages.common.ui.errors))
     } finally {
       setSyncing(false)
     }
@@ -193,6 +193,8 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
                 pending: copy.selector.pending,
                 sectorUnset: copy.selector.sectorUnset,
                 signals: copy.selector.signals,
+                recommendationLabels: { label: copy.selector.signals, headline: messages.dividendStrategy.ui.overview.decision.headlines, signalTitle: messages.dividendStrategy.ui.overview.decision.signalTitles },
+                pendingName: copy.identity.pendingName,
               }}
             />
           </CardContent>
@@ -218,8 +220,8 @@ function StockDetail({ analysis, parameters, onNavigate }: { analysis: StockAnal
   const { locale, messages } = useLocale()
   const copy = messages.stocks.ui
   const decisionCopy = messages.dividendStrategy.ui.overview.decision
-  const name = displayStockName(analysis)
-  const identity = interpolate(copy.detail.dataIdentity, { code: analysis.securityCode, exchange: analysis.exchangeCode, exchangeLabel: exchangeLabel(analysis.exchangeCode), date: formatDate(analysis.dataAsOfDate) })
+  const name = displayStockName(analysis, copy.identity.pendingName)
+  const identity = interpolate(copy.detail.dataIdentity, { code: analysis.securityCode, exchange: analysis.exchangeCode, exchangeLabel: exchangeLabel(analysis.exchangeCode, copy.identity.exchange), date: formatDate(analysis.dataAsOfDate) })
 
   return (
     <>
@@ -231,7 +233,7 @@ function StockDetail({ analysis, parameters, onNavigate }: { analysis: StockAnal
         <Badge variant={analysis.priceZoneConfirmed ? "accent" : "attention"}>{analysis.priceZoneConfirmed ? copy.detail.confirmed : copy.detail.unconfirmed}</Badge>
       </div>
 
-      <StockActionSummary analysis={analysis} labels={decisionCopy} />
+      <StockActionSummary analysis={analysis} labels={{ ...decisionCopy, recommendationLabels: messages.dividendStrategy.ui.overview.stockSelector.signals }} />
 
       <div className="stock-analysis-grid">
         <AnalysisTile label={copy.detail.metrics.closePrice} value={formatMoney(analysis.closePrice)} />
@@ -255,7 +257,7 @@ function StockDetail({ analysis, parameters, onNavigate }: { analysis: StockAnal
       <section className="stock-detail-section">
         <SectionHeading label={copy.detail.parametersLabel} title={copy.detail.parametersTitle} description={copy.detail.parametersDescription} />
         {parameters ? <div className="parameter-grid">{parameterEntries(parameters, copy.detail.parameterNames).map(([label, value]) => <div className="parameter-item" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div> : <EmptyState title={copy.detail.missingParametersTitle} description={copy.detail.missingParametersDescription} action={<Button variant="outline" onClick={() => onNavigate(`/settings?stock=${encodeURIComponent(analysis.securityCode)}&exchange=${encodeURIComponent(analysis.exchangeCode)}`)}>{copy.actions.configure}</Button>} />}
-        <div className="note-box">{analysis.explanation || copy.states.explanationFallback}</div>
+        <div className="note-box">{localizeRecommendationExplanation(analysis.explanation, decisionCopy.explanations, decisionCopy.priceZones, copy.states.explanationFallback)}</div>
       </section>
     </>
   )
@@ -268,7 +270,7 @@ function AnalysisTile({ label, value }: { label: string; value: string }) {
 function StockDetailPending({ stock, message, onSync }: { stock: StockWatchlistItem; message: string | null; onSync: () => void }) {
   const { messages } = useLocale()
   const copy = messages.stocks.ui
-  const name = displayStockName(stock)
+  const name = displayStockName(stock, copy.identity.pendingName)
   const identity = interpolate(copy.detail.pendingIdentity, { code: stock.securityCode, exchange: stock.exchangeCode })
 
   return (

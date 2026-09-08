@@ -99,7 +99,7 @@
     "status_code": 400,
     "title": "预算流水请求无效",
     "detail": "{message}",
-    "validation_message": null
+    "validation_message": "请检查请求字段后重试。"
   },
   "cash_ledger_entry_conflict": {
     "status_code": 409,
@@ -110,7 +110,7 @@
     "status_code": 400,
     "title": "交易记录无效",
     "detail": "{message}",
-    "validation_message": null
+    "validation_message": "请检查请求字段后重试。"
   },
   "portfolio_position_missing_for_trade": {
     "status_code": 400,

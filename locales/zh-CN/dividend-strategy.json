@@ -1,6 +1,7 @@
 {
   "ui": {
     "overview": {
+      "indexNote": "便签",
       "breadcrumb": {
         "myStocks": "我的股票",
         "todayDecision": "今日决策",
@@ -214,6 +215,16 @@
           "noAction": "当前没有需要执行的动作",
           "default": "等待收益率重新抬升"
         },
+        "explanations": {
+          "unavailable": "缺少有效模型参数、行情或 TTM 实际股息，暂不生成价格区域和交易建议。",
+          "re_evaluate": "最近存在已确认取消分红的事件，需要重新评估核心仓和后续操作，当前不生成交易建议。",
+          "reliability_failed": "股息可靠性检查未通过，当前只展示行情和持仓信息，不生成交易建议。",
+          "cautious": "股息率和价格区域可以计算，但可靠性资料不足或存在风险提醒，当前仅谨慎持有。",
+          "price_zone_pending": "模型资料完整，但新的价格区域尚未连续两个有效交易日确认，当前仅观察。",
+          "confirmed": "股息可靠性检查通过，已确认当前价格区域为 {zone}。",
+          "portfolio_missing_close_price": "组合中存在缺少有效收盘价的持仓，本期不生成买入建议。",
+          "portfolio_budget_limit": "本期组合预算或仓位额度不足，建议股数为 0。"
+        },
         "priceLadderPendingTitle": "价格阶梯等待资料",
         "priceLadderPendingDescription": "完整同步 TTM 实际股息和行情后，系统会计算五档参考区间。",
         "ladderAriaLabel": "{stockName}价格阶梯",
@@ -231,7 +242,7 @@
     "status_code": 400,
     "title": "股票模型参数无效",
     "detail": "{message}",
-    "validation_message": null
+    "validation_message": "请检查请求字段后重试。"
   },
   "model_parameter_version_already_exists": {
     "status_code": 409,
@@ -242,6 +253,6 @@
     "status_code": 400,
     "title": "股票分析请求无效",
     "detail": "{message}",
-    "validation_message": null
+    "validation_message": "请检查请求字段后重试。"
   }
 }

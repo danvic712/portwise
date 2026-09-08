@@ -43,6 +43,15 @@
     "actions": {
       "retry": "Retry"
     },
+    "errors": {
+      "requestFailed": "The request could not be completed. Please try again later.",
+      "timeout": "The request timed out. Check the service and try again.",
+      "stockModelParametersMissing": "This stock has no model parameters yet. Complete its setup first."
+    },
+    "statusSticker": {
+      "calm": "Okay",
+      "attention": "Take a breather"
+    },
     "settings": "Open settings",
     "scrollToTop": "Back to top",
     "states": {

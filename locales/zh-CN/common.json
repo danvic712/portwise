@@ -43,6 +43,15 @@
     "actions": {
       "retry": "重新读取"
     },
+    "errors": {
+      "requestFailed": "暂时无法完成请求，请稍后再试。",
+      "timeout": "请求超时，请检查服务状态后重试。",
+      "stockModelParametersMissing": "这只股票还没有模型参数，请先完成配置。"
+    },
+    "statusSticker": {
+      "calm": "嗯",
+      "attention": "先歇一下"
+    },
     "settings": "打开设置",
     "scrollToTop": "回到顶部",
     "states": {

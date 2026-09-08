@@ -131,7 +131,7 @@ public sealed class StockWatchlistAppServiceTests
             .GetAsync(CancellationToken.None);
 
         var stock = Assert.Single(result);
-        Assert.Equal("待同步 000001", stock.SecurityName);
+        Assert.Equal(string.Empty, stock.SecurityName);
     }
 
     private static Mock<IRepository<TEntity>> CreateRepository<TEntity>(IEnumerable<TEntity> entities)

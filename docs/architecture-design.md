@@ -48,6 +48,14 @@ Application 项目通过 `EmbeddedResource` 将根目录 `locales/**/*.json` 编
 
 根目录 JSON 是跨层共享的文本源；前端不直接读取 Application DLL，前端构建可按需复制/导入同一组资源保持显示文本一致。当前生产前端通过 API 消费后端返回的 `error_code`、`locale` 和安全的 `detail`，不包含 FTShare key 或后端凭据。
 
+### 3.1.1 本地化完整性约束
+
+- Web 页面、组件和格式化工具不得内置用户可见的中文或英文默认文案；必须从当前 locale 的 `ui` 节点读取。
+- API 错误必须传递稳定的 `error_code`，由 `IApplicationErrorLocalizer` 按 `Accept-Language` 选择 `detail`；验证失败使用对应语言的 `validation_message`，不能把 FluentValidation 或领域异常原文直接返回给用户。
+- Domain 推荐计算只返回稳定的解释代码（例如 `unavailable`、`confirmed:<zone>`），由 Web 层使用 `dividend-strategy.ui.overview.decision.explanations` 渲染；领域层不依赖 UI 语言资源。
+- 股票未同步时 API 保持名称为空，由 Web 的 `stocks.ui.identity.pendingName` 负责显示本地化占位名称；交易所名称同样由 locale 提供。
+- 金额、数字、百分比和日期格式必须跟随当前 `portwise-locale`，不得固定为单一语言格式。
+
 ## 4. Repo 分层布局
 
 Repo 根目录还包含跨层共享的多语言资源：

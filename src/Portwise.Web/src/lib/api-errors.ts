@@ -11,7 +11,12 @@ export type ProblemDetails = {
   errors?: Record<string, string[]>
 }
 
-export function getApiErrorMessage(error: unknown, fallback = "暂时无法完成请求，请稍后再试。") {
+export type ApiErrorMessages = {
+  timeout: string
+  stockModelParametersMissing: string
+}
+
+export function getApiErrorMessage(error: unknown, fallback: string, messages?: Partial<ApiErrorMessages>) {
   if (axios.isAxiosError<ProblemDetails>(error)) {
     const data = error.response?.data
     const errorCode = data?.errorCode ?? data?.error_code
@@ -27,11 +32,11 @@ export function getApiErrorMessage(error: unknown, fallback = "暂时无法完�
     }
 
     if (error.code === "ECONNABORTED") {
-      return "请求超时，请检查服务状态后重试。"
+      return messages?.timeout ?? fallback
     }
 
     if (errorCode === "stock_model_parameters_not_found") {
-      return "这只股票还没有模型参数，请先完成配置。"
+      return messages?.stockModelParametersMissing ?? fallback
     }
   }
 

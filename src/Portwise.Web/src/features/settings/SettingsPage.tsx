@@ -83,11 +83,11 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
       setStocks(list)
       setSelectedKey((current) => current && list.some((stock) => stockKey(stock) === current) ? current : list[0] ? stockKey(list[0]) : "")
     } catch (loadError) {
-      setError(getApiErrorMessage(loadError, readErrorRef.current))
+      setError(getApiErrorMessage(loadError, readErrorRef.current, messages.common.ui.errors))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [messages.common.ui.errors])
 
   const loadParameters = useCallback(async (signal?: AbortSignal) => {
     const stock = stocks.find((item) => stockKey(item) === selectedKey)
@@ -110,11 +110,11 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
         setParametersStockKey(selectedKey)
       }
     } catch (loadError) {
-      if (!signal?.aborted) setError(getApiErrorMessage(loadError, parameterErrorRef.current))
+      if (!signal?.aborted) setError(getApiErrorMessage(loadError, parameterErrorRef.current, messages.common.ui.errors))
     } finally {
       if (!signal?.aborted) setParametersLoading(false)
     }
-  }, [selectedKey, stocks])
+  }, [messages.common.ui.errors, selectedKey, stocks])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void loadStocks() }, 0)
@@ -169,7 +169,7 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
       setParameters(saved)
       setMessage(copy.states.successMessage)
     } catch (saveError) {
-      setError(getApiErrorMessage(saveError, copy.states.recordError))
+      setError(getApiErrorMessage(saveError, copy.states.recordError, messages.common.ui.errors))
     } finally {
       setSaving(false)
     }
@@ -187,7 +187,7 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
     return <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="unknown" contentClassName="settings-page-wrap"><EmptyState title={copy.states.emptyTitle} description={copy.states.emptyDescription} action={<Button onClick={() => onNavigate("/setup")}>{copy.actions.goSetup}</Button>} /></PageFrame>
   }
 
-  const stockLabel = selectedStock ? `${displayStockName(selectedStock)} · ${selectedStock.securityCode}` : copy.form.stockFallback
+  const stockLabel = selectedStock ? `${displayStockName(selectedStock, messages.stocks.ui.identity.pendingName)} · ${selectedStock.securityCode}` : copy.form.stockFallback
 
   return (
     <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="unknown" contentClassName="settings-page-wrap">
@@ -222,8 +222,8 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
               const holding = stock.holding
               const isSelected = selectedKey === key
               return <Button key={key} variant="ghost" className={`settings-stock-item ${isSelected ? "settings-stock-item-active" : ""}`} type="button" onClick={() => changeStock(stock)} role="tab" aria-selected={isSelected} aria-controls="settings-parameter-editor">
-                <span className="settings-stock-avatar" aria-hidden="true">{displayStockName(stock).slice(0, 2)}</span>
-                <span className="settings-stock-copy"><strong>{displayStockName(stock)}</strong><small>{stock.securityCode} · {stock.exchangeCode}</small></span>
+                <span className="settings-stock-avatar" aria-hidden="true">{displayStockName(stock, messages.stocks.ui.identity.pendingName).slice(0, 2)}</span>
+                <span className="settings-stock-copy"><strong>{displayStockName(stock, messages.stocks.ui.identity.pendingName)}</strong><small>{stock.securityCode} · {stock.exchangeCode}</small></span>
                 <span className="settings-stock-meta"><span>{copy.stocks.position}</span><strong>{holding ? `${formatNumber(holding.heldShares, 0)} ${copy.stocks.shareUnit}` : copy.stocks.positionEmpty}</strong>{holding && <small>{copy.stocks.cost} {formatMoney(holding.averageCostPerShare)}</small>}</span>
               </Button>
             })}

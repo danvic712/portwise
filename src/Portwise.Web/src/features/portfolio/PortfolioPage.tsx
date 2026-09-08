@@ -61,11 +61,11 @@ export function PortfolioPage({ onNavigate, onReplaceQuery, selectedStockKey, in
       setStocks(watchlist)
       setSelectedKey((current) => current && watchlist.some((stock) => stockKey(stock) === current) ? current : watchlist[0] ? stockKey(watchlist[0]) : "")
     } catch (loadError) {
-      setError(getApiErrorMessage(loadError, readErrorRef.current))
+      setError(getApiErrorMessage(loadError, readErrorRef.current, messages.common.ui.errors))
     } finally {
       setLoading(false)
     }
-  }, [setSelectedKey, setStocks])
+  }, [messages.common.ui.errors])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void load() }, 0)
@@ -129,7 +129,7 @@ export function PortfolioPage({ onNavigate, onReplaceQuery, selectedStockKey, in
       setFee("0")
       setSourceRecordId("")
     } catch (submitError) {
-      setError(getApiErrorMessage(submitError, copy.states.recordError))
+      setError(getApiErrorMessage(submitError, copy.states.recordError, messages.common.ui.errors))
     } finally {
       setSubmitting(false)
     }
@@ -147,8 +147,8 @@ export function PortfolioPage({ onNavigate, onReplaceQuery, selectedStockKey, in
     return <PageFrame currentPath="/portfolio" onNavigate={onNavigate} dataState="unknown" contentClassName="portfolio-page-wrap"><EmptyState title={copy.states.emptyTitle} description={copy.states.emptyDescription} action={<Button onClick={() => onNavigate("/setup")}>{copy.actions.goSetup}</Button>} /></PageFrame>
   }
 
-  const stockLabel = selectedStock ? `${displayStockName(selectedStock)} · ${selectedStock.securityCode}` : copy.result.stockFallback
-  const stockName = selectedStock ? displayStockName(selectedStock) : copy.result.stockFallback
+  const stockLabel = selectedStock ? `${displayStockName(selectedStock, messages.stocks.ui.identity.pendingName)} · ${selectedStock.securityCode}` : copy.result.stockFallback
+  const stockName = selectedStock ? displayStockName(selectedStock, messages.stocks.ui.identity.pendingName) : copy.result.stockFallback
   const holding = selectedStock?.holding
   const parsedQuantity = Number(quantity)
   const parsedPrice = Number(price)
@@ -220,8 +220,8 @@ export function PortfolioPage({ onNavigate, onReplaceQuery, selectedStockKey, in
                 <Field className="portfolio-grid-wide">
                   <FieldLabel htmlFor="trade-stock">{copy.form.stock}</FieldLabel>
                   <Select value={selectedKey} onValueChange={changeStock}>
-                    <SelectTrigger id="trade-stock" className="portfolio-select-trigger"><SelectValue placeholder={copy.form.stockPlaceholder}>{selectedStock ? `${displayStockName(selectedStock)} · ${selectedStock.securityCode}` : copy.form.stockPlaceholder}</SelectValue></SelectTrigger>
-                    <SelectContent><SelectGroup>{stocks.map((stock) => <SelectItem key={stockKey(stock)} value={stockKey(stock)}>{stock.securityCode} · {stock.exchangeCode} · {displayStockName(stock)}</SelectItem>)}</SelectGroup></SelectContent>
+                    <SelectTrigger id="trade-stock" className="portfolio-select-trigger"><SelectValue placeholder={copy.form.stockPlaceholder}>{selectedStock ? `${displayStockName(selectedStock, messages.stocks.ui.identity.pendingName)} · ${selectedStock.securityCode}` : copy.form.stockPlaceholder}</SelectValue></SelectTrigger>
+                    <SelectContent><SelectGroup>{stocks.map((stock) => <SelectItem key={stockKey(stock)} value={stockKey(stock)}>{stock.securityCode} · {stock.exchangeCode} · {displayStockName(stock, messages.stocks.ui.identity.pendingName)}</SelectItem>)}</SelectGroup></SelectContent>
                   </Select>
                   <FieldDescription>{copy.form.stockHint}</FieldDescription>
                 </Field>

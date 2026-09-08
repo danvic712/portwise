@@ -70,12 +70,12 @@ export function ApplicationShell() {
       const redirectPath = resolveSetupPath(status.isComplete, nextPath)
       if (redirectPath) navigate(redirectPath, true)
     } catch (statusError) {
-      setError(getApiErrorMessage(statusError, setupErrorRef.current))
+      setError(getApiErrorMessage(statusError, setupErrorRef.current, messages.common.ui.errors))
       navigate("/error", true)
     } finally {
       setLoading(false)
     }
-  }, [navigate, navigation])
+  }, [messages.common.ui.errors, navigate, navigation])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void checkSetup() }, 0)

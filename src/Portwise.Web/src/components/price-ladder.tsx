@@ -27,7 +27,7 @@ export function PriceLadder({ analysis, compact = false }: { analysis: StockAnal
       <div className="ladder-axis" aria-hidden="true">
         {boundaries.map((value) => <span key={value}>{formatMoney(value)}</span>)}
       </div>
-      <div className="ladder-track" aria-label={interpolate(copy.ladderAriaLabel, { stockName: displayStockName(analysis) })}>
+      <div className="ladder-track" aria-label={interpolate(copy.ladderAriaLabel, { stockName: displayStockName(analysis, messages.stocks.ui.identity.pendingName) })}>
         {zones.map((zone, index) => <div className={`ladder-zone ${zone.className}`} key={zone.code} style={{ flex: boundaries[index + 1] - boundaries[index] }}><span>{zone.label}</span></div>)}
         <div className="current-price-marker" style={{ left: `${markerPosition}%` }}><span>{formatMoney(analysis.closePrice)}</span><i /></div>
       </div>

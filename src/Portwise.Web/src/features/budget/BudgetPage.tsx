@@ -58,11 +58,11 @@ export function BudgetPage({ onNavigate }: { onNavigate: (path: string) => void 
       setSummary(budget)
       setStocks(watchlist)
     } catch (loadError) {
-      setError(getApiErrorMessage(loadError, readErrorRef.current))
+      setError(getApiErrorMessage(loadError, readErrorRef.current, messages.common.ui.errors))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [messages.common.ui.errors])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void load() }, 0)
@@ -112,7 +112,7 @@ export function BudgetPage({ onNavigate }: { onNavigate: (path: string) => void 
       setMessage(copy.states.successMessage)
       await load()
     } catch (submitError) {
-      setError(getApiErrorMessage(submitError, copy.states.recordError))
+      setError(getApiErrorMessage(submitError, copy.states.recordError, messages.common.ui.errors))
     } finally {
       setSubmitting(false)
     }
@@ -188,8 +188,8 @@ export function BudgetPage({ onNavigate }: { onNavigate: (path: string) => void 
                   <Field className="budget-grid-wide">
                     <FieldLabel htmlFor="entry-stock">{copy.form.stock}</FieldLabel>
                     <Select value={selectedStock || "__none__"} onValueChange={(value) => setSelectedStock(value === "__none__" || !value ? "" : value)}>
-                      <SelectTrigger id="entry-stock" className="budget-select-trigger"><SelectValue placeholder={copy.form.stockPlaceholder}>{selectedStockItem ? `${displayStockName(selectedStockItem)} · ${selectedStockItem.securityCode}` : copy.form.stockPlaceholder}</SelectValue></SelectTrigger>
-                      <SelectContent><SelectGroup><SelectItem value="__none__">{copy.form.stockPlaceholder}</SelectItem>{stocks.map((stock) => <SelectItem key={stockKey(stock)} value={stockKey(stock)}>{stock.securityCode} · {stock.exchangeCode} · {displayStockName(stock)}</SelectItem>)}</SelectGroup></SelectContent>
+                      <SelectTrigger id="entry-stock" className="budget-select-trigger"><SelectValue placeholder={copy.form.stockPlaceholder}>{selectedStockItem ? `${displayStockName(selectedStockItem, messages.stocks.ui.identity.pendingName)} · ${selectedStockItem.securityCode}` : copy.form.stockPlaceholder}</SelectValue></SelectTrigger>
+                      <SelectContent><SelectGroup><SelectItem value="__none__">{copy.form.stockPlaceholder}</SelectItem>{stocks.map((stock) => <SelectItem key={stockKey(stock)} value={stockKey(stock)}>{stock.securityCode} · {stock.exchangeCode} · {displayStockName(stock, messages.stocks.ui.identity.pendingName)}</SelectItem>)}</SelectGroup></SelectContent>
                     </Select>
                     <FieldDescription>{stocks.length ? copy.form.stockHint : copy.states.emptyStock}</FieldDescription>
                   </Field>

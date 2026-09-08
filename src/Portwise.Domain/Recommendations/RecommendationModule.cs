@@ -217,8 +217,8 @@ public static class RecommendationModule
                 && stock.DividendReliabilityCode == DividendReliabilityCodes.Passed)
             {
                 explanation = !portfolioValuationComplete
-                    ? $"{explanation} 组合中存在缺少有效收盘价的持仓，本期不生成买入建议。"
-                    : $"{explanation} 本期组合预算或仓位额度不足，建议股数为 0。";
+                    ? AppendExplanation(explanation, "portfolio_missing_close_price")
+                    : AppendExplanation(explanation, "portfolio_budget_limit");
             }
 
             recommendations[index] = new PortfolioRecommendationStockCalculation(
@@ -282,7 +282,7 @@ public static class RecommendationModule
             priceObservation?.TradingDate,
             null,
             computedAt,
-            "缺少有效模型参数、行情或 TTM 实际股息，暂不生成价格区域和交易建议。");
+            "unavailable");
 
     private static string GetRecommendationCode(
         string modelStatusCode,
@@ -302,17 +302,20 @@ public static class RecommendationModule
         => modelStatusCode switch
         {
             ModelStatusCodes.Unavailable =>
-                "缺少有效模型参数、行情或 TTM 实际股息，暂不生成价格区域和交易建议。",
+                "unavailable",
             ModelStatusCodes.ReEvaluate =>
-                "最近存在已确认取消分红的事件，需要重新评估核心仓和后续操作，当前不生成交易建议。",
+                "re_evaluate",
             ModelStatusCodes.Failed =>
-                "股息可靠性检查未通过，当前只展示行情和持仓信息，不生成交易建议。",
+                "reliability_failed",
             ModelStatusCodes.Cautious =>
-                "股息率和价格区域可以计算，但可靠性资料不足或存在风险提醒，当前仅谨慎持有。",
+                "cautious",
             _ when !priceZoneConfirmed =>
-                "模型资料完整，但新的价格区域尚未连续两个有效交易日确认，当前仅观察。",
-            _ => $"股息可靠性检查通过，已确认当前价格区域为 {confirmedPriceZoneCode}。"
+                "price_zone_pending",
+            _ => $"confirmed:{confirmedPriceZoneCode}"
         };
+
+    private static string AppendExplanation(string explanation, string code)
+        => string.IsNullOrWhiteSpace(explanation) ? code : $"{explanation}|{code}";
 
     private static int GetPricePriority(string? priceZoneCode)
         => priceZoneCode switch

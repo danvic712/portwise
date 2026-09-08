@@ -66,7 +66,7 @@ export function SetupPage({ onComplete }: { onComplete: (result: SetupResult) =>
       const result = await initializeSetup({ portfolioName: portfolioName.trim(), stocks: stocks.map((stock) => ({ ...stock, securityCode: stock.securityCode.trim(), exchangeCode: stock.exchangeCode.trim().toUpperCase() })) })
       onComplete(result)
     } catch (submitError) {
-      setError(getApiErrorMessage(submitError, copy.requestError))
+      setError(getApiErrorMessage(submitError, copy.requestError, messages.common.ui.errors))
     } finally {
       setSubmitting(false)
     }
@@ -91,7 +91,7 @@ export function SetupPage({ onComplete }: { onComplete: (result: SetupResult) =>
       <main className="page-wrap setup-wrap">
         <div className="setup-page">
           <section className="setup-intro" aria-labelledby="setup-title">
-            <div className="setup-intro-stamp" aria-hidden="true"><span>01</span><small>START</small></div>
+            <div className="setup-intro-stamp" aria-hidden="true"><span>01</span><small>{copy.startStamp}</small></div>
             <p className="eyebrow">{copy.eyebrow}</p>
             <h1 id="setup-title" className="setup-title"><span>{copy.titleLineOne}</span><span>{copy.titleLineTwo}</span></h1>
             <p>{copy.description}</p>

@@ -1,6 +1,7 @@
 {
   "ui": {
     "overview": {
+      "indexNote": "NOTE",
       "breadcrumb": {
         "myStocks": "My stocks",
         "todayDecision": "Today’s decision",
@@ -213,6 +214,16 @@
           "reEvaluate": "The data needs confirmation",
           "noAction": "No action is needed right now",
           "default": "Waiting for yield to recover"
+        },
+        "explanations": {
+          "unavailable": "Valid model parameters, market data, or trailing-twelve-month dividends are missing, so no price ranges or trade recommendation are generated.",
+          "re_evaluate": "A recently confirmed dividend cancellation requires a review of the core position and next steps; no trade recommendation is generated.",
+          "reliability_failed": "The dividend reliability check did not pass. Market and holding data are shown without a trade recommendation.",
+          "cautious": "Yield and price ranges are available, but the reliability data is incomplete or raises a warning; hold cautiously for now.",
+          "price_zone_pending": "The model data is complete, but the new price range has not been confirmed for two consecutive trading days; observe for now.",
+          "confirmed": "The dividend reliability check passed. The current price range is confirmed as {zone}.",
+          "portfolio_missing_close_price": "The portfolio has holdings without a valid close price, so no buy recommendation is generated this period.",
+          "portfolio_budget_limit": "The portfolio budget or position limit is insufficient this period; suggested shares are zero."
         },
         "priceLadderPendingTitle": "Price ladder waiting for data",
         "priceLadderPendingDescription": "Once the actual TTM dividends and market data are synced, the app will calculate five reference ranges.",

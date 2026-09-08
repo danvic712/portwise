@@ -14,7 +14,7 @@ export function formatMoney(value: number | null | undefined) {
     return "—"
   }
 
-  return new Intl.NumberFormat("zh-CN", {
+  return new Intl.NumberFormat(getLocale(), {
     style: "currency",
     currency: "CNY",
     minimumFractionDigits: 2,
@@ -27,7 +27,7 @@ export function formatNumber(value: number | null | undefined, digits = 2) {
     return "—"
   }
 
-  return new Intl.NumberFormat("zh-CN", {
+  return new Intl.NumberFormat(getLocale(), {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(value)
@@ -38,7 +38,7 @@ export function formatPercent(value: number | null | undefined, digits = 1) {
     return "—"
   }
 
-  return `${(value * 100).toFixed(digits)}%`
+  return new Intl.NumberFormat(getLocale(), { style: "percent", minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value)
 }
 
 export function formatDate(value: string | null | undefined) {
@@ -51,7 +51,7 @@ export function formatDate(value: string | null | undefined) {
     return value
   }
 
-  return new Intl.DateTimeFormat("zh-CN", {
+  return new Intl.DateTimeFormat(getLocale(), {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -68,12 +68,20 @@ export function formatDateTime(value: string | null | undefined) {
     return value
   }
 
-  return new Intl.DateTimeFormat("zh-CN", {
+  return new Intl.DateTimeFormat(getLocale(), {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   }).format(date)
+}
+
+function getLocale(): string | undefined {
+  if (typeof window !== "undefined") {
+    return window.localStorage.getItem("portwise-locale") ?? undefined
+  }
+
+  return undefined
 }
 
 export function today() {
