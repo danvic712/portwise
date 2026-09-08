@@ -1,6 +1,8 @@
-using Portwise.Application.Dtos;
+using Portwise.Application.Portfolio.Dtos;
+using Portwise.Application.Recommendations.Dtos;
+using Portwise.Application.Stocks.Dtos;
 
-namespace Portwise.Application.Contracts;
+namespace Portwise.Application.Recommendations.Contracts;
 
 public interface IPortfolioAllocationAppService
 {

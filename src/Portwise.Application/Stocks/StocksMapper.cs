@@ -1,14 +1,20 @@
 using Portwise.Application.Dtos;
+using Portwise.Application.Stocks.Dtos;
 using Portwise.Domain.Models;
 using Riok.Mapperly.Abstractions;
 
-namespace Portwise.Application.Mapping;
+namespace Portwise.Application.Stocks;
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public static partial class ApplicationMapper
+public static partial class StocksMapper
 {
-    public static partial StockHoldingSnapshot ToStockHoldingSnapshot(
-        PortfolioPosition position);
+    public static StockHoldingSnapshot ToStockHoldingSnapshot(
+        PortfolioPosition position)
+        => new(
+            position.HeldShares,
+            position.CoreShares,
+            position.TargetShares,
+            position.AverageCostPerShare);
 
     [MapProperty(nameof(Security.Id), nameof(StockWatchlistItem.SecurityId))]
     public static partial StockWatchlistItem ToStockWatchlistItem(
@@ -32,17 +38,4 @@ public static partial class ApplicationMapper
         FinancialSnapshot snapshot,
         string securityCode,
         string exchangeCode);
-
-    [MapProperty(nameof(ModelParameterSet.Id), nameof(StockModelParameterSet.ModelParameterSetId))]
-    public static partial StockModelParameterSet ToStockModelParameterSet(
-        ModelParameterSet parameters,
-        string securityCode,
-        string exchangeCode);
-
-    [MapProperty(nameof(CashLedgerEntry.Id), nameof(CashLedgerEntryResult.CashLedgerEntryId))]
-    public static partial CashLedgerEntryResult ToCashLedgerEntryResult(
-        CashLedgerEntry entry,
-        string? securityCode,
-        string? exchangeCode);
-
 }

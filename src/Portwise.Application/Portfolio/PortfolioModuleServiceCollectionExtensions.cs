@@ -1,4 +1,4 @@
-using Portwise.Application.Contracts;
+using Portwise.Application.Portfolio.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Portwise.Application.Portfolio;

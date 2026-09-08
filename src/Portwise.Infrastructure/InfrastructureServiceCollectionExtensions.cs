@@ -1,4 +1,5 @@
 using Portwise.Application.Contracts;
+using Portwise.Application.Stocks.Contracts;
 using Portwise.Domain.Contracts;
 using Portwise.Infrastructure.Contracts;
 using Microsoft.EntityFrameworkCore;

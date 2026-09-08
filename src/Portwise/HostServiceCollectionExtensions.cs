@@ -2,6 +2,7 @@ using System.Globalization;
 using Asp.Versioning;
 using Portwise.Application;
 using Portwise.Application.Contracts;
+using Portwise.Application.Stocks.Contracts;
 using Portwise.Background;
 using Portwise.Configuration;
 using Portwise.Contracts;

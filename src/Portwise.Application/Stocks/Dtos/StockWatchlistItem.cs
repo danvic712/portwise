@@ -1,4 +1,6 @@
-namespace Portwise.Application.Dtos;
+using Portwise.Application.Dtos;
+
+namespace Portwise.Application.Stocks.Dtos;
 
 public sealed record StockWatchlistItem(
     string SecurityCode,

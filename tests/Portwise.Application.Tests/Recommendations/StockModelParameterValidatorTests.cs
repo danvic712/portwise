@@ -1,5 +1,5 @@
-using Portwise.Application.Dtos;
-using Portwise.Application.Validators;
+using Portwise.Application.Recommendations.Dtos;
+using Portwise.Application.Recommendations.Validators;
 using Xunit;
 
 namespace Portwise.Application.Tests;

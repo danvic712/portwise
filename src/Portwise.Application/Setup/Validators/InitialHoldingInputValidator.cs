@@ -1,7 +1,7 @@
-using Portwise.Application.Dtos;
+using Portwise.Application.Setup.Dtos;
 using FluentValidation;
 
-namespace Portwise.Application.Validators;
+namespace Portwise.Application.Setup.Validators;
 
 public sealed class InitialHoldingInputValidator : AbstractValidator<InitialHoldingInput>
 {

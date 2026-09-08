@@ -1,5 +1,6 @@
 using Portwise.Application.Contracts;
-using Portwise.Application.Dtos;
+using Portwise.Application.Setup.Contracts;
+using Portwise.Application.Setup.Dtos;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 

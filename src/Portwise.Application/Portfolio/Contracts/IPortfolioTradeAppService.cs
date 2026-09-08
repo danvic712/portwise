@@ -1,6 +1,6 @@
-using Portwise.Application.Dtos;
+using Portwise.Application.Portfolio.Dtos;
 
-namespace Portwise.Application.Contracts;
+namespace Portwise.Application.Portfolio.Contracts;
 
 public interface IPortfolioTradeAppService
 {

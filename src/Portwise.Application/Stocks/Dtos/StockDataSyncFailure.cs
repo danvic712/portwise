@@ -1,4 +1,4 @@
-namespace Portwise.Application.Dtos;
+namespace Portwise.Application.Stocks.Dtos;
 
 public sealed record StockDataSyncFailure(
     string SecurityCode,

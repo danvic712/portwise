@@ -1,5 +1,6 @@
 using Portwise.Application.Contracts;
-using Portwise.Application.Dtos;
+using Portwise.Application.Stocks.Contracts;
+using Portwise.Application.Stocks.Dtos;
 using Portwise.Domain.Securities;
 
 namespace Portwise.Application.Stocks;

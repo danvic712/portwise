@@ -1,7 +1,8 @@
-using Portwise.Application.Dtos;
+using Portwise.Application.Setup.Dtos;
+using Portwise.Application.Validators;
 using FluentValidation;
 
-namespace Portwise.Application.Validators;
+namespace Portwise.Application.Setup.Validators;
 
 public sealed class SetupStockRequestValidator : AbstractValidator<SetupStockRequest>
 {

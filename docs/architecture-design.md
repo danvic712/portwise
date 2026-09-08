@@ -10,7 +10,7 @@ Portwise 是一个面向个人 A 股长期投资者的策略研究与组合记�
 
 ```text
 Portwise Host
-├── Application.Shared (Contracts / Dtos / Validators / Exceptions / Mapping)
+├── Application.Shared (Contracts / Dtos / Validators / Exceptions)
 ├── Application.Setup module
 ├── Application.Stocks module
 ├── Application.Portfolio module
@@ -95,8 +95,6 @@ src/
 │   │   └── ValidationErrorFormatter.cs
 │   ├── Exceptions/                     # Application 统一异常模型
 │   ├── Localization/                   # 错误目录与本地化实现
-│   ├── Mapping/                        # Mapperly 编译期对象映射
-│   │   └── ApplicationMapper.cs
 │   ├── ApplicationServiceCollectionExtensions.cs
 │   ├── Setup/                          # Setup module：contract、DTO、validation、实现
 │   │   ├── Contracts/ISetupAppService.cs
@@ -113,17 +111,20 @@ src/
 │   │   ├── StockDividendEventAppService.cs
 │   │   ├── StockFinancialSnapshotAppService.cs
 │   │   ├── StockDailyDataSyncAppService.cs
+│   │   ├── StocksMapper.cs
 │   │   └── DailySyncSchedule.cs
 │   ├── Portfolio/                      # Portfolio module：现金流水、交易和持仓变更
 │   │   ├── Contracts/{IBudgetAppService,IPortfolioTradeAppService}.cs
 │   │   ├── Dtos/{BudgetSummary,CashLedgerEntryResult,PortfolioTradeResult,RecordCashLedgerEntryRequest,RecordPortfolioTradeRequest}.cs
 │   │   ├── Validators/{RecordCashLedgerEntryRequest,RecordPortfolioTradeRequest}Validator.cs
+│   │   ├── PortfolioMapper.cs
 │   │   ├── BudgetAppService.cs
 │   │   └── PortfolioTradeAppService.cs
 │   └── Recommendations/                # Recommendation module：模型、单股分析和组合建议
 │       ├── Contracts/                   # 推荐与模型参数 Interface
 │       ├── Dtos/                        # 分析、建议、快照和模型参数 DTO
 │       ├── Validators/                  # 分析和模型参数请求验证器
+│       ├── RecommendationsMapper.cs
 │       ├── StockModelParameterAppService.cs
 │       ├── StockAnalysisAppService.cs
 │       ├── StockRecommendationAppService.cs
@@ -192,7 +193,7 @@ src/
 │       └── stock-display.ts           # 股票身份与名称展示
 ```
 
-Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfolio` 和 `Recommendations` 四个 module。每个 module 共置自己拥有的 Interface、DTO、Validator、实现和测试；因此修改一个用例时，主要知识和验证都集中在同一目录。`Contracts`、`Dtos` 和 `Validators` 根目录只保留真正跨 module 的错误、本地化、诊断、共享持仓 DTO 和通用 A 股规则，避免技术桶重新变成所有业务的汇聚点。目录归并不等于合并 HTTP 契约：价格、股息和财务同步仍然保持独立的 Interface 与 AppService，因为它们具有不同的数据校验、幂等键和结果类型；资料、行情、股息和财务四类事实的共同摄取、Security 解析、FTShare 调用、幂等写入和逐类失败策略由 `IStockFactSyncAppService` / `StockFactSyncAppService` 这个深模块承载，三个 HTTP AppService 只是验证后转发。单股分析、组合分配和建议快照也保持独立的用例边界。前端按相同的业务边界拆分 feature，但只通过版本化 HTTP API 访问后端，不直接引用 Application 或 Infrastructure。
+Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfolio` 和 `Recommendations` 四个 module。每个 module 共置自己拥有的 Interface、DTO、Validator、实现和测试；因此修改一个用例时，主要知识和验证都集中在同一目录。module 内的 public type 使用对应的 `Portwise.Application.<Module>.(Contracts|Dtos|Validators)` namespace，`ModuleNamespaceArchitectureTests` 会阻止新的类型泄漏回技术桶。`Contracts`、`Dtos` 和 `Validators` 根目录只保留真正跨 module 的错误、本地化、诊断、共享持仓 DTO 和通用 A 股规则，避免技术桶重新变成所有业务的汇聚点。目录归并不等于合并 HTTP 契约：价格、股息和财务同步仍然保持独立的 Interface 与 AppService，因为它们具有不同的数据校验、幂等键和结果类型；资料、行情、股息和财务四类事实的共同摄取、Security 解析、FTShare 调用、幂等写入和逐类失败策略由 `IStockFactSyncAppService` / `StockFactSyncAppService` 这个深模块承载，三个 HTTP AppService 只是验证后转发。单股分析、组合分配和建议快照也保持独立的用例边界。前端按相同的业务边界拆分 feature，但只通过版本化 HTTP API 访问后端，不直接引用 Application 或 Infrastructure。
 
 前端公共页面框架由 `SiteHeader`、`SiteFooter`、`PageFrame`、`PageTitle`、`SectionHeading` 和 `site-navigation` 组成，禁止使用 `app-shell` 作为公共组件名称；所有页面通过 `PageFrame` 复用框架，页面专属状态与布局留在对应 feature。`src/lib/navigation.ts` 是页面 shell 的导航 module：它集中路由识别、Setup gate 所需的路径判断、浏览器 history/popstate Adapter、查询参数更新和组合股票选择的 session 持久化；`App.tsx` 只负责把 Setup 状态映射为页面，feature 通过 `onNavigate`/`onReplaceQuery` seam 操作导航，不直接写 `window.history` 或 `sessionStorage`。查询参数优先于旧 session 选择，避免从今日决策跳转到组合页面时恢复错误股票。操作建议的代码归类、买卖方向、展示状态、价格区间和未知代码降级统一由 `src/lib/recommendation-display.ts` 提供；页面和组件只消费归一化后的展示结果，不自行解析 `recommendation_code` 或 `price_zone_code`。`index.css` 只承载 token、reset 和跨页面共享原子样式；今日决策页的布局、等待态、就绪态、骨架屏、装饰和响应式样式统一位于 `features/recommendations/recommendations.css`。交互控件优先使用 `src/components/ui` 中的 shadcn/ui 原语，feature 样式只负责业务变体与布局。
 
@@ -204,7 +205,7 @@ Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfo
 
 各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddPortwiseApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddPortwiseInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddPortwiseHost`。Application 根扩展只负责 FluentValidation、跨 module 的本地化/诊断和 `TimeProvider`，再调用 `AddPortwiseSetupModule`、`AddPortwiseStocksModule`、`AddPortwisePortfolioModule`、`AddPortwiseRecommendationsModule`；每个 module 自己拥有实现到 Interface 的注册清单，新增用例不会把具体类型重新塞回技术桶。Host 另提供 `HostServiceCollectionExtensions.AddPortwise(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库 migration 统一放在 `WebApplicationExtensions`；手动、每日定时和 Setup 后台同步都通过 `StockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器统一串行化执行、run ID、诊断上下文和取消语义，避免不同入口同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
 
-公共基础能力也遵循相同的组合边界：Swagger/Serilog 注册在 `HostServiceCollectionExtensions`，Swagger UI、Serilog HTTP 请求日志中间件和其他 `WebApplication` 行为在 `WebApplicationExtensions`；Application 的 Mapperly 映射定义集中在 `Mapping/ApplicationMapper.cs`，由构建期生成实际映射代码。
+公共基础能力也遵循相同的组合边界：Swagger/Serilog 注册在 `HostServiceCollectionExtensions`，Swagger UI、Serilog HTTP 请求日志中间件和其他 `WebApplication` 行为在 `WebApplicationExtensions`；Mapperly 映射定义由 `StocksMapper`、`PortfolioMapper` 和 `RecommendationsMapper` 分别归属各自 module，由构建期生成实际映射代码。
 
 约束：
 
@@ -234,7 +235,7 @@ Application 的 DTO 按所属 module 放在 `Application/{Setup,Stocks,Portfolio
 ### 5.3 公共对象映射
 
 - Riok.Mapperly 是本项目的默认对象映射框架。它在编译期生成映射代码，减少运行时反射和隐式约定，适合当前的单镜像部署。
-- 映射声明放在 `Application/Mapping/`，使用 partial mapper 和显式的 MapProperty/额外映射参数表达名称差异。
+- 映射声明放在拥有目标 DTO 的 module 根目录（例如 `Application/Stocks/StocksMapper.cs`），使用 partial mapper 和显式的 MapProperty/额外映射参数表达名称差异；不再设置跨 module 的 `ApplicationMapper` 汇聚点。
 - Application 返回 DTO，不返回 Domain Model；AppService 负责领域编排，Mapper 只负责数据形状转换，不包含查询、验证、事务或业务规则。
 - 需要上下文才能完成的输出映射可以使用额外映射参数；仍然无法由通用 Mapper 表达的派生计算结果，应保留在 AppService/Domain，不要强行塞入映射器。
 - 新增 DTO 或 Model 字段时，必须检查 Mapperly 的编译期诊断并补充对应映射；不得通过关闭警告掩盖未映射字段。
@@ -644,3 +645,4 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | 01 HTTP contract publication module | 已完成：集中运行时与 build-time OpenAPI 注册，前端请求消费生成路径约束，增加 wire numeric 运行时归一化与 contract drift 检查；CI/Docker 先生成并校验 contract，再构建前端 | `dotnet test`、`pnpm api:check`、`pnpm build`；提交 `refactor: close HTTP contract publication loop` |
 | 02 Recommendation 事实装配 module | 已完成：`StockAnalysisAppService` 增加关注列表批量事实读取，单股与组合入口共享一次计算时间和分析结果；组合分配拒绝混合计算时间，快照复用组合结果时间 | `dotnet test`（82 Application tests）；提交 `refactor: batch recommendation fact assembly` |
 | 03 Frontend application shell module | 已完成：路由选择、Setup gate、浏览器 session 读取和 feature 装载集中到 `application-shell.tsx`；feature 页面按路由懒加载；navigation 纯策略增加 Node 原生测试与 `pnpm test` 脚本 | `pnpm test`（4 tests）、`pnpm build`、`pnpm lint`；提交 `refactor: deepen frontend application shell` |
+| 04 Application module ownership executable | 已完成：module-specific Contracts/DTOs/Validators 使用 module namespace，Mapperly 映射拆分为 `StocksMapper`、`PortfolioMapper`、`RecommendationsMapper`；新增架构测试防止类型泄漏回根技术桶 | `dotnet test`（84 Application tests）、`dotnet build Portwise.slnx`；提交 `refactor: enforce application module ownership` |

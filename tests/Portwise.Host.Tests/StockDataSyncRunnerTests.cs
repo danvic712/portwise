@@ -1,6 +1,7 @@
 using Portwise.Application.Contracts;
 using Portwise.Application.Diagnostics;
-using Portwise.Application.Dtos;
+using Portwise.Application.Stocks.Contracts;
+using Portwise.Application.Stocks.Dtos;
 using Portwise.Background;
 using Portwise.Contracts;
 using Microsoft.Extensions.DependencyInjection;

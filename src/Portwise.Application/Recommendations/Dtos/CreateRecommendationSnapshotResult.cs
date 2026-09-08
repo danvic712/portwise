@@ -1,4 +1,4 @@
-namespace Portwise.Application.Dtos;
+namespace Portwise.Application.Recommendations.Dtos;
 
 public sealed record CreateRecommendationSnapshotResult(
     Guid ModelRunId,

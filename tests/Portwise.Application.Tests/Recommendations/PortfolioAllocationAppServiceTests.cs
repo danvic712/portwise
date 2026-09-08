@@ -1,5 +1,7 @@
-using Portwise.Application.Dtos;
+using Portwise.Application.Portfolio.Dtos;
 using Portwise.Application.Recommendations;
+using Portwise.Application.Recommendations.Dtos;
+using Portwise.Application.Stocks.Dtos;
 using Portwise.Domain.Contracts;
 using Portwise.Domain.Models;
 using Moq;

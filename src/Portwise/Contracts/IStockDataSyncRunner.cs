@@ -1,4 +1,4 @@
-using Portwise.Application.Dtos;
+using Portwise.Application.Stocks.Dtos;
 
 namespace Portwise.Contracts;
 

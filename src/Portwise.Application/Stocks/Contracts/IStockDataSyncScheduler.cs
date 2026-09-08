@@ -1,4 +1,4 @@
-namespace Portwise.Application.Contracts;
+namespace Portwise.Application.Stocks.Contracts;
 
 public interface IStockDataSyncScheduler
 {

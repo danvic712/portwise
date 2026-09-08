@@ -1,6 +1,6 @@
-using Portwise.Application.Dtos;
+using Portwise.Application.Stocks.Dtos;
 
-namespace Portwise.Application.Contracts;
+namespace Portwise.Application.Stocks.Contracts;
 
 public interface IStockPriceObservationAppService
 {

@@ -1,4 +1,4 @@
-using Portwise.Application.Dtos;
+using Portwise.Application.Stocks.Dtos;
 using Portwise.Background;
 using Portwise.Configuration;
 using Portwise.Contracts;

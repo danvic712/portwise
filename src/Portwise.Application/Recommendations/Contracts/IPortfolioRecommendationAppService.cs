@@ -1,6 +1,6 @@
-using Portwise.Application.Dtos;
+using Portwise.Application.Recommendations.Dtos;
 
-namespace Portwise.Application.Contracts;
+namespace Portwise.Application.Recommendations.Contracts;
 
 public interface IPortfolioRecommendationAppService
 {

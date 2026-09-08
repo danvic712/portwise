@@ -1,6 +1,6 @@
 using Portwise.Application.Contracts;
-using Portwise.Application.Dtos;
-using Portwise.Application.Mapping;
+using Portwise.Application.Stocks.Contracts;
+using Portwise.Application.Stocks.Dtos;
 using Portwise.Domain.Contracts;
 using Portwise.Domain.Models;
 
@@ -25,10 +25,10 @@ public sealed class StockWatchlistAppService(IUow uow) : IStockWatchlistAppServi
         return securities
             .Select(security =>
             {
-                var item = ApplicationMapper.ToStockWatchlistItem(
+                var item = StocksMapper.ToStockWatchlistItem(
                     security,
                     holdingsBySecurityId.TryGetValue(security.Id, out var position)
-                        ? ApplicationMapper.ToStockHoldingSnapshot(position)
+                        ? StocksMapper.ToStockHoldingSnapshot(position)
                         : null);
                 return item with
                 {

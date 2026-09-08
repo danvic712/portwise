@@ -1,8 +1,9 @@
-using Portwise.Application.Dtos;
+using Portwise.Application.Portfolio.Dtos;
+using Portwise.Application.Validators;
 using Portwise.Domain.Portfolio;
 using FluentValidation;
 
-namespace Portwise.Application.Validators;
+namespace Portwise.Application.Portfolio.Validators;
 
 public sealed class RecordPortfolioTradeRequestValidator
     : AbstractValidator<RecordPortfolioTradeRequest>

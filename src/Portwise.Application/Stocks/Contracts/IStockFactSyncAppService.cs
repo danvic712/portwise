@@ -1,7 +1,7 @@
-using Portwise.Application.Dtos;
+using Portwise.Application.Stocks.Dtos;
 using Portwise.Domain.Securities;
 
-namespace Portwise.Application.Contracts;
+namespace Portwise.Application.Stocks.Contracts;
 
 public interface IStockFactSyncAppService
 {

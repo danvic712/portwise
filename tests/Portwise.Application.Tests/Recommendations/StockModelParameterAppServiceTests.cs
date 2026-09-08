@@ -1,9 +1,10 @@
 using System.Linq.Expressions;
 using Portwise.Application.Contracts;
-using Portwise.Application.Dtos;
 using Portwise.Application.Exceptions;
 using Portwise.Application.Recommendations;
-using Portwise.Application.Validators;
+using Portwise.Application.Recommendations.Contracts;
+using Portwise.Application.Recommendations.Dtos;
+using Portwise.Application.Recommendations.Validators;
 using Portwise.Application.Stocks;
 using Portwise.Domain.Contracts;
 using Portwise.Domain.Models;

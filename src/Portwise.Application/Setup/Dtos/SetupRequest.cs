@@ -1,4 +1,4 @@
-namespace Portwise.Application.Dtos;
+namespace Portwise.Application.Setup.Dtos;
 
 public sealed record SetupRequest(
     string PortfolioName,

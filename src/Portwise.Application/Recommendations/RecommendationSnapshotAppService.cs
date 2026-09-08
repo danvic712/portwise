@@ -1,5 +1,6 @@
 using Portwise.Application.Contracts;
-using Portwise.Application.Dtos;
+using Portwise.Application.Recommendations.Contracts;
+using Portwise.Application.Recommendations.Dtos;
 using Portwise.Application.Exceptions;
 using Portwise.Domain.Contracts;
 using Portwise.Domain.Models;

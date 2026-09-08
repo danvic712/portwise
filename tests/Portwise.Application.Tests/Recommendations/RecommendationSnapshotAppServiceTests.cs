@@ -1,7 +1,8 @@
 using Portwise.Application.Contracts;
-using Portwise.Application.Dtos;
 using Portwise.Application.Exceptions;
 using Portwise.Application.Recommendations;
+using Portwise.Application.Recommendations.Contracts;
+using Portwise.Application.Recommendations.Dtos;
 using Portwise.Domain.Contracts;
 using Portwise.Domain.Models;
 using Moq;

@@ -1,9 +1,10 @@
 using System.Linq.Expressions;
 using Portwise.Application.Portfolio;
 using Portwise.Application.Contracts;
-using Portwise.Application.Dtos;
 using Portwise.Application.Exceptions;
-using Portwise.Application.Validators;
+using Portwise.Application.Portfolio.Contracts;
+using Portwise.Application.Portfolio.Dtos;
+using Portwise.Application.Portfolio.Validators;
 using Portwise.Domain.Contracts;
 using Portwise.Domain.Exceptions;
 using Portwise.Domain.Models;

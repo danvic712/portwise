@@ -1,6 +1,6 @@
-using Portwise.Application.Dtos;
+using Portwise.Application.Setup.Dtos;
 
-namespace Portwise.Application.Contracts;
+namespace Portwise.Application.Setup.Contracts;
 
 public interface ISetupAppService
 {

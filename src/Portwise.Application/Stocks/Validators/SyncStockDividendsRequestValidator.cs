@@ -1,7 +1,8 @@
-using Portwise.Application.Dtos;
+using Portwise.Application.Stocks.Dtos;
+using Portwise.Application.Validators;
 using FluentValidation;
 
-namespace Portwise.Application.Validators;
+namespace Portwise.Application.Stocks.Validators;
 
 public sealed class SyncStockDividendsRequestValidator
     : AbstractValidator<SyncStockDividendsRequest>

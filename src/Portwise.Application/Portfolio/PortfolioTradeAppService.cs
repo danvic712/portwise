@@ -1,5 +1,6 @@
 using Portwise.Application.Contracts;
-using Portwise.Application.Dtos;
+using Portwise.Application.Portfolio.Contracts;
+using Portwise.Application.Portfolio.Dtos;
 using Portwise.Application.Exceptions;
 using Portwise.Application.Validators;
 using Portwise.Domain.Contracts;

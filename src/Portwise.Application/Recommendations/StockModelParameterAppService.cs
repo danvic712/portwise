@@ -1,7 +1,7 @@
 using Portwise.Application.Contracts;
-using Portwise.Application.Dtos;
+using Portwise.Application.Recommendations.Contracts;
+using Portwise.Application.Recommendations.Dtos;
 using Portwise.Application.Exceptions;
-using Portwise.Application.Mapping;
 using Portwise.Application.Validators;
 using Portwise.Domain.Contracts;
 using Portwise.Domain.Models;
@@ -52,7 +52,7 @@ public sealed class StockModelParameterAppService(
 
         return parameters is null
             ? null
-            : ApplicationMapper.ToStockModelParameterSet(
+            : RecommendationsMapper.ToStockModelParameterSet(
                 parameters,
                 reference.SecurityCode,
                 reference.ExchangeCode);
@@ -106,7 +106,7 @@ public sealed class StockModelParameterAppService(
         await parameterRepository.AddAsync(parameters, cancellationToken);
         await uow.CommitAsync(cancellationToken);
 
-        return ApplicationMapper.ToStockModelParameterSet(
+        return RecommendationsMapper.ToStockModelParameterSet(
             parameters,
             reference.SecurityCode,
             reference.ExchangeCode);

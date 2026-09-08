@@ -1,6 +1,7 @@
 using Portwise.Application.Contracts;
 using Portwise.Application.Diagnostics;
 using Portwise.Application.Exceptions;
+using Portwise.Application.Stocks.Contracts;
 using Portwise.Contracts;
 
 namespace Portwise.Background;

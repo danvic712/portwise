@@ -1,4 +1,4 @@
-using Portwise.Application.Contracts;
+using Portwise.Application.Stocks.Contracts;
 
 namespace Portwise.Infrastructure.Exceptions;
 

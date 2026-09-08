@@ -1,8 +1,9 @@
 using System.Linq.Expressions;
-using Portwise.Application.Dtos;
+using Portwise.Application.Recommendations.Dtos;
+using Portwise.Application.Validators;
 using FluentValidation;
 
-namespace Portwise.Application.Validators;
+namespace Portwise.Application.Recommendations.Validators;
 
 public sealed class SaveStockModelParametersRequestValidator
     : AbstractValidator<SaveStockModelParametersRequest>

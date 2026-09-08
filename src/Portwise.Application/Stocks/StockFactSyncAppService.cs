@@ -1,7 +1,7 @@
 using Portwise.Application.Contracts;
-using Portwise.Application.Dtos;
+using Portwise.Application.Stocks.Contracts;
+using Portwise.Application.Stocks.Dtos;
 using Portwise.Application.Exceptions;
-using Portwise.Application.Mapping;
 using Portwise.Domain.Contracts;
 using Portwise.Domain.Models;
 using Portwise.Domain.Securities;
@@ -211,7 +211,7 @@ public sealed class StockFactSyncAppService(
                 cancellationToken);
         if (existingObservation is not null)
         {
-            return ApplicationMapper.ToStockPriceObservationResult(
+            return StocksMapper.ToStockPriceObservationResult(
                 existingObservation,
                 reference.SecurityCode,
                 reference.ExchangeCode);
@@ -240,7 +240,7 @@ public sealed class StockFactSyncAppService(
         await uow.Get<PriceObservation>().AddAsync(observation, cancellationToken);
         await uow.CommitAsync(cancellationToken);
 
-        return ApplicationMapper.ToStockPriceObservationResult(
+            return StocksMapper.ToStockPriceObservationResult(
             observation,
             reference.SecurityCode,
             reference.ExchangeCode);
@@ -299,7 +299,7 @@ public sealed class StockFactSyncAppService(
                     data.SourceRecordId,
                     out var existingEvent))
             {
-                results.Add(ApplicationMapper.ToStockDividendEventResult(
+                results.Add(StocksMapper.ToStockDividendEventResult(
                     existingEvent,
                     reference.SecurityCode,
                     reference.ExchangeCode));
@@ -333,7 +333,7 @@ public sealed class StockFactSyncAppService(
             }
 
             newEvents.Add(dividendEvent);
-            results.Add(ApplicationMapper.ToStockDividendEventResult(
+                results.Add(StocksMapper.ToStockDividendEventResult(
                 dividendEvent,
                 reference.SecurityCode,
                 reference.ExchangeCode));
@@ -403,7 +403,7 @@ public sealed class StockFactSyncAppService(
 
             if (existingByDate.TryGetValue(data.DataAsOfDate, out var existingSnapshot))
             {
-                results.Add(ApplicationMapper.ToStockFinancialSnapshotResult(
+                results.Add(StocksMapper.ToStockFinancialSnapshotResult(
                     existingSnapshot,
                     reference.SecurityCode,
                     reference.ExchangeCode));
@@ -436,7 +436,7 @@ public sealed class StockFactSyncAppService(
             }
 
             newSnapshots.Add(snapshot);
-            results.Add(ApplicationMapper.ToStockFinancialSnapshotResult(
+                results.Add(StocksMapper.ToStockFinancialSnapshotResult(
                 snapshot,
                 reference.SecurityCode,
                 reference.ExchangeCode));

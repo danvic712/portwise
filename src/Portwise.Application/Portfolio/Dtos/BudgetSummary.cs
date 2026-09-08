@@ -1,4 +1,4 @@
-namespace Portwise.Application.Dtos;
+namespace Portwise.Application.Portfolio.Dtos;
 
 public sealed record BudgetSummary(
     Guid PortfolioId,
