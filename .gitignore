@@ -141,6 +141,9 @@ dist
 *.db-shm
 *.db-wal
 
+# JetBrains IDE metadata
+.idea/
+
 # Frontend build output is generated into the ASP.NET Core host at build time
 src/Portwise/wwwroot/
 
