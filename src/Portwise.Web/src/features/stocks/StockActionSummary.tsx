@@ -1,15 +1,15 @@
 import { ArrowDownRight, ArrowUpRight, ShieldCheck } from "lucide-react"
 
 import { interpolate, type OverviewCopy } from "@/lib/i18n"
-import { currentPriceZoneLabel } from "@/lib/price-zones"
-import { recommendationHeadline, recommendationSignalTitle, recommendationTone } from "@/lib/stock-display"
+import { currentPriceZoneLabel, recommendationPresentation } from "@/lib/recommendation-display"
 import type { StockAnalysisResult } from "@/lib/api-types"
 
 type StockActionLabels = Pick<OverviewCopy["decision"], "actionLabel" | "headlines" | "signalTitles" | "priceZones" | "inZone">
 
 export function StockActionSummary({ analysis, labels }: { analysis: StockAnalysisResult; labels: StockActionLabels }) {
-  const tone = recommendationTone(analysis.recommendationCode)
-  const headline = recommendationHeadline(analysis.recommendationCode, labels.headlines)
+  const presentation = recommendationPresentation(analysis.recommendationCode, { headline: labels.headlines, signalTitle: labels.signalTitles })
+  const tone = presentation.tone
+  const headline = presentation.headline
   const zone = currentPriceZoneLabel(analysis, labels.priceZones)
   const Icon = tone === "reduce" ? ArrowDownRight : tone === "hold" ? ShieldCheck : ArrowUpRight
 
@@ -19,7 +19,7 @@ export function StockActionSummary({ analysis, labels }: { analysis: StockAnalys
       <div className="stock-action-summary-copy">
         <span>{labels.actionLabel}</span>
         <h3>{headline.lead}<em>{headline.accent}</em></h3>
-        <p>{recommendationSignalTitle(analysis.recommendationCode, labels.signalTitles)}</p>
+        <p>{presentation.signalTitle}</p>
       </div>
       <div className="stock-action-summary-zone">
         <span>{interpolate(labels.inZone, { zone })}</span>

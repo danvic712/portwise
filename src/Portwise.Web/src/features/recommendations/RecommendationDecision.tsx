@@ -3,8 +3,8 @@ import { ArrowDownRight, ArrowRight, Check, Clock3, Coins, ShieldCheck, Target, 
 import { PriceLadder, PriceZoneBoard } from "@/components/price-ladder"
 import { Button } from "@/components/ui/button"
 import { interpolate, useLocale } from "@/lib/i18n"
-import { currentPriceZoneLabel } from "@/lib/price-zones"
-import { analysisDisplayName, recommendationHeadline, recommendationSignalTitle } from "@/lib/stock-display"
+import { currentPriceZoneLabel, recommendationPresentation } from "@/lib/recommendation-display"
+import { analysisDisplayName } from "@/lib/stock-display"
 import { formatMoney, formatNumber, formatPercent } from "@/lib/utils"
 import type { StockRecommendationResult } from "@/lib/api-types"
 
@@ -13,13 +13,13 @@ export function RecommendationDecision({ recommendation, onRecord }: { recommend
   const copy = messages.dividendStrategy.ui.overview
   const decisionCopy = copy.decision
   const { analysis } = recommendation
-  const isSell = analysis.recommendationCode.toLowerCase().includes("trim")
-  const actionShares = isSell ? recommendation.suggestedSellShares : recommendation.suggestedBuyShares
-  const headline = recommendationHeadline(analysis.recommendationCode, decisionCopy.headlines)
+  const presentation = recommendationPresentation(analysis.recommendationCode, { headline: decisionCopy.headlines, signalTitle: decisionCopy.signalTitles })
+  const actionShares = presentation.isSell ? recommendation.suggestedSellShares : recommendation.suggestedBuyShares
+  const headline = presentation.headline
   const currentZone = currentPriceZoneLabel(analysis, { strong_buy: decisionCopy.priceZones.strongBuy, accumulate: decisionCopy.priceZones.accumulate, hold: decisionCopy.priceZones.hold, partial_trim: decisionCopy.priceZones.partialTrim, aggressive_trim: decisionCopy.priceZones.aggressiveTrim })
   const securityName = analysisDisplayName(analysis)
   const actionLabel = actionShares > 0
-    ? `${isSell ? decisionCopy.sell : decisionCopy.buy} ${formatNumber(actionShares, 0)} ${copy.ready.sharesUnit}`
+    ? `${presentation.isSell ? decisionCopy.sell : decisionCopy.buy} ${formatNumber(actionShares, 0)} ${copy.ready.sharesUnit}`
     : decisionCopy.hold
 
   return (
@@ -38,15 +38,15 @@ export function RecommendationDecision({ recommendation, onRecord }: { recommend
               <div className="d-action-icon"><ArrowDownRight size={17} /></div>
               <div><span>{decisionCopy.actionLabel}</span><strong>{actionLabel}</strong><small>{actionShares > 0 ? interpolate(decisionCopy.amountAndZone, { amount: formatMoney(recommendation.suggestedTradeAmount), zone: currentZone }) : decisionCopy.waitingConfirmation}</small></div>
             </div>
-            <Button className="d-primary-button" onClick={() => onRecord(actionShares > 0 ? (isSell ? "sell" : "buy") : "buy")}>
-              {actionShares > 0 ? (isSell ? decisionCopy.recordSell : decisionCopy.recordBuy) : decisionCopy.recordHold}<ArrowRight data-icon="inline-end" />
+            <Button className="d-primary-button" onClick={() => onRecord(actionShares > 0 ? (presentation.isSell ? "sell" : "buy") : "buy")}>
+              {actionShares > 0 ? (presentation.isSell ? decisionCopy.recordSell : decisionCopy.recordBuy) : decisionCopy.recordHold}<ArrowRight data-icon="inline-end" />
             </Button>
           </div>
         </div>
 
         <section className="surface d-signal-card">
           <div className="d-card-topline"><span>02 / 03 · {decisionCopy.whyTitle}</span><Target size={16} /></div>
-          <h2>{recommendationSignalTitle(analysis.recommendationCode, decisionCopy.signalTitles)}</h2>
+          <h2>{presentation.signalTitle}</h2>
           <p className="d-card-description">{interpolate(decisionCopy.lastTwelveMonthsFormula, { date: analysis.dataAsOfDate ?? decisionCopy.noDataDate })}</p>
           <div className="d-readout-grid">
             <div><span>{decisionCopy.latestPrice}</span><strong>{formatMoney(analysis.closePrice)}</strong><em>{analysis.priceZoneConfirmed ? decisionCopy.zoneConfirmed : decisionCopy.zonePending}</em></div>

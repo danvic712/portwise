@@ -1,7 +1,8 @@
 import { Check, ChevronRight } from "lucide-react"
 
 import { cn, stockKey } from "@/lib/utils"
-import { displayStockName, hasAnalysisData, recommendationLabel, recommendationTone } from "@/lib/stock-display"
+import { displayStockName } from "@/lib/stock-display"
+import { hasAnalysisData, recommendationPresentation } from "@/lib/recommendation-display"
 import type { StockRecommendationResult, StockWatchlistItem } from "@/lib/api-types"
 import { Button } from "@/components/ui/button"
 
@@ -24,10 +25,12 @@ export function StockSelector({ stocks, selectedKey, onSelect, recommendations =
       {stocks.map((stock) => {
         const selected = stockKey(stock) === selectedKey
         const recommendation = recommendations.find((item) => stockKey(item.analysis) === stockKey(stock))
-        const statusCode = recommendation && hasAnalysisData(recommendation.analysis) ? recommendation.analysis.recommendationCode : null
-        const isReady = Boolean(statusCode)
-        const statusLabel = statusCode ? recommendationLabel(statusCode, labels.signals) : labels.pending
-        const statusTone = recommendationTone(statusCode)
+        const presentation = recommendation && hasAnalysisData(recommendation.analysis)
+          ? recommendationPresentation(recommendation.analysis.recommendationCode, { label: labels.signals })
+          : null
+        const isReady = presentation !== null
+        const statusLabel = presentation?.label ?? labels.pending
+        const statusTone = presentation?.tone ?? "hold"
         const stockName = displayStockName(stock)
         const initials = stockName.slice(0, 2)
         return (

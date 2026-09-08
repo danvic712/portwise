@@ -9,8 +9,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { StockSelector } from "@/components/stock-selector"
 import { getApiErrorMessage } from "@/lib/api-errors"
 import { interpolate, useLocale, type OverviewCopy } from "@/lib/i18n"
-import { currentPriceZoneLabel } from "@/lib/price-zones"
-import { analysisDisplayName, displayStockName, hasAnalysisData, recommendationLabel, recommendationTone } from "@/lib/stock-display"
+import { currentPriceZoneLabel, hasAnalysisData, recommendationPresentation } from "@/lib/recommendation-display"
+import { analysisDisplayName, displayStockName } from "@/lib/stock-display"
 import { formatDateTime, formatMoney, formatNumber, stockKey } from "@/lib/utils"
 import type { BudgetSummary, PortfolioRecommendationResult, StockRecommendationResult, StockWatchlistItem } from "@/lib/api-types"
 import { createRecommendationSnapshot, getBudgetSummary, getRecommendations, getWatchlist } from "@/features/recommendations/recommendations.api"
@@ -155,10 +155,9 @@ function DailyNotebookHeader({ dataState, labels, lastUpdated, actions }: { data
 
 function ReadyGuidance({ recommendation, labels }: { recommendation: StockRecommendationResult; labels: OverviewCopy }) {
   const { analysis } = recommendation
-  const normalizedCode = analysis.recommendationCode.toLowerCase()
-  const isSell = normalizedCode.includes("trim")
-  const actionShares = isSell ? recommendation.suggestedSellShares : recommendation.suggestedBuyShares
-  const kind = normalizedCode.includes("trim") ? "trim" : normalizedCode === "strong_buy" || normalizedCode === "accumulate" ? "buy" : normalizedCode === "re_evaluate" ? "review" : "hold"
+  const presentation = recommendationPresentation(analysis.recommendationCode, { label: labels.stockSelector.signals })
+  const actionShares = presentation.isSell ? recommendation.suggestedSellShares : recommendation.suggestedBuyShares
+  const kind = presentation.kind
   const guidance = {
     buy: { title: labels.guidance.buyTitle, description: labels.guidance.buyDescription },
     trim: { title: labels.guidance.trimTitle, description: labels.guidance.trimDescription },
@@ -207,12 +206,12 @@ function ReadyPortfolioPulse({ recommendation, budget, labels }: { recommendatio
       <div className="d-pulse-stock-list" role="list" aria-label={labels.stockSelector.listLabel}>
         {recommendation.stocks.map((item) => {
           const ready = hasAnalysisData(item.analysis)
-          const tone = ready ? recommendationTone(item.analysis.recommendationCode) : "pending"
-          const isSell = item.analysis.recommendationCode.toLowerCase().includes("trim")
-          const shares = isSell ? item.suggestedSellShares : item.suggestedBuyShares
-          const status = ready ? recommendationLabel(item.analysis.recommendationCode, labels.stockSelector.signals) : labels.stockSelector.pending
+          const presentation = ready ? recommendationPresentation(item.analysis.recommendationCode, { label: labels.stockSelector.signals }) : null
+          const tone = presentation?.tone ?? "hold"
+          const shares = presentation?.isSell ? item.suggestedSellShares : item.suggestedBuyShares
+          const status = presentation?.label ?? labels.stockSelector.pending
           const action = ready
-            ? shares > 0 ? `${isSell ? labels.decision.sell : labels.decision.buy} ${formatNumber(shares, 0)} ${labels.ready.sharesUnit}` : labels.decision.hold
+            ? shares > 0 ? `${presentation?.isSell ? labels.decision.sell : labels.decision.buy} ${formatNumber(shares, 0)} ${labels.ready.sharesUnit}` : labels.decision.hold
             : labels.pending.syncLabel
           return <div key={stockKey(item.analysis)} className={`d-pulse-stock d-pulse-stock-${tone}`} role="listitem"><span className="d-pulse-stock-dot" /><div className="d-pulse-stock-copy"><strong>{analysisDisplayName(item.analysis)}</strong><span>{item.analysis.securityCode}.{item.analysis.exchangeCode}</span></div><div className="d-pulse-stock-action"><strong>{status}</strong><small>{action}</small></div></div>
         })}

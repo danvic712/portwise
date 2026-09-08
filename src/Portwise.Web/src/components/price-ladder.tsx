@@ -1,6 +1,6 @@
 import type { StockAnalysisResult } from "@/lib/api-types"
 import { interpolate, useLocale } from "@/lib/i18n"
-import { getPriceZones } from "@/lib/price-zones"
+import { getPriceZones } from "@/lib/recommendation-display"
 import { displayStockName } from "@/lib/stock-display"
 import { formatMoney } from "@/lib/utils"
 
