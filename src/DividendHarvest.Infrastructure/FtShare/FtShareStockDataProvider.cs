@@ -15,7 +15,8 @@ namespace DividendHarvest.Infrastructure.FtShare;
 public sealed class FtShareStockDataProvider(
     IFtShareMcpToolInvoker toolInvoker,
     IOptions<FtShareOptions> options,
-    IDiagnosticContext diagnosticContext) : IStockDataProvider
+    IDiagnosticContext diagnosticContext,
+    TimeProvider timeProvider) : IStockDataProvider
 {
     public async Task<StockData?> GetAsync(
         AShareReference reference,
@@ -85,28 +86,6 @@ public sealed class FtShareStockDataProvider(
         return ParseFinancialData(reference, payload);
     }
 
-    private static void ValidateOptions(FtShareOptions options)
-    {
-        if (string.IsNullOrWhiteSpace(options.StockProfileToolName)
-            || string.IsNullOrWhiteSpace(options.StockMarketDataToolName)
-            || string.IsNullOrWhiteSpace(options.StockDividendEventsToolName)
-            || string.IsNullOrWhiteSpace(options.StockFinancialSnapshotsToolName)
-            || string.IsNullOrWhiteSpace(options.SecurityCodeArgumentName)
-            || string.IsNullOrWhiteSpace(options.ExchangeCodeArgumentName))
-        {
-            throw new FtShareProviderException(
-                new InvalidOperationException("FTShare MCP 股票资料工具配置不完整。"));
-        }
-
-        if (options.RequestTimeoutSeconds is < 1 or > 300
-            || options.MaxRetryCount is < 0 or > 5
-            || options.RetryDelayMilliseconds is < 0 or > 10_000)
-        {
-            throw new FtShareProviderException(
-                new InvalidOperationException("FTShare MCP 超时、重试次数或重试间隔配置无效。"));
-        }
-    }
-
     private async Task<JsonElement?> InvokeStockToolAsync(
         AShareReference reference,
         FtShareOptions currentOptions,
@@ -115,7 +94,6 @@ public sealed class FtShareStockDataProvider(
         string dataKind,
         string timeoutMessage)
     {
-        ValidateOptions(currentOptions);
         var arguments = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
             [currentOptions.SecurityCodeArgumentName] = reference.SecurityCode,
@@ -353,7 +331,7 @@ public sealed class FtShareStockDataProvider(
             dataQualityCode ?? DataQualityCodes.Missing);
     }
 
-    private static IReadOnlyList<StockDividendData>? ParseDividendData(
+    private IReadOnlyList<StockDividendData>? ParseDividendData(
         AShareReference reference,
         JsonElement? payload)
     {
@@ -383,7 +361,7 @@ public sealed class FtShareStockDataProvider(
         return dividends;
     }
 
-    private static IReadOnlyList<StockFinancialData>? ParseFinancialData(
+    private IReadOnlyList<StockFinancialData>? ParseFinancialData(
         AShareReference reference,
         JsonElement? payload)
     {
@@ -413,7 +391,7 @@ public sealed class FtShareStockDataProvider(
         return snapshots;
     }
 
-    private static StockFinancialData? ParseFinancialItem(
+    private StockFinancialData? ParseFinancialItem(
         AShareReference reference,
         JsonElement item)
     {
@@ -443,7 +421,7 @@ public sealed class FtShareStockDataProvider(
             "period_end_date",
             "date");
         var capturedAt = ReadDateTimeOffset(item, "captured_at", "captured_time")
-            ?? DateTimeOffset.UtcNow;
+            ?? timeProvider.GetUtcNow();
         var publishedAt = ReadDateTimeOffset(item, "published_at", "published_time");
         var dataSource = ReadString(item, "data_source", "source");
         var sourceRecordId = ReadString(
@@ -528,7 +506,7 @@ public sealed class FtShareStockDataProvider(
         return null;
     }
 
-    private static StockDividendData? ParseDividendItem(
+    private StockDividendData? ParseDividendItem(
         AShareReference reference,
         JsonElement item)
     {
@@ -578,7 +556,7 @@ public sealed class FtShareStockDataProvider(
             ?? string.Equals(dividendTypeCode, "special_cash", StringComparison.Ordinal);
         var publishedAt = ReadDateTimeOffset(item, "published_at", "published_time");
         var capturedAt = ReadDateTimeOffset(item, "captured_at", "captured_time")
-            ?? DateTimeOffset.UtcNow;
+            ?? timeProvider.GetUtcNow();
         var dataSource = ReadString(item, "data_source", "source");
         var sourceRecordId = ReadString(
             item,

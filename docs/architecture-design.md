@@ -554,15 +554,17 @@ Host 的 `ApplicationExceptionHandler` 只负责识别 Application 异常、调�
 - `diagnostic_operation`、`correlation_id`、`run_id`、`error_code`、`severity`；其中操作只允许 `http_request`、`http_error`、`daily_stock_data_sync`、`stock_data_sync` 和 `ftshare_mcp`。
 - A 股 `security_code`、`exchange_code` 和有限集合的 `data_kind`（`profile`、`market`、`dividend`、`financial`）。
 
-Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 `Activity` 的 `TraceId`/`SpanId`/`ParentId` 注入结构化日志，不需要手工维护 correlation id 的生成和传播；ASP.NET Core 自身也会为每个 HTTP 请求创建 Activity，`HttpContext.TraceIdentifier` 因此天然是 W3C 格式的 trace id。`WebApplicationExtensions` 仍然为每个 HTTP 请求开启一个 `http_request` scope 并返回 `X-Correlation-Id` 响应头；Application 异常响应同时返回 `trace_id`。`DailyStockDataSyncHostedService` 为每次交易日同步创建独立 run scope；`FtShareStockDataProvider` 为每次资料、行情、股息和财务 MCP 调用追加股票引用和数据类型；这些嵌套 scope 产生的 Activity 会按照 `Activity.Current` 自动形成父子关系，构成一次请求内的完整调用链。诊断上下文仍然不接受任意字典，超过长度、包含不允许字符或不在有限集合中的值会被丢弃；内部日志最多记录异常类型和 cause type，不记录异常消息，避免把请求正文、持仓数量、认证信息、FTShare key、原始响应和内部异常文本带入日志、Activity Tag 或 ProblemDetails。
+Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 `Activity` 的 `TraceId`/`SpanId`/`ParentId` 注入结构化日志，不需要手工维护 correlation id 的生成和传播；ASP.NET Core 自身也会为每个 HTTP 请求创建 Activity，`HttpContext.TraceIdentifier` 因此天然是 W3C 格式的 trace id。`WebApplicationExtensions` 仍然为每个 HTTP 请求开启一个 `http_request` scope 并返回 `X-Correlation-Id` 响应头；Application 异常响应同时返回 `trace_id`。`StockDataSyncRunner` 为每次实际同步创建独立 run scope；`FtShareStockDataProvider` 为每次资料、行情、股息和财务 MCP 调用追加股票引用和数据类型；这些嵌套 scope 产生的 Activity 会按照 `Activity.Current` 自动形成父子关系，构成一次请求内的完整调用链。诊断上下文仍然不接受任意字典，超过长度、包含不允许字符或不在有限集合中的值会被丢弃；内部日志最多记录异常类型和 cause type，不记录异常消息，避免把请求正文、持仓数量、认证信息、FTShare key、原始响应和内部异常文本带入日志、Activity Tag 或 ProblemDetails。
 
 ## 12. 测试策略
 
-测试项目位于 `tests/`，当前只针对 Domain 和 Application 编写单元测试，使用 xUnit + Moq：
+测试项目位于 `tests/`，使用 xUnit + Moq；需要时间控制时使用微软提供的 `FakeTimeProvider`：
 
 - Domain 测试领域不变量。
 - Application 测试通过 `IRepository<TEntity>`、`IUow` 和数据提供 Adapter 的 Interface mock 验证用例行为。
 - Application 测试不创建真实 DbContext，也不依赖 SQLite 或真实 FTShare 网络连接。
+- Infrastructure 测试通过真实 SQLite 验证 migration 和 FTShare Options 校验。
+- Host 测试验证同步执行器的并发边界、Controller 入口、Options 校验和调度时间。
 - Infrastructure 的 EF Fluent 配置和 Adapter 通过编译、依赖检查及后续专门测试验证；不把 EF Core 细节泄漏到 Application 单元测试。
 
 所有测试必须保持对 Interface 的验证，而不是依赖具体实现内部结构。

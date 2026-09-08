@@ -1,15 +1,16 @@
-using System.Text.Json;
 using System.Runtime.ExceptionServices;
+using System.Text.Json;
 using DividendHarvest.Infrastructure.Contracts;
+using Microsoft.Extensions.Options;
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
-using Microsoft.Extensions.Options;
 
 namespace DividendHarvest.Infrastructure.FtShare;
 
 public sealed class FtShareMcpToolInvoker(
-    IOptions<FtShareOptions> options) : IFtShareMcpToolInvoker
+    IOptions<FtShareOptions> options,
+    TimeProvider timeProvider) : IFtShareMcpToolInvoker
 {
     public async Task<JsonElement?> InvokeAsync(
         string toolName,
@@ -20,12 +21,7 @@ public sealed class FtShareMcpToolInvoker(
         ArgumentNullException.ThrowIfNull(arguments);
 
         var currentOptions = options.Value;
-        if (!Uri.TryCreate(currentOptions.McpEndpoint, UriKind.Absolute, out var endpoint)
-            || endpoint.Scheme is not ("http" or "https"))
-        {
-            throw new InvalidOperationException(
-                "FTShare MCP 地址未配置，或不是有效的 HTTP(S) 地址。请设置 FtShare__McpEndpoint。");
-        }
+        var endpoint = new Uri(currentOptions.McpEndpoint, UriKind.Absolute);
 
         Exception? lastTransientException = null;
         for (var attempt = 0; ; attempt++)
@@ -49,18 +45,19 @@ public sealed class FtShareMcpToolInvoker(
                 lastTransientException = exception;
             }
 
-            if (attempt >= Math.Max(currentOptions.MaxRetryCount, 0))
+            if (attempt >= currentOptions.MaxRetryCount)
             {
                 ExceptionDispatchInfo.Capture(lastTransientException!).Throw();
             }
 
             await Task.Delay(
                 CalculateRetryDelay(currentOptions.RetryDelay, attempt),
+                timeProvider,
                 cancellationToken);
         }
     }
 
-    private static async Task<JsonElement?> InvokeOnceAsync(
+    private async Task<JsonElement?> InvokeOnceAsync(
         Uri endpoint,
         FtShareOptions options,
         string toolName,
@@ -75,19 +72,23 @@ public sealed class FtShareMcpToolInvoker(
                 ConnectionTimeout = options.RequestTimeout
             });
 
-        using var timeoutCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCancellation.CancelAfter(options.RequestTimeout);
+        using var timeoutCancellation = new CancellationTokenSource(
+            options.RequestTimeout,
+            timeProvider);
+        using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            timeoutCancellation.Token);
 
         await using var client = await McpClient.CreateAsync(
             transport,
-            cancellationToken: timeoutCancellation.Token);
+            cancellationToken: linkedCancellation.Token);
 
         var result = await client.CallToolAsync(
             toolName,
             arguments,
             progress: null,
             options: null,
-            timeoutCancellation.Token);
+            linkedCancellation.Token);
 
         if (result.IsError == true)
         {

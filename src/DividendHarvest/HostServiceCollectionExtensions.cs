@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Enrichers.Span;
 using ApplicationDiagnosticContext = DividendHarvest.Application.Contracts.IDiagnosticContext;
@@ -66,8 +67,11 @@ public static class HostServiceCollectionExtensions
                     document.Info.Description = "A 股股息交易参考 API。";
                     return Task.CompletedTask;
                 }));
-        services.Configure<DailySyncOptions>(
-            configuration.GetSection(DailySyncOptions.SectionName));
+        services.AddSingleton<IValidateOptions<DailySyncOptions>, DailySyncOptionsValidator>();
+        services
+            .AddOptions<DailySyncOptions>()
+            .Bind(configuration.GetSection(DailySyncOptions.SectionName))
+            .ValidateOnStart();
         services.AddSingleton<IStockDataSyncRunner, StockDataSyncRunner>();
         services.AddSingleton<StockDataSyncTaskQueue>();
         services.AddSingleton<IStockDataSyncScheduler>(serviceProvider =>

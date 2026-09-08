@@ -211,13 +211,15 @@ ASP.NET Core 按默认规则加载 `appsettings.json` 和当前环境对应的 `
 | --- | --- | --- |
 | `ASPNETCORE_ENVIRONMENT` | ASP.NET Core 环境 | `Production`（容器中建议显式设置） |
 | `ConnectionStrings__Default` | SQLite 连接字符串 | `Data Source=dividend-harvest.db` |
-| `FtShare__McpEndpoint` | FTShare MCP Streamable HTTP 地址 | 空 |
+| `FtShare__McpEndpoint` | FTShare MCP Streamable HTTP 地址 | `https://market.ft.tech/gateway/mcp` |
 | `FtShare__RequestTimeoutSeconds` | 单次 MCP 请求超时 | `30` |
 | `FtShare__MaxRetryCount` | MCP 请求最大重试次数 | `2` |
 | `FtShare__RetryDelayMilliseconds` | 重试间隔 | `250` |
 | `DailySync__Enabled` | 是否启用每日同步 | `true` |
 | `DailySync__LocalTime` | 每日同步时间 | `18:00` |
 | `DailySync__TimeZoneId` | 每日同步时区 | `Asia/Shanghai` |
+
+`FtShare` 和 `DailySync` 配置会在 Host 启动时校验。地址、时间格式、时区、超时和重试范围无效时，应用会直接报告配置错误，不会等到首次同步请求才失败。
 
 FTShare 工具名称和参数名也可以通过 `FtShare__*` 配置覆盖：
 

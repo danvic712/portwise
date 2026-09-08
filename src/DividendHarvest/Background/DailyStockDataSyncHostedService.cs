@@ -1,3 +1,4 @@
+using System.Globalization;
 using DividendHarvest.Application.Stocks;
 using DividendHarvest.Configuration;
 using DividendHarvest.Contracts;
@@ -19,23 +20,26 @@ public sealed class DailyStockDataSyncHostedService(
             return;
         }
 
+        var localTime = TimeOnly.ParseExact(
+            options.Value.LocalTime,
+            "HH:mm",
+            CultureInfo.InvariantCulture);
+        var timeZone = TimeZoneInfo.FindSystemTimeZoneById(options.Value.TimeZoneId);
+
         while (!stoppingToken.IsCancellationRequested)
         {
-            var timeZone = ResolveTimeZone(options.Value.TimeZoneId);
-            var localTime = TimeOnly.TryParse(options.Value.LocalTime, out var parsedTime)
-                ? parsedTime
-                : new TimeOnly(18, 0);
+            var utcNow = timeProvider.GetUtcNow();
             var nextRun = DailySyncSchedule.GetNextRunUtc(
-                timeProvider.GetUtcNow(),
+                utcNow,
                 localTime,
                 timeZone);
-            var delay = nextRun - timeProvider.GetUtcNow();
+            var delay = nextRun - utcNow;
 
             if (delay > TimeSpan.Zero)
             {
                 try
                 {
-                    await Task.Delay(delay, stoppingToken);
+                    await Task.Delay(delay, timeProvider, stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
@@ -60,22 +64,6 @@ public sealed class DailyStockDataSyncHostedService(
         catch (Exception)
         {
             // The shared runner records the failure with its run ID. Keep scheduling future runs.
-        }
-    }
-
-    private static TimeZoneInfo ResolveTimeZone(string timeZoneId)
-    {
-        try
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            return TimeZoneInfo.Utc;
-        }
-        catch (InvalidTimeZoneException)
-        {
-            return TimeZoneInfo.Utc;
         }
     }
 }

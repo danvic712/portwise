@@ -4,6 +4,7 @@ using DividendHarvest.Infrastructure.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace DividendHarvest.Infrastructure;
 
@@ -21,9 +22,13 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IUow, Repositories.EFUow>();
         services.AddScoped<IDatabaseLifecycle, DatabaseLifecycle>();
 
+        services.AddSingleton<
+            IValidateOptions<FtShare.FtShareOptions>,
+            FtShare.FtShareOptionsValidator>();
         services
             .AddOptions<FtShare.FtShareOptions>()
-            .Bind(configuration.GetSection(FtShare.FtShareOptions.SectionName));
+            .Bind(configuration.GetSection(FtShare.FtShareOptions.SectionName))
+            .ValidateOnStart();
         services.AddScoped<IFtShareMcpToolInvoker, FtShare.FtShareMcpToolInvoker>();
         services.AddScoped<IStockDataProvider, FtShare.FtShareStockDataProvider>();
 
