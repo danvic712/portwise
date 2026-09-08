@@ -24,8 +24,11 @@ catch (Exception exception) when (exception is not HostAbortedException)
 {
     // HostAbortedException 由 `dotnet ef` 等设计时工具触发，属于正常控制流，不应记为致命错误。
     Log.Fatal(exception, "DividendHarvest host terminated unexpectedly");
+    return 1;
 }
 finally
 {
     await Log.CloseAndFlushAsync();
 }
+
+return 0;
