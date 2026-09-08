@@ -634,3 +634,11 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | 03 HTTP contract 单一事实源 | 已修复：Host build-time 生成版本化 OpenAPI，前端从 `openapi-typescript` 生成 transport contract，`api-contract.ts` 是唯一 wire-to-UI Adapter | `e97c070` |
 | 04 导航与 Setup gate module | 已修复：`navigation.ts` 集中路由、history、查询参数和 Setup gate seam，修复 query 与旧 session 选择冲突 | `e4ff8f3` |
 | 05 Application 领域 module locality | 已修复：Setup、Stocks、Portfolio、Recommendations 各自共置 contract/DTO/validator/实现/测试，根目录只保留跨 module 共享项 | `aa2dae8` |
+
+## 16. 2026-09-09 架构复审候选项处理记录
+
+本节记录修改后复审中的剩余候选。每项完成后保持独立提交；实现与本记录一起验证。提交哈希以 Git 历史为准，避免在提交内容中制造自引用。
+
+| 复审候选项 | 处理结果 | 验证 |
+| --- | --- | --- |
+| 01 HTTP contract publication module | 已完成：集中运行时与 build-time OpenAPI 注册，前端请求消费生成路径约束，增加 wire numeric 运行时归一化与 contract drift 检查；CI/Docker 先生成并校验 contract，再构建前端 | `dotnet test`、`pnpm api:check`、`pnpm build`；提交 `refactor: close HTTP contract publication loop` |

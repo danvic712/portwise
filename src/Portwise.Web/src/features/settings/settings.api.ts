@@ -1,17 +1,15 @@
 import axios from "axios"
 
-import { apiClient } from "@/lib/api-client"
+import { apiGet, apiPost } from "@/lib/api-client"
 import type { SaveStockModelParametersRequest, StockModelParameterSet, StockWatchlistItem } from "@/lib/api-types"
 
 export async function getSettingsStocks() {
-  const response = await apiClient.get<StockWatchlistItem[]>("/stocks")
-  return response.data
+  return apiGet<StockWatchlistItem[]>("/api/v1/stocks")
 }
 
 export async function getSettingsParameters(securityCode: string, exchangeCode: string, signal?: AbortSignal) {
   try {
-    const response = await apiClient.get<StockModelParameterSet | null>(`/stocks/${securityCode}/${exchangeCode}/model-parameters`, { signal })
-    return response.data
+    return await apiGet<StockModelParameterSet | null>("/api/v1/stocks/{securityCode}/{exchangeCode}/model-parameters", { securityCode, exchangeCode }, { signal })
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
       return null
@@ -22,6 +20,5 @@ export async function getSettingsParameters(securityCode: string, exchangeCode: 
 }
 
 export async function updateSettingsParameters(request: SaveStockModelParametersRequest) {
-  const response = await apiClient.post<StockModelParameterSet>("/stocks/model-parameters", request)
-  return response.data
+  return apiPost<StockModelParameterSet, "/api/v1/stocks/model-parameters", SaveStockModelParametersRequest>("/api/v1/stocks/model-parameters", request)
 }

@@ -1,3 +1,10 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS contract-build
+
+WORKDIR /workspace
+COPY . .
+RUN dotnet restore Portwise.slnx
+RUN dotnet build src/Portwise/Portwise.csproj -c Release --no-restore
+
 FROM node:24-alpine AS frontend-build
 
 WORKDIR /workspace/src/Portwise.Web
@@ -5,14 +12,12 @@ COPY src/Portwise.Web/package.json src/Portwise.Web/pnpm-lock.yaml ./
 RUN corepack enable && pnpm install --frozen-lockfile
 COPY src/Portwise.Web/ ./
 COPY locales/ /workspace/locales/
-RUN pnpm build
+COPY --from=contract-build /workspace/src/Portwise.Web/openapi/portwise_v1.json ./openapi/portwise_v1.json
+RUN pnpm api:generate && pnpm api:check && pnpm build
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS backend-build
+FROM contract-build AS backend-build
 
-WORKDIR /workspace
-COPY . .
 COPY --from=frontend-build /workspace/src/Portwise/wwwroot ./src/Portwise/wwwroot
-RUN dotnet restore Portwise.slnx
 RUN dotnet publish src/Portwise/Portwise.csproj -c Release --no-restore -o /app/publish /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime

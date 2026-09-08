@@ -59,28 +59,7 @@ public static class HostServiceCollectionExtensions
         services.AddSingleton<ApplicationDiagnosticContext, ActivityDiagnosticContext>();
         services.AddSingleton<IHttpErrorRenderer, ProblemDetailsErrorRenderer>();
         services.AddExceptionHandler<ApplicationExceptionHandler>();
-        services.AddControllers();
-        services
-            .AddApiVersioning(options =>
-            {
-                options.DefaultApiVersion = new ApiVersion(1, 0);
-                options.AssumeDefaultVersionWhenUnspecified = false;
-                options.ReportApiVersions = true;
-                options.ApiVersionReader = new UrlSegmentApiVersionReader();
-            })
-            .AddMvc()
-            .AddApiExplorer(options =>
-            {
-                options.GroupNameFormat = "'v'VVV";
-                options.SubstituteApiVersionInUrl = true;
-            })
-            .AddOpenApi(options => options.Document.AddDocumentTransformer(
-                (document, _, _) =>
-                {
-                    document.Info.Title = "Portwise API";
-                    document.Info.Description = "Portwise A 股策略参考 API。";
-                    return Task.CompletedTask;
-                }));
+        services.AddPortwiseOpenApiDescription();
         services.AddSingleton<IValidateOptions<DailySyncOptions>, DailySyncOptionsValidator>();
         services
             .AddOptions<DailySyncOptions>()

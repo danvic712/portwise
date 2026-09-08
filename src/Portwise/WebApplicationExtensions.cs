@@ -38,7 +38,7 @@ public static class WebApplicationExtensions
 
     private static WebApplication MapOpenApiEndpoints(this WebApplication app)
     {
-        app.MapOpenApi().WithDocumentPerVersion();
+        app.MapPortwiseOpenApi();
 
         var apiVersionDescriptionProvider = app.Services
             .GetRequiredService<IApiVersionDescriptionProvider>();

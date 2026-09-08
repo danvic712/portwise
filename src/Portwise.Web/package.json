@@ -13,6 +13,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "api:generate": "openapi-typescript openapi/portwise_v1.json -o src/lib/api-contract.generated.ts",
+    "api:check": "node scripts/check-api-contract.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

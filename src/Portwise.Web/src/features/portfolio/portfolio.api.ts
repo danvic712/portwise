@@ -1,12 +1,10 @@
-import { apiClient } from "@/lib/api-client"
+import { apiGet, apiPost } from "@/lib/api-client"
 import type { PortfolioTradeResult, RecordPortfolioTradeRequest, StockWatchlistItem } from "@/lib/api-types"
 
 export async function getPortfolioStocks() {
-  const response = await apiClient.get<StockWatchlistItem[]>("/stocks")
-  return response.data
+  return apiGet<StockWatchlistItem[]>("/api/v1/stocks")
 }
 
 export async function recordPortfolioTrade(request: RecordPortfolioTradeRequest) {
-  const response = await apiClient.post<PortfolioTradeResult>("/portfolio/trades", request)
-  return response.data
+  return apiPost<PortfolioTradeResult, "/api/v1/portfolio/trades", RecordPortfolioTradeRequest>("/api/v1/portfolio/trades", request)
 }

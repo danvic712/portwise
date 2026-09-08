@@ -1,8 +1,5 @@
 using Portwise;
-using Asp.Versioning;
-using Asp.Versioning.ApiExplorer;
 using System.Reflection;
-using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
@@ -34,28 +31,7 @@ try
         : WebApplication.CreateBuilder(args);
     if (isOpenApiGeneration)
     {
-        builder.Services.AddControllers();
-        builder.Services
-            .AddApiVersioning(options =>
-            {
-                options.DefaultApiVersion = new ApiVersion(1, 0);
-                options.AssumeDefaultVersionWhenUnspecified = false;
-                options.ReportApiVersions = true;
-                options.ApiVersionReader = new UrlSegmentApiVersionReader();
-            })
-            .AddMvc()
-            .AddApiExplorer(options =>
-            {
-                options.GroupNameFormat = "'v'VVV";
-                options.SubstituteApiVersionInUrl = true;
-            })
-            .AddOpenApi(options => options.Document.AddDocumentTransformer(
-                (document, _, _) =>
-                {
-                    document.Info.Title = "Portwise API";
-                    document.Info.Description = "Portwise A 股策略参考 API。";
-                    return Task.CompletedTask;
-                }));
+        builder.Services.AddPortwiseOpenApiDescription();
     }
     else
     {
@@ -66,7 +42,7 @@ try
 
     if (isOpenApiGeneration)
     {
-        app.MapOpenApi().WithDocumentPerVersion();
+        app.MapPortwiseOpenApi();
         app.MapControllers();
         app.Run();
     }
