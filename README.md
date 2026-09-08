@@ -329,7 +329,7 @@ pnpm run lint
 pnpm run build
 ```
 
-当前单元测试只覆盖 Domain 和 Application，使用 xUnit；Application 测试使用 Moq 模拟 Uow、Repository、Provider 和调度器。UI 页面验收还应在浏览器中检查目标分辨率、加载态、空态、错误态、夜间主题和中英文切换，构建成功不等于视觉验收完成。
+后端测试覆盖 Domain、Application、Host 和 Infrastructure，统一使用 xUnit；Application 测试使用 Moq 模拟 Uow、Repository、Provider 和调度器，Infrastructure 测试使用真实 SQLite 验证 migration 与 EF 约束，Host 测试覆盖同步执行、Options 校验和调度时间。UI 页面验收还应在浏览器中检查目标分辨率、加载态、空态、错误态、夜间主题和中英文切换，构建成功不等于视觉验收完成。
 
 ## 许可
 

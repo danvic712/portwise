@@ -438,7 +438,7 @@ Application 只返回 `StockModelParameterSet` DTO，不返回 `ModelParameterSe
 
 ### 8.10 交易日数据同步
 
-`IStockDailyDataSyncAppService` 按关注列表逐只调用 `IStockFactSyncAppService`；事实同步模块按股票复用一次 Security 上下文，依次执行资料、行情、股息和财务快照同步。失败项记录股票、数据类型、稳定 `error_code` 和结构化 `parameters`，不在后台结果中固化某一种语言的展示文案；HTTP 入口由 `IApplicationErrorLocalizer` 按 `Accept-Language` 生成文本，后台日志和其他非 HTTP 消费者使用默认语言在展示边界本地化。其他数据类型及其他股票继续执行，避免单个 FTShare 数据缺口阻断整批更新。结果中的 `FullyCompletedStockCount` 只统计四类数据全部成功的股票，`PartiallyFailedStockCount` 统计至少一类失败的股票。`POST /api/v1/stocks/sync` 提供手动触发入口。
+`IStockDailyDataSyncAppService` 按关注列表逐只调用 `IStockFactSyncAppService`；事实同步模块按股票复用一次 Security 上下文，依次执行资料、行情、股息和财务快照同步。失败项记录股票、数据类型、稳定 `error_code` 和结构化 `parameters`，不在后台结果中固化某一种语言的展示文案；HTTP 请求先由 `RequestLocalizationMiddleware` 根据 `Accept-Language` 设置 `CurrentUICulture`，异常展示再由 `IApplicationErrorLocalizer` 使用该 culture 生成文本，后台日志和其他非 HTTP 消费者使用默认语言或显式 culture 在展示边界本地化。其他数据类型及其他股票继续执行，避免单个 FTShare 数据缺口阻断整批更新。结果中的 `FullyCompletedStockCount` 只统计四类数据全部成功的股票，`PartiallyFailedStockCount` 统计至少一类失败的股票。`POST /api/v1/stocks/sync` 提供手动触发入口。
 
 股票事实与建议的 Application 数据流如下：
 
@@ -579,3 +579,22 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 - 事实数据和建议快照按 `docs/dividend-harvest-quant-model.md` 的 canonical 字段建模。
 - 新增持久化能力先增加对应 Domain Model `class` 和 Fluent Configuration，再通过 `IUow.Get<TEntity>()` 获取通用 Repository；不要从 Host 或 AppService 直接使用 DbContext。
 - 新增业务状态代码时使用显式枚举或 `*_code` 约定；字符串代码放入 `Codes/`，真正的枚举放入所属项目的 `Enums/` 文件夹。
+
+## 14. 2026-09-07 后端架构审查处理记录
+
+本节记录 HTML 架构审查报告的处理结果，避免把“建议探索项”误解为已经批准的重写任务。每个已修复项目保持独立提交；保留项目只有在出现明确的正确性、性能或部署指标后才重新评估。
+
+| 报告项 | 处理结果 | 提交/触发条件 |
+| --- | --- | --- |
+| 01 EF Core migrations | 已修复：启动统一执行 `MigrateAsync`，设计时工厂和初始 migration 已纳入 Infrastructure | `0e74ad0` |
+| 02 同步执行 seam | 已修复：HTTP、Setup 和定时任务统一经过 `IStockDataSyncRunner` | `62d81b3` |
+| 03 Options 与时间 | 已修复：Options `ValidateOnStart`，调度/重试/超时使用注入的 `TimeProvider` | `7776ddb` |
+| 04 启动退出码 | 已修复：启动异常刷新日志后返回非零退出码 | `3ea1ab7` |
+| 05 行为型持久化 seam | 保留 `IUow` + 通用 Repository；当前没有足够的重复查询或性能证据 | 出现具体查询/性能问题后再引入窄接口 |
+| 06 HTTP 本地化 | 已修复：ASP.NET Core `RequestLocalizationMiddleware` 负责 HTTP culture；JSON catalog 保留 | `c202011` |
+| 07 Activity 采样 | 保留本地 listener，保证无 Collector 的单进程部署仍可诊断 | 接入 OpenTelemetry 或有采样成本指标后再调整 |
+| 08 组合建议读模型 | 暂不引入快照；先以真实组合规模、查询次数和延迟建立基线 | 指标确认 N+1/延迟热点后再批量 projection |
+| 09 单组合不变量 | 已修复：`portfolio_scope` 唯一索引和并发冲突映射 | `44439cd` |
+| 10 股票事实 AppService | 保留独立事实类型契约；当前重复主要是入口校验与转发 | 出现共享事务、幂等或真实 adapter 复用需求后再提取内部 module |
+
+截至本记录，后端完整测试共 141 个通过；EF Core `has-pending-model-changes` 检查通过。
