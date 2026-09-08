@@ -9,7 +9,7 @@ namespace DividendHarvest.Diagnostics;
 /// </summary>
 internal static class DividendHarvestActivitySource
 {
-    private const string Name = "DividendHarvest";
+    private const string Name = "Portwise";
 
     public static readonly ActivitySource Instance = new(Name);
 

@@ -11,7 +11,7 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
-    Log.Information("Starting DividendHarvest host");
+    Log.Information("Starting Portwise host");
 
     var builder = WebApplication.CreateBuilder(args);
     builder.AddDividendHarvest();
@@ -23,7 +23,7 @@ try
 catch (Exception exception) when (exception is not HostAbortedException)
 {
     // HostAbortedException 由 `dotnet ef` 等设计时工具触发，属于正常控制流，不应记为致命错误。
-    Log.Fatal(exception, "DividendHarvest host terminated unexpectedly");
+    Log.Fatal(exception, "Portwise host terminated unexpectedly");
     return 1;
 }
 finally

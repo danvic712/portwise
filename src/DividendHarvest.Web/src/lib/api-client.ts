@@ -10,7 +10,7 @@ export const apiClient = axios.create({
 })
 
 apiClient.interceptors.request.use((config) => {
-  const locale = localStorage.getItem("dividend-harvest-locale") ?? "zh-CN"
+  const locale = localStorage.getItem("portwise-locale") ?? "zh-CN"
   config.headers.set("Accept-Language", locale)
   return config
 })

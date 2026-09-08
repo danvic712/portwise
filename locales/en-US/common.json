@@ -1,10 +1,10 @@
 {
   "ui": {
-    "appName": "Dividend Harvest",
-    "brandName": "Dividend Harvest",
-    "pageTitle": "Dividend Harvest · Dividend reference",
-    "appEyebrow": "DIVIDEND HARVEST / A-SHARE REFERENCE",
-    "brandCaption": "Dividend income · Long-term accumulation",
+    "appName": "Portwise",
+    "brandName": "Portwise",
+    "pageTitle": "Portwise · Strategy reference",
+    "appEyebrow": "PORTWISE / A-SHARE STRATEGIES",
+    "brandCaption": "Strategy research · Long-term investing",
     "backToOverview": "Back to today’s decision",
     "mainNavigation": "Main navigation",
     "mobileNavigation": "Mobile navigation",
@@ -32,7 +32,7 @@
     },
     "preferences": {
       "label": "Display and language",
-      "description": "Choose how Dividend Harvest should look."
+      "description": "Choose how Portwise should look."
     },
     "language": {
       "label": "Language",

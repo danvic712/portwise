@@ -33,7 +33,7 @@ function AppContent() {
   const [portfolioStockKey, setPortfolioStockKey] = useState(() => {
     const query = new URLSearchParams(window.location.search)
     const queryStockKey = query.get("stock") ?? (query.get("code") && query.get("exchange") ? `${query.get("code")}:${query.get("exchange")}` : null)
-    return queryStockKey ?? window.sessionStorage.getItem("dividend-harvest-portfolio-stock") ?? ""
+    return queryStockKey ?? window.sessionStorage.getItem("portwise-portfolio-stock") ?? ""
   })
   const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null)
   const [setupNotice, setSetupNotice] = useState<string | null>(null)

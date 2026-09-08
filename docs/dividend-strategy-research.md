@@ -24,7 +24,7 @@
 
 来源：[上海证券交易所关于修订上证红利指数编制方案的公告](https://www.sse.com.cn/market/sseindex/diclosure/c/c_20220327_5700336.shtml)
 
-对 Dividend Harvest 的启示：不能只看最近一次分红或当天股息率，应同时检查多年分红记录和支付能力。
+对 Portwise 股息策略的启示：不能只看最近一次分红或当天股息率，应同时检查多年分红记录和支付能力。
 
 ### S&P 中国 A 股高股息红利贵族
 
@@ -32,7 +32,7 @@ S&P 中国 A 股高股息红利贵族方法要求股票至少连续五年增加�
 
 来源：[S&P China Dividend Aristocrats Indices Methodology](https://www.spglobal.com/spdji/tc/documents/methodologies/methodology-sp-china-div-arist-indices.pdf)
 
-对 Dividend Harvest 的启示：股息持续性、可交易性和组合上限应成为独立的筛选层，不能全部混在“目标股息率”里。
+对 Portwise 股息策略的启示：股息持续性、可交易性和组合上限应成为独立的筛选层，不能全部混在“目标股息率”里。
 
 ### MSCI 高股息指数
 
@@ -47,7 +47,7 @@ MSCI 的高股息方法包含以下过滤：
 
 来源：[MSCI High Dividend Yield Indexes Methodology](https://www.msci.com/indexes/documents/methodology/3_MSCI_High_Dividend_Yield_Indexes_Methodology_20250829.pdf)
 
-对 Dividend Harvest 的启示：高股息可能只是股价大跌的结果，因此股息率信号必须经过可持续性、质量和下跌风险检查。
+对 Portwise 股息策略的启示：高股息可能只是股价大跌的结果，因此股息率信号必须经过可持续性、质量和下跌风险检查。
 
 ### FTSE All-World High Dividend Yield
 
@@ -55,7 +55,7 @@ FTSE All-World High Dividend Yield 方法使用未来十二个月股息率，对
 
 来源：[FTSE Russell All-World High Dividend Yield Index](https://www.lseg.com/en/ftse-russell/indices/ftse-all-world-high-dividend-yield-index)
 
-对 Dividend Harvest 的启示：预计股息和特别股息必须单独标记；信号不应因股息率在边界附近的小变化而频繁跳转。
+对 Portwise 股息策略的启示：预计股息和特别股息必须单独标记；信号不应因股息率在边界附近的小变化而频繁跳转。
 
 ## 3. 外部方法到本项目 V1 的映射
 

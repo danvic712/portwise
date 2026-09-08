@@ -28,7 +28,7 @@ function resolveTheme(theme: Theme) {
     : theme
 }
 
-export function ThemeProvider({ children, defaultTheme = "system", storageKey = "dividend-harvest-theme" }: ThemeProviderProps) {
+export function ThemeProvider({ children, defaultTheme = "system", storageKey = "portwise-theme" }: ThemeProviderProps) {
   const [theme, setTheme] = React.useState<Theme>(() => {
     const stored = localStorage.getItem(storageKey)
     return isTheme(stored) ? stored : defaultTheme

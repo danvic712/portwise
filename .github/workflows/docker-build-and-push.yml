@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DOCKERHUB_IMAGE: danvic712/dividend-harvest
-  GHCR_IMAGE: ghcr.io/danvic712/dividend-harvest
+  DOCKERHUB_IMAGE: danvic712/portwise
+  GHCR_IMAGE: ghcr.io/danvic712/portwise
 
 jobs:
   docker:
@@ -69,5 +69,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=dividend-harvest
-          cache-to: type=gha,mode=max,scope=dividend-harvest
+          cache-from: type=gha,scope=portwise
+          cache-to: type=gha,mode=max,scope=portwise

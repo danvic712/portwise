@@ -75,7 +75,7 @@ function isLocale(value: string | null): value is Locale {
 }
 
 function getInitialLocale(): Locale {
-  const storedLocale = typeof window !== "undefined" ? window.localStorage.getItem("dividend-harvest-locale") : null
+  const storedLocale = typeof window !== "undefined" ? window.localStorage.getItem("portwise-locale") : null
   return isLocale(storedLocale) ? storedLocale : "zh-CN"
 }
 
@@ -84,7 +84,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const messages = catalogs[locale]
 
   function setLocale(nextLocale: Locale) {
-    window.localStorage.setItem("dividend-harvest-locale", nextLocale)
+    window.localStorage.setItem("portwise-locale", nextLocale)
     setLocaleState(nextLocale)
   }
 

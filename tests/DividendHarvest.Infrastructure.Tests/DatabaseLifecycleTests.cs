@@ -112,7 +112,7 @@ public sealed class DatabaseLifecycleTests
     }
 
     private static string CreateDatabasePath()
-        => Path.Combine(Path.GetTempPath(), $"dividend-harvest-{Guid.NewGuid():N}.db");
+        => Path.Combine(Path.GetTempPath(), $"portwise-{Guid.NewGuid():N}.db");
 
     private static void DeleteDatabase(string databasePath)
     {

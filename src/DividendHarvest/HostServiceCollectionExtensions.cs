@@ -77,8 +77,8 @@ public static class HostServiceCollectionExtensions
             .AddOpenApi(options => options.Document.AddDocumentTransformer(
                 (document, _, _) =>
                 {
-                    document.Info.Title = "Dividend Harvest API";
-                    document.Info.Description = "A 股股息交易参考 API。";
+                    document.Info.Title = "Portwise API";
+                    document.Info.Description = "Portwise A 股策略参考 API。";
                     return Task.CompletedTask;
                 }));
         services.AddSingleton<IValidateOptions<DailySyncOptions>, DailySyncOptionsValidator>();

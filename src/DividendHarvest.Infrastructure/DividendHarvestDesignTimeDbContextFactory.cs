@@ -9,7 +9,7 @@ internal sealed class DividendHarvestDesignTimeDbContextFactory
     public DividendHarvestDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<DividendHarvestDbContext>()
-            .UseSqlite("Data Source=dividend-harvest.design.db")
+            .UseSqlite("Data Source=portwise.design.db")
             .Options;
 
         return new DividendHarvestDbContext(options);

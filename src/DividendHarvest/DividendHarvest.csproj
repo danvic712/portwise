@@ -33,7 +33,7 @@
   <ItemGroup>
     <ProjectReference Include="../DividendHarvest.Application/DividendHarvest.Application.csproj" />
     <ProjectReference Include="../DividendHarvest.Infrastructure/DividendHarvest.Infrastructure.csproj" />
-    <ProjectReference Include="../DividendHarvest.Web/dividend-harvest.esproj">
+    <ProjectReference Include="../DividendHarvest.Web/portwise.esproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

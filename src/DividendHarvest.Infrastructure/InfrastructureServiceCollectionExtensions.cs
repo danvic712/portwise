@@ -15,7 +15,7 @@ public static class InfrastructureServiceCollectionExtensions
         IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("Default")
-            ?? "Data Source=dividend-harvest.db";
+            ?? "Data Source=portwise.db";
 
         services.AddDbContext<DividendHarvestDbContext>(options =>
             options.UseSqlite(connectionString));

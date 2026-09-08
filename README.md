@@ -1,6 +1,8 @@
-# Dividend Harvest
+# Portwise
 
-Dividend Harvest 是一个面向个人 A 股长期投资者的私人工具。它把股票资料、股息事实、收盘行情、持仓和预算放在同一个组合上下文中，用规则透明的方式给出“现在是否适合观察、分批买入或减仓”的参考。
+Portwise 是一个面向个人 A 股长期投资者的私人工具。它把股票资料、策略所需的市场事实、收盘行情、持仓和预算放在同一个组合上下文中，用规则透明的方式给出“现在是否适合观察、分批买入或减仓”的参考。当前版本内置股息策略，后续可以扩展更多策略。
+
+项目地址：[github.com/danvic712/portwise](https://github.com/danvic712/portwise)
 
 > 本项目只提供可解释的研究和模拟记录，不预测股价、不自动下单、不构成投资建议。
 
@@ -9,7 +11,7 @@ Dividend Harvest 是一个面向个人 A 股长期投资者的私人工具。它
 这个项目优先解决三个问题：
 
 1. 让不熟悉量化模型的用户知道“当前发生了什么”和“下一步可以做什么”；
-2. 用 TTM 实际股息、股息可靠性和价格区域生成每只股票的分批交易参考；
+2. 用当前的股息策略，以 TTM 实际股息、股息可靠性和价格区域生成每只股票的分批交易参考；
 3. 保存个人的持仓、交易和现金流水，让建议能结合自己的实际情况，而不是只看一个股息率。
 
 当前版本只支持中国 A 股、CNY 和单用户单组合场景，不包含账户体系、多人协作、自动交易或云端托管。
@@ -53,7 +55,7 @@ ASP.NET Core Host
 在项目根目录执行：
 
 ```bash
-docker build -t danvic712/dividend-harvest .
+docker build -t danvic712/portwise .
 ```
 
 镜像采用多阶段构建：先构建 React 前端，再发布 ASP.NET Core 后端。根目录的 `locales/` 会同时纳入前端构建和后端嵌入式资源；其中前端 UI 文案和后端应用错误定义共用同一套中英文语言文件。
@@ -63,13 +65,13 @@ docker build -t danvic712/dividend-harvest .
 SQLite 数据库位于容器内的 `/app/data`，建议挂载 volume 或宿主机目录：
 
 ```bash
-docker run --name dividend-harvest \
+docker run --name portwise \
   --rm \
   -p 8080:8080 \
-  -v dividend-harvest-data:/app/data \
+  -v portwise-data:/app/data \
   -e ASPNETCORE_ENVIRONMENT=Production \
   -e FtShare__McpEndpoint="https://<ftshare-mcp-endpoint>/mcp" \
-  danvic712/dividend-harvest
+  danvic712/portwise
 ```
 
 启动后访问：
@@ -107,8 +109,8 @@ git push origin v0.1.0
 该 tag 会发布为以下镜像，并同时更新各自的 `latest`：
 
 ```text
-danvic712/dividend-harvest:v0.1.0
-ghcr.io/danvic712/dividend-harvest:v0.1.0
+danvic712/portwise:v0.1.0
+ghcr.io/danvic712/portwise:v0.1.0
 ```
 
 ### Azure App Service 持久化配置
@@ -120,7 +122,7 @@ Linux 自定义容器默认不会持久化文件系统。将 App Service 的持�
 | `WEBSITES_ENABLE_APP_SERVICE_STORAGE` | `true` |
 | `WEBSITES_PORT` | `8080` |
 | `ASPNETCORE_ENVIRONMENT` | `Production` |
-| `ConnectionStrings__Default` | `Data Source=/home/dividend-harvest.db` |
+| `ConnectionStrings__Default` | `Data Source=/home/portwise.db` |
 
 也可以使用 Azure CLI 配置：
 
@@ -132,7 +134,7 @@ az webapp config appsettings set \
     WEBSITES_ENABLE_APP_SERVICE_STORAGE=true \
     WEBSITES_PORT=8080 \
     ASPNETCORE_ENVIRONMENT=Production \
-    'ConnectionStrings__Default=Data Source=/home/dividend-harvest.db'
+    'ConnectionStrings__Default=Data Source=/home/portwise.db'
 ```
 
 `WEBSITES_PORT=8080` 对应镜像的 `EXPOSE 8080`。Azure 官方建议将需要持久化的文件写入 `/home`；但 App Service Linux 的 `/home` 属于共享存储，SQLite 可能受到文件锁限制，建议保持单实例使用并做好备份。需要多实例或更高并发时，应改用 Azure Database 等托管数据库。[Azure 自定义容器文档](https://learn.microsoft.com/zh-cn/azure/app-service/configure-custom-container)
@@ -154,7 +156,7 @@ az webapp config appsettings set \
 dotnet run --project src/DividendHarvest/DividendHarvest.csproj --launch-profile http
 ```
 
-后端启动时会自动应用待执行的 EF Core migration，并在空 SQLite 数据库中创建完整结构。默认数据库文件为项目运行目录下的 `dividend-harvest.db`；生产配置默认使用 `/app/data/dividend-harvest.db`。本地开发配置来自 `appsettings.json` + `appsettings.Development.json`（更详细的日志级别），生产环境使用 `appsettings.Production.json`。
+后端启动时会自动应用待执行的 EF Core migration，并在空 SQLite 数据库中创建完整结构。默认数据库文件为项目运行目录下的 `portwise.db`；生产配置默认使用 `/app/data/portwise.db`。本地开发配置来自 `appsettings.json` + `appsettings.Development.json`（更详细的日志级别），生产环境使用 `appsettings.Production.json`。
 
 修改 EF Core 模型后，先还原仓库固定版本的工具，再从 Infrastructure 项目生成 migration：
 
@@ -178,7 +180,7 @@ dotnet publish src/DividendHarvest/DividendHarvest.csproj -c Release -p:BuildFro
 
 ### 前端开发联调（SpaProxy）
 
-本地开发使用 .NET 官方标准的 [`Microsoft.AspNetCore.SpaProxy`](https://learn.microsoft.com/aspnet/core/client-side/spa/intro) 集成前端，取代早期“手动开两个终端 + Vite 自带 proxy”的方式：`Properties/launchSettings.json` 的 `http` profile 已经设置 `ASPNETCORE_HOSTINGSTARTUPASSEMBLIES=Microsoft.AspNetCore.SpaProxy`，`DividendHarvest.csproj` 在 `Debug` 配置下引用了 `Microsoft.AspNetCore.SpaProxy` 包并声明了 `SpaRoot`/`SpaProxyServerUrl`/`SpaProxyLaunchCommand`；前端同时通过 `dividend-harvest.esproj` 挂入 Host，保证 Rider 能识别标准的 `.NET Launch Settings Profile` 与 SPA 启动项目。
+本地开发使用 .NET 官方标准的 [`Microsoft.AspNetCore.SpaProxy`](https://learn.microsoft.com/aspnet/core/client-side/spa/intro) 集成前端，取代早期“手动开两个终端 + Vite 自带 proxy”的方式：`Properties/launchSettings.json` 的 `http` profile 已经设置 `ASPNETCORE_HOSTINGSTARTUPASSEMBLIES=Microsoft.AspNetCore.SpaProxy`，Host 项目在 `Debug` 配置下引用了 `Microsoft.AspNetCore.SpaProxy` 包并声明了 `SpaRoot`/`SpaProxyServerUrl`/`SpaProxyLaunchCommand`；前端同时通过 JavaScript SDK 工程挂入 Host，保证 Rider 能识别标准的 `.NET Launch Settings Profile` 与 SPA 启动项目。
 
 只需要一条命令即可同时启动后端和前端 dev server：
 
@@ -210,7 +212,7 @@ ASP.NET Core 按默认规则加载 `appsettings.json` 和当前环境对应的 `
 | 环境变量 | 用途 | 默认值 |
 | --- | --- | --- |
 | `ASPNETCORE_ENVIRONMENT` | ASP.NET Core 环境 | `Production`（容器中建议显式设置） |
-| `ConnectionStrings__Default` | SQLite 连接字符串 | `Data Source=dividend-harvest.db` |
+| `ConnectionStrings__Default` | SQLite 连接字符串 | `Data Source=portwise.db` |
 | `FtShare__McpEndpoint` | FTShare MCP Streamable HTTP 地址 | `https://market.ft.tech/gateway/mcp` |
 | `FtShare__RequestTimeoutSeconds` | 单次 MCP 请求超时 | `30` |
 | `FtShare__MaxRetryCount` | MCP 请求最大重试次数 | `2` |
@@ -287,7 +289,7 @@ API 使用 URL Segment 版本号，当前版本为 `v1`，完整接口和请求�
 
 完整模型规则、字段口径和验收用例见：
 
-- [股息收益与分批交易参考模型](docs/dividend-harvest-quant-model.md)
+- [股息策略收益与分批交易参考模型](docs/dividend-strategy-quant-model.md)
 - [股息策略研究摘要](docs/dividend-strategy-research.md)
 - [应用架构设计](docs/architecture-design.md)
 

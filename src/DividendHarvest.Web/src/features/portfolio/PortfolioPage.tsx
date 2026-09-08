@@ -82,7 +82,7 @@ export function PortfolioPage({ onNavigate, selectedStockKey, onSelectedStockKey
     if (!nextKey) return
     setSelectedKey(nextKey)
     onSelectedStockKeyChange(nextKey)
-    window.sessionStorage.setItem("dividend-harvest-portfolio-stock", nextKey)
+    window.sessionStorage.setItem("portwise-portfolio-stock", nextKey)
     setResult(null)
     const nextUrl = new URL(window.location.href)
     nextUrl.searchParams.set("stock", nextKey)

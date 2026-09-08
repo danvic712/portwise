@@ -1,10 +1,10 @@
 {
   "ui": {
-    "appName": "股息收割",
-    "brandName": "Dividend Harvest",
-    "pageTitle": "Dividend Harvest · 股息收割",
-    "appEyebrow": "DIVIDEND HARVEST / A-SHARE REFERENCE",
-    "brandCaption": "股息收割 · 长期积累",
+    "appName": "Portwise",
+    "brandName": "Portwise",
+    "pageTitle": "Portwise · 策略参考",
+    "appEyebrow": "PORTWISE / A 股策略",
+    "brandCaption": "策略研究 · 长期积累",
     "backToOverview": "返回今日决策",
     "mainNavigation": "主导航",
     "mobileNavigation": "移动端主导航",

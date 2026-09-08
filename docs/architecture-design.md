@@ -1,8 +1,8 @@
-# Dividend Harvest 应用架构设计
+# Portwise 应用架构设计
 
 ## 1. 目标与边界
 
-Dividend Harvest 是一个面向个人 A 股长期投资者的私人工具。后端使用 ASP.NET Core Controllers，前端和后端最终由同一个 Host 镜像提供。后端负责持久化用户的组合、持仓、交易和模型数据，并通过 FTShare MCP Adapter 获取外部股票资料、行情、股息和财务数据。
+Portwise 是一个面向个人 A 股长期投资者的策略研究与组合记录工具。当前内置股息策略，后端使用 ASP.NET Core Controllers，前端和后端最终由同一个 Host 镜像提供。后端负责持久化用户的组合、持仓、交易和模型数据，并通过 FTShare MCP Adapter 获取外部股票资料、行情、股息和财务数据。
 
 系统只提供可解释的参考结果，不执行交易，也不把外部数据源当作用户持仓或交易记录的归属地。
 
@@ -34,7 +34,7 @@ Host 只负责 HTTP 路由、依赖注入组合和运行时启动；业务规则
 Host 项目的配置文件位于 `src/DividendHarvest/`：
 
 - `appsettings.json`：本地开发默认配置，使用工作目录下的 SQLite 文件。
-- `appsettings.Production.json`：生产环境配置，使用 `/app/data/dividend-harvest.db`，适配 Docker volume 持久化。
+- `appsettings.Production.json`：生产环境配置，使用 `/app/data/portwise.db`，适配 Docker volume 持久化。
 
 ASP.NET Core 默认环境名为 `Production`（大小写不敏感）时，会自动加载 `appsettings.Production.json`。环境变量仍作为后置覆盖层，可用于部署时覆盖连接字符串、FTShare MCP 地址和工具参数。两个文件只保存非敏感默认值，FTShare key 不进入源代码、镜像或 Git。
 
@@ -496,7 +496,7 @@ Host 使用 .NET 原生的 `Microsoft.AspNetCore.OpenApi`（`AddOpenApi`/`MapOpe
 
 ### 10.2 Serilog
 
-Host 使用 Serilog 接管 ASP.NET Core 和应用的 `ILogger<T>` 日志，配置来源为 `appsettings.json`、`appsettings.Development.json`/`appsettings.Production.json`。`WriteTo` 同时配置 `Console` 和 `File` 两个 sink：`Console` 输出到标准输出（本地终端或容器标准输出，供实时观察和容器日志采集）；`File` 按天滚动写入进程工作目录下的 `logs/dividend-harvest-{Date}.log`（`retainedFileCountLimit: 31`，只保留最近 31 天），供本地排查历史问题和无容器日志采集设施时兜底查阅。`logs/` 目录已在 `.gitignore` 中排除，不提交任何运行日志文件；容器部署时 `logs/` 通过 Docker `VOLUME` 声明持久化到宿主机，与 `data/` 卷同一约定。`UseSerilogRequestLogging` 记录 HTTP 请求摘要，业务日志使用结构化属性；请求体、Authorization、FTShare 凭据和原始外部响应不得写入日志（对 Console 和 File 两个 sink 同样生效）。请求、后台同步和 FTShare 调用通过统一诊断上下文写入受控的关联字段。
+Host 使用 Serilog 接管 ASP.NET Core 和应用的 `ILogger<T>` 日志，配置来源为 `appsettings.json`、`appsettings.Development.json`/`appsettings.Production.json`。`WriteTo` 同时配置 `Console` 和 `File` 两个 sink：`Console` 输出到标准输出（本地终端或容器标准输出，供实时观察和容器日志采集）；`File` 按天滚动写入进程工作目录下的 `logs/portwise-{Date}.log`（`retainedFileCountLimit: 31`，只保留最近 31 天），供本地排查历史问题和无容器日志采集设施时兜底查阅。`logs/` 目录已在 `.gitignore` 中排除，不提交任何运行日志文件；容器部署时 `logs/` 通过 Docker `VOLUME` 声明持久化到宿主机，与 `data/` 卷同一约定。`UseSerilogRequestLogging` 记录 HTTP 请求摘要，业务日志使用结构化属性；请求体、Authorization、FTShare 凭据和原始外部响应不得写入日志（对 Console 和 File 两个 sink 同样生效）。请求、后台同步和 FTShare 调用通过统一诊断上下文写入受控的关联字段。
 
 `Program.cs` 采用 Serilog 官方推荐的两阶段初始化模式，避免"Host 尚未构建完成前发生的致命错误没有任何日志"的问题：
 
@@ -529,7 +529,7 @@ Application 使用 Riok.Mapperly 生成编译期映射代码，统一的映射�
 
 - `src/DividendHarvest/Properties/launchSettings.json` 是 Host 本地启动的唯一 profile 来源，提供 `http` profile（`applicationUrl=http://localhost:5276`，`ASPNETCORE_ENVIRONMENT=Development`），供 `dotnet run --launch-profile http` 和 IDE 运行配置下拉框使用；该 profile 同时设置 `DOTNET_USE_POLLING_FILE_WATCHER=1`，兼容 macOS 上当前 .NET 10.0.0 的 `FileSystemWatcher` 启动递归问题，避免 Host 卡在 `WebApplication.CreateBuilder` 阶段；这是 .NET Web 项目模板的标准文件，缺失会导致手动 `dotnet run` 在没有显式设置环境变量时以 `Production` 环境启动，从而绕过开发期配置和异常页面。
 - `appsettings.Development.json` 是 `Development` 环境的配置覆盖（当前只覆盖 Serilog 最低日志级别为 `Debug`），与 `appsettings.json`、`appsettings.Production.json` 一起构成完整的三段式环境配置；新增只在本地开发环境需要的配置项时优先放入这个文件，不要污染 `appsettings.json` 的默认值。
-- 本地开发使用 .NET 官方标准的 `Microsoft.AspNetCore.SpaProxy` 集成前端：`DividendHarvest.csproj` 仅在 `Debug` 配置下引用 `Microsoft.AspNetCore.SpaProxy` 包，并声明 `SpaRoot`（`../DividendHarvest.Web/`）、`SpaProxyServerUrl`（`http://127.0.0.1:4173`）、`SpaProxyLaunchCommand`（`pnpm run dev`）；同时通过 `dividend-harvest.esproj`（`Microsoft.VisualStudio.JavaScript.Sdk`）以 `ReferenceOutputAssembly=false` 挂入 Host，使 Rider 识别前端项目与标准 `.NET Launch Settings Profile`。`Properties/launchSettings.json` 的 `http` profile 设置了 `ASPNETCORE_HOSTINGSTARTUPASSEMBLIES=Microsoft.AspNetCore.SpaProxy`，Host 地址为 `http://localhost:5276`。执行 `dotnet run --launch-profile http` 或 Rider 的 `DividendHarvest: http` 配置时，SpaProxy 通过 `IHostingStartup` 自动注入的 `IStartupFilter` 检测 Vite dev server 是否就绪，未就绪则自动执行 `SpaProxyLaunchCommand` 拉起，并把非 API 请求反向代理到 dev server；开发者只需要一条命令即可完成前后端联调。还原、构建、运行（CI、Dockerfile、`BuildFrontend` Target、SpaProxy dev server）全部统一使用 pnpm，不引入 npm。`WebApplicationExtensions` 的中间件管道不需要为此做任何区分（Development/Production 都是同一套 `UseDefaultFiles`/`UseStaticFiles`/`MapFallbackToFile`），SpaProxy 的转发逻辑完全由 `IStartupFilter` 在管道最前面完成。Release/Publish 不引用 SpaProxy 包，发布产物仍是纯静态文件。
+- 本地开发使用 .NET 官方标准的 `Microsoft.AspNetCore.SpaProxy` 集成前端：Host 项目仅在 `Debug` 配置下引用 `Microsoft.AspNetCore.SpaProxy` 包，并声明 `SpaRoot`（`../DividendHarvest.Web/`）、`SpaProxyServerUrl`（`http://127.0.0.1:4173`）、`SpaProxyLaunchCommand`（`pnpm run dev`）；同时通过 `portwise.esproj`（`Microsoft.VisualStudio.JavaScript.Sdk`）以 `ReferenceOutputAssembly=false` 挂入 Host，使 Rider 识别标准 `.NET Launch Settings Profile` 与 SPA 启动项目。`Properties/launchSettings.json` 的 `http` profile 设置了 `ASPNETCORE_HOSTINGSTARTUPASSEMBLIES=Microsoft.AspNetCore.SpaProxy`，Host 地址为 `http://localhost:5276`。执行 `dotnet run --launch-profile http` 或 IDE 的 `http` 配置时，SpaProxy 通过 `IHostingStartup` 自动注入的 `IStartupFilter` 检测 Vite dev server 是否就绪，未就绪则自动执行 `SpaProxyLaunchCommand` 拉起，并把非 API 请求反向代理到 dev server；开发者只需要一条命令即可完成前后端联调。还原、构建、运行（CI、Dockerfile、`BuildFrontend` Target、SpaProxy dev server）全部统一使用 pnpm，不引入 npm。`WebApplicationExtensions` 的中间件管道不需要为此做任何区分（Development/Production 都是同一套 `UseDefaultFiles`/`UseStaticFiles`/`MapFallbackToFile`），SpaProxy 的转发逻辑完全由 `IStartupFilter` 在管道最前面完成。Release/Publish 不引用 SpaProxy 包，发布产物仍是纯静态文件。
 - 前端（`src/DividendHarvest.Web`）与 Host 项目在构建上保持独立：CI（`build-and-test.yml`）和 Dockerfile 分别用 `pnpm install`/`pnpm build` 显式构建前端后再构建/发布 Host，这是为了避免在只安装 .NET SDK、没有 Node.js/pnpm 的构建环境（例如 Docker 后端构建阶段镜像）上因为隐式触发前端构建而失败。`DividendHarvest.csproj` 额外提供一个默认关闭的 `BuildFrontend` MSBuild Target（`BeforeTargets="Build;Publish"`），只有显式传入 `-p:BuildFrontend=true` 执行 `dotnet build`/`dotnet publish` 时才会自动执行 `pnpm install`/`pnpm build` 并把产物写入 Host 的 `wwwroot`，用于本地一次性生成前后端产物；CI 和 Docker 流程不依赖也不触发这个 Target。</replace>
 
 ## 11. Exception 设计
@@ -576,7 +576,7 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 新增行情、股息、财务和建议计算功能时，优先遵守以下边界：
 
 - 外部 FTShare 数据先进入 Infrastructure Adapter，再转换为 Application DTO。
-- 事实数据和建议快照按 `docs/dividend-harvest-quant-model.md` 的 canonical 字段建模。
+- 事实数据和建议快照按 `docs/dividend-strategy-quant-model.md` 的 canonical 字段建模。
 - 新增持久化能力先增加对应 Domain Model `class` 和 Fluent Configuration，再通过 `IUow.Get<TEntity>()` 获取通用 Repository；不要从 Host 或 AppService 直接使用 DbContext。
 - 新增业务状态代码时使用显式枚举或 `*_code` 约定；字符串代码放入 `Codes/`，真正的枚举放入所属项目的 `Enums/` 文件夹。
 

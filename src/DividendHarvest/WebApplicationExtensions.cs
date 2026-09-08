@@ -49,7 +49,7 @@ public static class WebApplicationExtensions
             {
                 options.SwaggerEndpoint(
                     $"/openapi/{description.GroupName}.json",
-                    $"Dividend Harvest API {description.GroupName}");
+                    $"Portwise API {description.GroupName}");
             }
 
             options.RoutePrefix = "swagger";
