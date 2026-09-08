@@ -80,7 +80,9 @@ src/
 │   ├── Exceptions/                     # 跨层可识别的持久化异常
 │   ├── Portfolio/                      # 持仓领域规则
 │   ├── Securities/                     # A 股标识领域规则
-│   └── DividendModel/                  # 股息率与价格区域计算
+│   ├── DividendModel/                  # 股息率与价格区域计算
+│   └── Recommendations/                # 推荐规则组合入口
+│       └── RecommendationModule.cs
 ├── Portwise.Application/
 │   ├── Contracts/                      # Application 对外 Interface
 │   │   ├── ISetupAppService.cs
@@ -424,13 +426,13 @@ Application 只返回 `StockModelParameterSet` DTO，不返回 `ModelParameterSe
 
 ### 8.8 当前股票分析
 
-`GET /api/v1/stocks/{securityCode}/{exchangeCode}/analysis` 通过 `IStockRecommendationAppService` 编排单股结果：`IStockAnalysisAppService` 读取当前已生效模型参数、按交易日期去重后的最近两个有效行情、股息事实和可选持仓，计算 TTM 实际每股股息、当前股息率及四个参考价格边界；随后由单股推荐用例调用 `IPortfolioAllocationAppService` 在单股票范围内计算建议股数。`StockAnalysisResult` 只承载可复用的单股分析事实，`StockRecommendationResult` 在外层承载建议买卖股数、金额和预计手续费，避免把组合分配结果混入分析 DTO。`ObservedPriceZoneCode` 是最新有效收盘价的直接区域，`PriceZoneCode` 只有在最近两个有效交易日一致时才有值；未确认时不生成买入或减仓股数。历史回放中的股息和财务事实还必须满足 `published_at` 不晚于 `data_as_of_date`；缺失公开时间的事实仍可参与当前 V1 计算，但不应被伪造为有明确公开时点。
+`GET /api/v1/stocks/{securityCode}/{exchangeCode}/analysis` 通过 `IStockRecommendationAppService` 编排单股结果：`IStockAnalysisAppService` 读取当前已生效模型参数、按交易日期去重后的最近两个有效行情、股息事实和可选持仓，组装为 Domain `RecommendationModule.CalculateStock` 的输入，由纯计算模块生成 TTM 实际每股股息、当前股息率及四个参考价格边界；随后由单股推荐用例调用 `IPortfolioAllocationAppService` 在单股票范围内计算建议股数。`StockAnalysisResult` 只承载可复用的单股分析事实，`StockRecommendationResult` 在外层承载建议买卖股数、金额和预计手续费，避免把组合分配结果混入分析 DTO。`ObservedPriceZoneCode` 是最新有效收盘价的直接区域，`PriceZoneCode` 只有在最近两个有效交易日一致时才有值；未确认时不生成买入或减仓股数。历史回放中的股息和财务事实还必须满足 `published_at` 不晚于 `data_as_of_date`；缺失公开时间的事实仍可参与当前 V1 计算，但不应被伪造为有明确公开时点。
 
-分析结果明确区分 `unavailable`、`cautious`、`failed`、`re_evaluate` 和价格区域；取消分红时可靠性代码为 `failed`，模型状态单独为 `re_evaluate`，建议代码为 `re_evaluate`。当前没有完整股息可靠性财务资料时只返回谨慎参考和 `no_action`，不生成买卖股数。单股分析阶段不读取组合现金或全组合市值，也不计算交易数量；`StockRecommendationAppService` 或组合分配阶段统一调用 Domain `TradeQuantityCalculator`，避免同一结果在两个阶段重复计算。`StockAnalysisResult.SecurityId` 是后续 Application 阶段传递的规范本地身份。多股票之间的资金排序和集中度竞争由组合建议用例统一处理，建议快照由独立用例保存。
+分析结果明确区分 `unavailable`、`cautious`、`failed`、`re_evaluate` 和价格区域；取消分红时可靠性代码为 `failed`，模型状态单独为 `re_evaluate`，建议代码为 `re_evaluate`。当前没有完整股息可靠性财务资料时只返回谨慎参考和 `no_action`，不生成买卖股数。单股分析阶段不读取组合现金或全组合市值，也不计算交易数量；`RecommendationModule.CalculateStock` 负责在 Domain 内组合单股规则，`RecommendationModule.AllocatePortfolio` 负责在 Domain 内组合预算、集中度和交易数量规则。两个入口都是纯计算模块，Application 的 `*AppService` 只负责读取事实、组装输入和映射输出，避免把业务规则重新散落到用例编排中。`StockAnalysisResult.SecurityId` 是后续 Application 阶段传递的规范本地身份。多股票之间的资金排序和集中度竞争由组合建议用例统一处理，建议快照由独立用例保存。
 
 ### 8.9 多股票组合建议
 
-`GET /api/v1/recommendations` 通过 `IPortfolioRecommendationAppService` 读取关注列表、每只股票的单股分析结果和组合预算，再把这些已按股票代码与交易所对齐的输入交给 `IPortfolioAllocationAppService`。前者是组合建议用例编排，后者是组合分配深模块，并在组合范围读取有效模型参数，独立负责本期预算、行业/单股约束、交易数量和稳定排序。资金分配顺序固定为强买入区、分批加仓区，再按可靠性通过状态和目标股数缺口排序；相同条件保持关注列表的稳定顺序，不使用随机排序。
+`GET /api/v1/recommendations` 通过 `IPortfolioRecommendationAppService` 读取关注列表、每只股票的单股分析结果和组合预算，再把这些已按股票代码与交易所对齐的输入交给 `IPortfolioAllocationAppService`。前者是组合建议用例编排，后者是 Application 适配器：它在组合范围读取有效模型参数后调用 Domain `RecommendationModule.AllocatePortfolio`，由该深模块独立负责本期预算、行业/单股约束、交易数量和稳定排序。资金分配顺序固定为强买入区、分批加仓区，再按可靠性通过状态和目标股数缺口排序；相同条件保持关注列表的稳定顺序，不使用随机排序。
 
 组合建议会先从现金流水余额扣除组合现金保留比例，再逐只应用预算比例、单股/单次/单期金额上限、行业/单股/单期金额上限、交易单位和手续费，并把已分配的买入金额从剩余预算中扣除。现金保留比例虽然按股票参数保存，但组合计算取当前有效参数中的最大值。减仓仍保护核心仓，不占用买入预算。`Security.SectorCode` 来自 FTShare 股票资料的可选 `sector_code`/`industry_code` 字段；缺失行业资料时跳过行业上限，不推断或伪造行业归属。
 
@@ -450,13 +452,20 @@ StockDailyDataSyncAppService ──┐
                                ├── FTShare profile/market/dividend/financial
                                └── 四类事实幂等写入
 
-StockAnalysisAppService ──> StockAnalysisResult(+ SecurityId)
+StockAnalysisAppService ──> RecommendationModule.CalculateStock
                                       │
-StockRecommendationAppService ───────┴──> StockRecommendationResult
+                                      ▼
+                          StockAnalysisResult(+ SecurityId)
                                       │
-PortfolioRecommendationAppService ────┴──> PortfolioAllocationAppService
+StockRecommendationAppService ──────┴──> PortfolioAllocationAppService
+                                      │                 │
+PortfolioRecommendationAppService ──┘                 ▼
+                                      RecommendationModule.AllocatePortfolio
                                                         │
                                                         ▼
+                                      Stock/Portfolio RecommendationResult
+                                      │
+                                      ▼
                                       RecommendationSnapshotAppService
                                       (直接使用同一分析结果写入快照)
 ```

@@ -1,10 +1,8 @@
 using Portwise.Application.Contracts;
 using Portwise.Application.Dtos;
-using Portwise.Domain.Codes;
 using Portwise.Domain.Contracts;
-using Portwise.Domain.DividendModel;
 using Portwise.Domain.Models;
-using Portwise.Domain.Portfolio;
+using Portwise.Domain.Recommendations;
 
 namespace Portwise.Application.DividendStrategy;
 
@@ -54,138 +52,55 @@ public sealed class PortfolioAllocationAppService(
                 parameter.PortfolioId == budgetSummary.PortfolioId
                 && parameter.EffectiveFromDate <= currentDate,
             cancellationToken: cancellationToken);
-        var parametersById = parameters.ToDictionary(parameter => parameter.Id);
-        var totalPortfolioValue = alignedAnalyses
-            .Where(analysis => analysis.ClosePrice is not null)
-            .Sum(analysis => analysis.HeldShares * analysis.ClosePrice!.Value);
-        var portfolioValuationComplete = alignedAnalyses
-            .All(analysis => analysis.HeldShares <= 0 || analysis.ClosePrice is not null);
-        var sectorMarketValues = Enumerable.Range(0, alignedAnalyses.Length)
-            .Where(index => !string.IsNullOrWhiteSpace(watchlist[index].SectorCode))
-            .GroupBy(index => watchlist[index].SectorCode!, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(
-                group => group.Key,
-                group => group.Sum(index =>
-                    alignedAnalyses[index].HeldShares
-                    * (alignedAnalyses[index].ClosePrice ?? 0m)),
-                StringComparer.OrdinalIgnoreCase);
-        var cashReserveRatio = PortfolioBudgetCalculator.CalculateCurrentCashReserveRatio(
-            parameters,
-            currentDate);
-        var startingAvailableBudget = portfolioValuationComplete
-            ? PortfolioBudgetCalculator.CalculateAvailableBudget(
+        var calculation = RecommendationModule.AllocatePortfolio(
+            new PortfolioRecommendationInput(
+                budgetSummary.PortfolioId,
                 budgetSummary.CashBalanceAmount,
-                totalPortfolioValue,
-                cashReserveRatio)
-            : 0m;
-        var remainingBudget = startingAvailableBudget;
-        var totalSuggestedTradeAmount = 0m;
-        var totalTransactionFeeAmount = 0m;
-        var recommendations = alignedAnalyses
-            .Select(analysis => new StockRecommendationResult(
-                analysis,
-                0,
-                0,
-                0m,
-                0m))
-            .ToArray();
-
-        var orderedIndexes = Enumerable.Range(0, alignedAnalyses.Length)
-            .OrderBy(index => GetPricePriority(alignedAnalyses[index].PriceZoneCode))
-            .ThenBy(index =>
-                alignedAnalyses[index].DividendReliabilityCode == DividendReliabilityCodes.Passed
-                    ? 0
-                    : 1)
-            .ThenByDescending(index => GetTargetGap(watchlist[index].Holding))
-            .ThenBy(index => index)
-            .ToArray();
-
-        foreach (var index in orderedIndexes)
-        {
-            var analysis = alignedAnalyses[index];
-            if (analysis.ModelParameterSetId is not { } parameterId
-                || !parametersById.TryGetValue(parameterId, out var parameter)
-                || analysis.ClosePrice is not { } closePrice
-                || analysis.PriceZoneCode is not { } priceZoneCode)
-            {
-                continue;
-            }
-
-            var trade = TradeQuantityCalculator.Calculate(
-                parameter,
-                analysis.ModelStatusCode,
-                analysis.DividendReliabilityCode,
-                priceZoneCode,
-                closePrice,
-                analysis.HeldShares,
-                analysis.CoreShares,
-                watchlist[index].Holding?.TargetShares ?? 0,
-                remainingBudget,
-                totalPortfolioValue > 0 ? totalPortfolioValue : null,
-                analysis.HeldShares * closePrice,
-                watchlist[index].SectorCode is { } sectorCode
-                    && sectorMarketValues.TryGetValue(sectorCode, out var sectorMarketValue)
-                    ? sectorMarketValue
-                    : null);
-            var recommendation = new StockRecommendationResult(
-                analysis,
-                trade.SuggestedBuyShares,
-                trade.SuggestedSellShares,
-                trade.SuggestedTradeAmount,
-                trade.EstimatedTransactionFeeAmount);
-            if (trade.SuggestedBuyShares == 0
-                && IsBuyZone(priceZoneCode)
-                && analysis.ModelStatusCode == ModelStatusCodes.Available
-                && analysis.DividendReliabilityCode == DividendReliabilityCodes.Passed)
-            {
-                recommendation = recommendation with
-                {
-                    Analysis = analysis with
+                watchlist
+                    .Select((stock, index) =>
                     {
-                        Explanation = !portfolioValuationComplete
-                            ? $"{analysis.Explanation} 组合中存在缺少有效收盘价的持仓，本期不生成买入建议。"
-                            : $"{analysis.Explanation} 本期组合预算或仓位额度不足，建议股数为 0。"
-                    }
-                };
-            }
-
-            if (trade.SuggestedBuyShares > 0)
+                        var analysis = alignedAnalyses[index];
+                        return new PortfolioRecommendationStockInput(
+                            stock.SecurityId,
+                            stock.SectorCode,
+                            analysis.ModelStatusCode,
+                            analysis.DividendReliabilityCode,
+                            analysis.ClosePrice,
+                            analysis.PriceZoneCode,
+                            analysis.HeldShares,
+                            analysis.CoreShares,
+                            stock.Holding?.TargetShares ?? 0,
+                            analysis.ModelParameterSetId,
+                            analysis.Explanation);
+                    })
+                    .ToArray(),
+                parameters,
+                currentDate,
+                computedAt));
+        var analysisById = alignedAnalyses.ToDictionary(analysis => analysis.SecurityId);
+        var recommendations = calculation.Stocks
+            .Select(stock =>
             {
-                remainingBudget = Math.Max(
-                    remainingBudget
-                        - trade.SuggestedTradeAmount
-                        - trade.EstimatedTransactionFeeAmount,
-                    0m);
-            }
-
-            totalSuggestedTradeAmount += trade.SuggestedTradeAmount;
-            totalTransactionFeeAmount += trade.EstimatedTransactionFeeAmount;
-            recommendations[index] = recommendation;
-        }
+                var analysis = analysisById[stock.SecurityId] with
+                {
+                    Explanation = stock.Explanation
+                };
+                return new StockRecommendationResult(
+                    analysis,
+                    stock.SuggestedBuyShares,
+                    stock.SuggestedSellShares,
+                    stock.SuggestedTradeAmount,
+                    stock.EstimatedTransactionFeeAmount);
+            })
+            .ToArray();
 
         return new PortfolioRecommendationResult(
-            budgetSummary.PortfolioId,
-            startingAvailableBudget,
-            remainingBudget,
-            totalSuggestedTradeAmount,
-            totalTransactionFeeAmount,
+            calculation.PortfolioId,
+            calculation.StartingAvailableBudgetAmount,
+            calculation.RemainingAvailableBudgetAmount,
+            calculation.TotalSuggestedTradeAmount,
+            calculation.EstimatedTransactionFeeAmount,
             recommendations,
-            computedAt);
+            calculation.ComputedAt);
     }
-
-    private static int GetPricePriority(string? priceZoneCode)
-        => priceZoneCode switch
-        {
-            PriceZoneCodes.StrongBuy => 0,
-            PriceZoneCodes.Accumulate => 1,
-            _ => 2
-        };
-
-    private static int GetTargetGap(StockHoldingSnapshot? holding)
-        => holding is null
-            ? 0
-            : Math.Max(holding.TargetShares - holding.HeldShares, 0);
-
-    private static bool IsBuyZone(string priceZoneCode)
-        => priceZoneCode is PriceZoneCodes.StrongBuy or PriceZoneCodes.Accumulate;
 }
