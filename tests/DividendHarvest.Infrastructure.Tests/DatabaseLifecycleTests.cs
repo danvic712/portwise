@@ -1,3 +1,4 @@
+using DividendHarvest.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -53,6 +54,29 @@ public sealed class DatabaseLifecycleTests
                 .GetAppliedMigrationsAsync();
 
             Assert.Equal(migrationsAfterFirstRun, migrationsAfterSecondRun);
+        }
+        finally
+        {
+            DeleteDatabase(databasePath);
+        }
+    }
+
+    [Fact]
+    public async Task MigrateAsync_EnforcesTheSinglePortfolioInvariant()
+    {
+        var databasePath = CreateDatabasePath();
+
+        try
+        {
+            await using var dbContext = CreateDbContext(databasePath);
+            var lifecycle = new DatabaseLifecycle(dbContext);
+            await lifecycle.MigrateAsync();
+
+            dbContext.Portfolios.Add(new Portfolio { Name = "第一组合" });
+            await dbContext.SaveChangesAsync();
+            dbContext.Portfolios.Add(new Portfolio { Name = "第二组合" });
+
+            await Assert.ThrowsAsync<DbUpdateException>(() => dbContext.SaveChangesAsync());
         }
         finally
         {

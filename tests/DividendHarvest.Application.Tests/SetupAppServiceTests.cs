@@ -5,11 +5,12 @@ using DividendHarvest.Application.Exceptions;
 using DividendHarvest.Application.Setup;
 using DividendHarvest.Application.Validators;
 using DividendHarvest.Domain.Contracts;
+using DividendHarvest.Domain.Exceptions;
 using DividendHarvest.Domain.Models;
-using PortfolioEntity = DividendHarvest.Domain.Models.Portfolio;
 using DividendHarvest.Domain.Securities;
 using Moq;
 using Xunit;
+using PortfolioEntity = DividendHarvest.Domain.Models.Portfolio;
 
 namespace DividendHarvest.Application.Tests;
 
@@ -149,6 +150,27 @@ public sealed class SetupAppServiceTests
         Assert.False(result.StockDataSyncScheduled);
         unitOfWork.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         repository.Verify(x => x.AddAsync(It.IsAny<PortfolioEntity>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task InitializeAsync_maps_a_concurrent_unique_portfolio_commit_to_setup_conflict()
+    {
+        var repository = CreatePortfolioRepository(hasPortfolio: false);
+        var scheduler = new Mock<IStockDataSyncScheduler>();
+        var unitOfWork = CreateUnitOfWork(repository);
+        unitOfWork
+            .Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new UnitOfWorkCommitException(
+                new InvalidOperationException("unique portfolio scope"),
+                isUniqueConstraintViolation: true));
+        var service = new SetupAppService(unitOfWork.Object, scheduler.Object, CreateRequestValidator());
+
+        var exception = await Assert.ThrowsAsync<ApplicationErrorException>(() => service.InitializeAsync(
+            new SetupRequest("长期股息组合", [new SetupStockRequest("000001", "SZSE", null)]),
+            CancellationToken.None));
+
+        Assert.Equal(ApplicationErrorCodes.SetupAlreadyCompleted, exception.ErrorCode);
+        scheduler.Verify(x => x.TrySchedule(), Times.Never);
     }
 
     [Fact]

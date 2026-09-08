@@ -3,11 +3,12 @@ using DividendHarvest.Application.Dtos;
 using DividendHarvest.Application.Exceptions;
 using DividendHarvest.Application.Validators;
 using DividendHarvest.Domain.Contracts;
+using DividendHarvest.Domain.Exceptions;
 using DividendHarvest.Domain.Models;
-using PortfolioEntity = DividendHarvest.Domain.Models.Portfolio;
 using DividendHarvest.Domain.Portfolio;
 using DividendHarvest.Domain.Securities;
 using FluentValidation;
+using PortfolioEntity = DividendHarvest.Domain.Models.Portfolio;
 
 namespace DividendHarvest.Application.Setup;
 
@@ -115,7 +116,16 @@ public sealed class SetupAppService(
             }
         }
 
-        await uow.CommitAsync(cancellationToken);
+        try
+        {
+            await uow.CommitAsync(cancellationToken);
+        }
+        catch (UnitOfWorkCommitException exception) when (exception.IsUniqueConstraintViolation)
+        {
+            throw ApplicationErrors.Simple(
+                ApplicationErrorCodes.SetupAlreadyCompleted,
+                exception);
+        }
         var stockDataSyncScheduled = stockDataSyncScheduler.TrySchedule();
 
         return new SetupResult(

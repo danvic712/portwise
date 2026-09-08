@@ -19,5 +19,12 @@ public sealed class PortfolioConfiguration : IEntityTypeConfiguration<Portfolio>
             .HasColumnName("currency_code")
             .HasMaxLength(3)
             .IsRequired();
+        builder.Property<string>("PortfolioScope")
+            .HasColumnName("portfolio_scope")
+            .HasMaxLength(32)
+            .HasDefaultValue("default")
+            .IsRequired();
+        builder.HasIndex("PortfolioScope")
+            .IsUnique();
     }
 }

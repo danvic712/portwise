@@ -341,6 +341,8 @@ modelBuilder.ApplyConfigurationsFromAssembly(
 
 因此实体类不使用 Data Annotation，也不需要知道数据库表结构。新增实体时必须同时新增对应的 `IEntityTypeConfiguration<TEntity>` 文件；一个配置文件只负责一个实体。
 
+V1 只有一个组合上下文。`PortfolioConfiguration` 使用 `portfolio_scope` 默认值和唯一索引在数据库层强制单组合不变量；`SetupAppService` 仍先给出正常的已完成错误，若并发初始化在提交阶段触发唯一约束，则把 Infrastructure 的 commit 错误转换为相同的 `setup_already_completed` Application 错误。
+
 当前基础关系：
 
 ```text
