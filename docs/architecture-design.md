@@ -633,4 +633,4 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | 02 后端 Recommendation module | 已修复：Domain `RecommendationModule` 集中单股分析与组合分配规则，Application AppService 变为薄 Adapter | `196a4ff` |
 | 03 HTTP contract 单一事实源 | 已修复：Host build-time 生成版本化 OpenAPI，前端从 `openapi-typescript` 生成 transport contract，`api-contract.ts` 是唯一 wire-to-UI Adapter | `e97c070` |
 | 04 导航与 Setup gate module | 已修复：`navigation.ts` 集中路由、history、查询参数和 Setup gate seam，修复 query 与旧 session 选择冲突 | `e4ff8f3` |
-| 05 Application 领域 module locality | 已修复：Setup、Stocks、Portfolio、Recommendations 各自共置 contract/DTO/validator/实现/测试，根目录只保留跨 module 共享项 | `b535643` |
+| 05 Application 领域 module locality | 已修复：Setup、Stocks、Portfolio、Recommendations 各自共置 contract/DTO/validator/实现/测试，根目录只保留跨 module 共享项 | `aa2dae8` |
