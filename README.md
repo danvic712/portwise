@@ -292,6 +292,7 @@ API 使用 URL Segment 版本号，当前版本为 `v1`，完整接口和请求�
 - [股息策略收益与分批交易参考模型](docs/dividend-strategy-quant-model.md)
 - [股息策略研究摘要](docs/dividend-strategy-research.md)
 - [应用架构设计](docs/architecture-design.md)
+- [架构决策记录](docs/adr/README.md)
 
 ## 项目结构
 

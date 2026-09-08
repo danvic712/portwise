@@ -6,6 +6,8 @@ Portwise 是一个面向个人 A 股长期投资者的策略研究与组合记�
 
 系统只提供可解释的参考结果，不执行交易，也不把外部数据源当作用户持仓或交易记录的归属地。
 
+本文档是当前实现地图；难以逆转的架构选择记录在 [`docs/adr/`](adr/)，领域术语和产品范围记录在根目录 [`CONTEXT.md`](../CONTEXT.md)。实现变更必须同步更新相应 ADR 或本文件，不能让本地 agent 笔记取代受版本控制的决策记录。
+
 ## 2. 分层与依赖方向
 
 ```text
@@ -195,7 +197,7 @@ src/
 
 Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfolio` 和 `Recommendations` 四个 module。每个 module 共置自己拥有的 Interface、DTO、Validator、实现和测试；因此修改一个用例时，主要知识和验证都集中在同一目录。module 内的 public type 使用对应的 `Portwise.Application.<Module>.(Contracts|Dtos|Validators)` namespace，`ModuleNamespaceArchitectureTests` 会阻止新的类型泄漏回技术桶。`Contracts`、`Dtos` 和 `Validators` 根目录只保留真正跨 module 的错误、本地化、诊断、共享持仓 DTO 和通用 A 股规则，避免技术桶重新变成所有业务的汇聚点。目录归并不等于合并 HTTP 契约：价格、股息和财务同步仍然保持独立的 Interface 与 AppService，因为它们具有不同的数据校验、幂等键和结果类型；资料、行情、股息和财务四类事实的共同摄取、Security 解析、FTShare 调用、幂等写入和逐类失败策略由 `IStockFactSyncAppService` / `StockFactSyncAppService` 这个深模块承载，三个 HTTP AppService 只是验证后转发。单股分析、组合分配和建议快照也保持独立的用例边界。前端按相同的业务边界拆分 feature，但只通过版本化 HTTP API 访问后端，不直接引用 Application 或 Infrastructure。
 
-前端公共页面框架由 `SiteHeader`、`SiteFooter`、`PageFrame`、`PageTitle`、`SectionHeading` 和 `site-navigation` 组成，禁止使用 `app-shell` 作为公共组件名称；所有页面通过 `PageFrame` 复用框架，页面专属状态与布局留在对应 feature。`src/lib/navigation.ts` 是页面 shell 的导航 module：它集中路由识别、Setup gate 所需的路径判断、浏览器 history/popstate Adapter、查询参数更新和组合股票选择的 session 持久化；`App.tsx` 只负责把 Setup 状态映射为页面，feature 通过 `onNavigate`/`onReplaceQuery` seam 操作导航，不直接写 `window.history` 或 `sessionStorage`。查询参数优先于旧 session 选择，避免从今日决策跳转到组合页面时恢复错误股票。操作建议的代码归类、买卖方向、展示状态、价格区间和未知代码降级统一由 `src/lib/recommendation-display.ts` 提供；页面和组件只消费归一化后的展示结果，不自行解析 `recommendation_code` 或 `price_zone_code`。`index.css` 只承载 token、reset 和跨页面共享原子样式；今日决策页的布局、等待态、就绪态、骨架屏、装饰和响应式样式统一位于 `features/recommendations/recommendations.css`。交互控件优先使用 `src/components/ui` 中的 shadcn/ui 原语，feature 样式只负责业务变体与布局。
+前端公共页面框架由 `SiteHeader`、`SiteFooter`、`PageFrame`、`PageTitle`、`SectionHeading` 和 `site-navigation` 组成；`application-shell.tsx` 是负责 Setup gate、路由选择和 feature 懒加载的应用编排 module，不是公共视觉组件。所有页面通过 `PageFrame` 复用框架，页面专属状态与布局留在对应 feature。`src/lib/navigation.ts` 是页面 shell 的导航 module：它集中路由识别、Setup gate 所需的路径判断、浏览器 history/popstate Adapter、查询参数更新和组合股票选择的 session 持久化；`App.tsx` 只负责提供 LocaleProvider，feature 通过 `onNavigate`/`onReplaceQuery` seam 操作导航，不直接写 `window.history` 或 `sessionStorage`。查询参数优先于旧 session 选择，避免从今日决策跳转到组合页面时恢复错误股票。操作建议的代码归类、买卖方向、展示状态、价格区间和未知代码降级统一由 `src/lib/recommendation-display.ts` 提供；页面和组件只消费归一化后的展示结果，不自行解析 `recommendation_code` 或 `price_zone_code`。`index.css` 只承载 token、reset 和跨页面共享原子样式；今日决策页的布局、等待态、就绪态、骨架屏、装饰和响应式样式统一位于 `features/recommendations/recommendations.css`。交互控件优先使用 `src/components/ui` 中的 shadcn/ui 原语，feature 样式只负责业务变体与布局。
 
 前端使用 Node `24.16.0` 与 pnpm `12.3.4` 构建静态资源，输出到 Host 的 `wwwroot/`；该目录是构建产物并保持本地生成，不提交源代码仓库。根目录 `Dockerfile` 使用 Node Alpine、.NET SDK Alpine 和 ASP.NET Core Alpine 三阶段构建：前两阶段只负责编译，最终镜像只保留 .NET publish 输出，因此不会携带 Node、pnpm、源码或测试依赖。单镜像构建流程必须先完成前端构建，再执行 ASP.NET Core publish；开发预览使用 Vite proxy 将 `/api` 转发到本地 Host。
 
@@ -532,7 +534,7 @@ Host 使用 Serilog 接管 ASP.NET Core 和应用的 `ILogger<T>` 日志，配�
 
 ### 10.3 Mapperly
 
-Application 使用 Riok.Mapperly 生成编译期映射代码，统一的映射声明位于 `Application/Mapping/ApplicationMapper.cs`。Mapper 只负责 Domain Model、外部规范化 DTO 和响应 DTO 之间的数据形状转换；业务规则、数据查询、事务和派生建议仍由 Application/Domain 负责。
+Application 使用 Riok.Mapperly 生成编译期映射代码，映射声明分别位于 `Application/Stocks/StocksMapper.cs`、`Application/Portfolio/PortfolioMapper.cs` 和 `Application/Recommendations/RecommendationsMapper.cs`。Mapper 只负责 Domain Model、外部规范化 DTO 和响应 DTO 之间的数据形状转换；业务规则、数据查询、事务和派生建议仍由 Application/Domain 负责。
 
 ### 10.4 API Versioning
 
@@ -646,3 +648,4 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | 02 Recommendation 事实装配 module | 已完成：`StockAnalysisAppService` 增加关注列表批量事实读取，单股与组合入口共享一次计算时间和分析结果；组合分配拒绝混合计算时间，快照复用组合结果时间 | `dotnet test`（82 Application tests）；提交 `refactor: batch recommendation fact assembly` |
 | 03 Frontend application shell module | 已完成：路由选择、Setup gate、浏览器 session 读取和 feature 装载集中到 `application-shell.tsx`；feature 页面按路由懒加载；navigation 纯策略增加 Node 原生测试与 `pnpm test` 脚本 | `pnpm test`（4 tests）、`pnpm build`、`pnpm lint`；提交 `refactor: deepen frontend application shell` |
 | 04 Application module ownership executable | 已完成：module-specific Contracts/DTOs/Validators 使用 module namespace，Mapperly 映射拆分为 `StocksMapper`、`PortfolioMapper`、`RecommendationsMapper`；新增架构测试防止类型泄漏回根技术桶 | `dotnet test`（84 Application tests）、`dotnet build Portwise.slnx`；提交 `refactor: enforce application module ownership` |
+| 05 CONTEXT/ADR authority | 已完成：修正根上下文产品名与文档权威声明，新增 `docs/adr/` 索引及单组合、单 Host、HTTP 合约、Application module locality 四项 Accepted ADR，并清理实现地图中的过时路径 | `git diff --check`、全文旧路径扫描；提交 `docs: establish architecture decision authority` |
