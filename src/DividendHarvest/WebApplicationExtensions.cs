@@ -1,7 +1,7 @@
+using Asp.Versioning.ApiExplorer;
 using DividendHarvest.Application.Contracts;
 using DividendHarvest.Application.Diagnostics;
 using DividendHarvest.Infrastructure.Contracts;
-using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.OpenApi;
@@ -16,6 +16,7 @@ public static class WebApplicationExtensions
     public static WebApplication UseDividendHarvest(this WebApplication app)
     {
         app.UseDividendHarvestDiagnosticContext();
+        app.UseRequestLocalization();
         app.UseExceptionHandler();
         app.UseSerilogRequestLogging();
         app.UseDefaultFiles();

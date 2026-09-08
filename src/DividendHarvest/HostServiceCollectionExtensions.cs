@@ -1,3 +1,4 @@
+using System.Globalization;
 using Asp.Versioning;
 using DividendHarvest.Application;
 using DividendHarvest.Application.Contracts;
@@ -9,6 +10,7 @@ using DividendHarvest.ExceptionHandling;
 using DividendHarvest.HealthChecks;
 using DividendHarvest.Infrastructure;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -42,6 +44,18 @@ public static class HostServiceCollectionExtensions
                 .Enrich.FromLogContext()
                 .Enrich.WithSpan());
         services.AddProblemDetails();
+        services.AddLocalization();
+        services.AddOptions<RequestLocalizationOptions>()
+            .Configure<IApplicationErrorCatalog>((options, catalog) =>
+            {
+                var cultures = catalog.SupportedCultureNames
+                    .Select(CultureInfo.GetCultureInfo)
+                    .ToList();
+                var defaultCulture = CultureInfo.GetCultureInfo(catalog.DefaultCultureName);
+                options.DefaultRequestCulture = new RequestCulture(defaultCulture);
+                options.SupportedCultures = cultures;
+                options.SupportedUICultures = cultures;
+            });
         services.AddSingleton<ApplicationDiagnosticContext, ActivityDiagnosticContext>();
         services.AddSingleton<IHttpErrorRenderer, ProblemDetailsErrorRenderer>();
         services.AddExceptionHandler<ApplicationExceptionHandler>();

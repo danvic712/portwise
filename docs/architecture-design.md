@@ -40,9 +40,9 @@ ASP.NET Core 默认环境名为 `Production`（大小写不敏感）时，会自
 
 ## 3.1 多语言资源
 
-根目录 `locales/` 是跨层共享的文本资源源文件，当前包含 `zh-CN` 和 `en-US` 两个语言目录；每个语言目录按业务领域拆分为 `common.json`、`setup.json`、`stocks.json`、`portfolio.json` 和 `dividend-strategy.json`。异常定义使用稳定的 `error_code` 作为 JSON 键，并支持由 Application 异常提供的命名参数插值。业务领域 JSON 可以同时包含保留的 `ui` 节点，供前端页面读取产品文案；Application 异常目录加载器只读取顶层错误定义并显式忽略 `ui` 节点，避免前端文案改变异常目录语义。语言选择、参数插值与 HTTP 展示由独立的 `IApplicationErrorLocalizer` 负责。
+根目录 `locales/` 是跨层共享的文本资源源文件，当前包含 `zh-CN` 和 `en-US` 两个语言目录；每个语言目录按业务领域拆分为 `common.json`、`setup.json`、`stocks.json`、`portfolio.json` 和 `dividend-strategy.json`。异常定义使用稳定的 `error_code` 作为 JSON 键，并支持由 Application 异常提供的命名参数插值。业务领域 JSON 可以同时包含保留的 `ui` 节点，供前端页面读取产品文案；Application 异常目录加载器只读取顶层错误定义并显式忽略 `ui` 节点，避免前端文案改变异常目录语义。错误目录与参数插值仍由独立的 `IApplicationErrorLocalizer` 负责，HTTP 请求的语言协商交给 ASP.NET Core 的 `RequestLocalizationMiddleware`。
 
-Application 项目通过 `EmbeddedResource` 将根目录 `locales/**/*.json` 编译嵌入 `DividendHarvest.Application.dll`。运行时只从程序集资源读取文本，不读取可被容器或请求任意替换的本地文件。Host 的统一异常处理器根据请求的 `Accept-Language` 及其 `q` 权重选择语言，返回 canonical culture name；不支持、质量为 0 或缺失时回退到 `zh-CN`，并在 ProblemDetails 扩展中返回实际使用的 `locale`。后台同步等非 HTTP 入口使用默认语言。
+Application 项目通过 `EmbeddedResource` 将根目录 `locales/**/*.json` 编译嵌入 `DividendHarvest.Application.dll`。运行时只从程序集资源读取文本，不读取可被容器或请求任意替换的本地文件。Host 注册 `RequestLocalizationOptions`，由 ASP.NET Core 根据 `Accept-Language` 的标准质量权重选择受支持语言；不支持、质量为 0 或缺失时回退到 `zh-CN`，并在 ProblemDetails 扩展中返回 `CultureInfo.CurrentUICulture` 的 canonical name。后台同步、CLI 和测试等非 HTTP 入口仍可通过 `IApplicationErrorLocalizer` 显式选择语言或使用默认语言。
 
 根目录 JSON 是跨层共享的文本源；前端不直接读取 Application DLL，前端构建可按需复制/导入同一组资源保持显示文本一致。当前生产前端通过 API 消费后端返回的 `error_code`、`locale` 和安全的 `detail`，不包含 FTShare key 或后端凭据。
 

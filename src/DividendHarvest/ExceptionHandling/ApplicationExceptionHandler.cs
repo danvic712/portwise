@@ -1,8 +1,9 @@
+using System.Globalization;
 using DividendHarvest.Application.Contracts;
 using DividendHarvest.Application.Diagnostics;
 using DividendHarvest.Application.Exceptions;
-using Microsoft.AspNetCore.Diagnostics;
 using DividendHarvest.Contracts;
+using Microsoft.AspNetCore.Diagnostics;
 
 namespace DividendHarvest.ExceptionHandling;
 
@@ -24,7 +25,7 @@ public sealed class ApplicationExceptionHandler(
 
         var localizedError = errorLocalizer.Localize(
             applicationException,
-            httpContext.Request.Headers.AcceptLanguage.ToString());
+            CultureInfo.CurrentUICulture.Name);
 
         using var diagnosticScope = diagnosticContext.BeginScope(new DiagnosticScope(
             "http_error",
