@@ -9,7 +9,7 @@ using PortfolioEntity = Portwise.Domain.Models.Portfolio;
 using Portwise.Domain.Securities;
 using FluentValidation;
 
-namespace Portwise.Application.DividendStrategy;
+namespace Portwise.Application.Recommendations;
 
 public sealed class StockModelParameterAppService(
     IUow uow,

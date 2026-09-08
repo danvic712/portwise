@@ -4,7 +4,7 @@ using Portwise.Application.Exceptions;
 using Portwise.Domain.Contracts;
 using Portwise.Domain.Models;
 
-namespace Portwise.Application.DividendStrategy;
+namespace Portwise.Application.Recommendations;
 
 public sealed class RecommendationSnapshotAppService(
     IUow uow,

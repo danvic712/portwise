@@ -9,7 +9,7 @@ using Portwise.Domain.Recommendations;
 using Portwise.Domain.Securities;
 using FluentValidation;
 
-namespace Portwise.Application.DividendStrategy;
+namespace Portwise.Application.Recommendations;
 
 public sealed class StockAnalysisAppService(
     IUow uow,

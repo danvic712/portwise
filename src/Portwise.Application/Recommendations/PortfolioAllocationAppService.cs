@@ -4,7 +4,7 @@ using Portwise.Domain.Contracts;
 using Portwise.Domain.Models;
 using Portwise.Domain.Recommendations;
 
-namespace Portwise.Application.DividendStrategy;
+namespace Portwise.Application.Recommendations;
 
 public sealed class PortfolioAllocationAppService(
     IUow uow,

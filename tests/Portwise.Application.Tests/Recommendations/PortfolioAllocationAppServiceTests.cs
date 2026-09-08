@@ -1,5 +1,5 @@
 using Portwise.Application.Dtos;
-using Portwise.Application.DividendStrategy;
+using Portwise.Application.Recommendations;
 using Portwise.Domain.Contracts;
 using Portwise.Domain.Models;
 using Moq;

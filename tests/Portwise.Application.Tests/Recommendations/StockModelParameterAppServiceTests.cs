@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 using Portwise.Application.Contracts;
 using Portwise.Application.Dtos;
 using Portwise.Application.Exceptions;
-using Portwise.Application.DividendStrategy;
+using Portwise.Application.Recommendations;
 using Portwise.Application.Validators;
 using Portwise.Application.Stocks;
 using Portwise.Domain.Contracts;

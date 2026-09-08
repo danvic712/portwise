@@ -1,7 +1,7 @@
 using Portwise.Application.Contracts;
 using Portwise.Application.Dtos;
 
-namespace Portwise.Application.DividendStrategy;
+namespace Portwise.Application.Recommendations;
 
 public sealed class StockRecommendationAppService(
     IStockAnalysisAppService stockAnalysisAppService,

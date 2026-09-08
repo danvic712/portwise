@@ -10,11 +10,11 @@ Portwise 是一个面向个人 A 股长期投资者的策略研究与组合记�
 
 ```text
 Portwise Host
-├── Application.Contracts / Dtos / Exceptions / Validators / Mapping
-├── Application.Setup
-├── Application.Stocks
-├── Application.Portfolio
-├── Application.DividendStrategy
+├── Application.Shared (Contracts / Dtos / Validators / Exceptions / Mapping)
+├── Application.Setup module
+├── Application.Stocks module
+├── Application.Portfolio module
+├── Application.Recommendations module
 └── Infrastructure
     ├── Contracts
     ├── Configurations
@@ -84,32 +84,29 @@ src/
 │   └── Recommendations/                # 推荐规则组合入口
 │       └── RecommendationModule.cs
 ├── Portwise.Application/
-│   ├── Contracts/                      # Application 对外 Interface
-│   │   ├── ISetupAppService.cs
-│   │   ├── IStockDataProvider.cs
-│   │   ├── IStockDataProviderFailure.cs
-│   │   ├── IStockDataSyncScheduler.cs
-│   │   ├── IStockWatchlistAppService.cs
-│   │   ├── IStockModelParameterAppService.cs
-│   │   ├── IStockPriceObservationAppService.cs
-│   │   ├── IStockDividendEventAppService.cs
-│   │   ├── IStockFactSyncAppService.cs
-│   │   ├── IStockAnalysisAppService.cs
-│   │   ├── IStockRecommendationAppService.cs
-│   │   ├── IStockFinancialSnapshotAppService.cs
-│   │   ├── IBudgetAppService.cs
-│   │   ├── IPortfolioRecommendationAppService.cs
-│   │   ├── IPortfolioAllocationAppService.cs
-│   │   ├── IRecommendationSnapshotAppService.cs
-│   │   └── IStockDailyDataSyncAppService.cs
-│   ├── Dtos/                           # 所有 Application DTO
-│   ├── Exceptions/                     # 所有 Application 自定义 Exception
-│   ├── Validators/                     # FluentValidation 请求验证器
+│   ├── Contracts/                      # 仅跨 module 的错误、本地化和诊断 Interface
+│   │   ├── IApplicationErrorCatalog.cs
+│   │   ├── IApplicationErrorLocalizer.cs
+│   │   └── IDiagnosticContext.cs
+│   ├── Dtos/                           # 仅跨 module 的共享 DTO
+│   │   └── StockHoldingSnapshot.cs
+│   ├── Validators/                     # 跨 module 的通用规则和错误格式化
+│   │   ├── AShareValidationRules.cs
+│   │   └── ValidationErrorFormatter.cs
+│   ├── Exceptions/                     # Application 统一异常模型
+│   ├── Localization/                   # 错误目录与本地化实现
 │   ├── Mapping/                        # Mapperly 编译期对象映射
 │   │   └── ApplicationMapper.cs
 │   ├── ApplicationServiceCollectionExtensions.cs
-│   ├── Setup/                          # AppService 实现和用例编排
-│   ├── Stocks/                         # 股票资料、关注列表和交易日数据同步
+│   ├── Setup/                          # Setup module：contract、DTO、validation、实现
+│   │   ├── Contracts/ISetupAppService.cs
+│   │   ├── Dtos/{InitialHoldingInput,SetupRequest,SetupResult,SetupStatus,SetupStockRequest,SetupStockResult}.cs
+│   │   ├── Validators/{InitialHoldingInput,SetupRequest,SetupStockRequest}Validator.cs
+│   │   └── SetupAppService.cs
+│   ├── Stocks/                         # Market Data module：股票事实、关注列表和同步
+│   │   ├── Contracts/                   # 股票资料与同步 Interface
+│   │   ├── Dtos/                        # 股票资料、行情、股息、财务和同步结果
+│   │   ├── Validators/                  # 股票事实同步请求验证器
 │   │   ├── StockWatchlistAppService.cs
 │   │   ├── StockFactSyncAppService.cs
 │   │   ├── StockPriceObservationAppService.cs
@@ -117,10 +114,16 @@ src/
 │   │   ├── StockFinancialSnapshotAppService.cs
 │   │   ├── StockDailyDataSyncAppService.cs
 │   │   └── DailySyncSchedule.cs
-│   ├── Portfolio/                      # 组合现金流水、交易和持仓变更
+│   ├── Portfolio/                      # Portfolio module：现金流水、交易和持仓变更
+│   │   ├── Contracts/{IBudgetAppService,IPortfolioTradeAppService}.cs
+│   │   ├── Dtos/{BudgetSummary,CashLedgerEntryResult,PortfolioTradeResult,RecordCashLedgerEntryRequest,RecordPortfolioTradeRequest}.cs
+│   │   ├── Validators/{RecordCashLedgerEntryRequest,RecordPortfolioTradeRequest}Validator.cs
 │   │   ├── BudgetAppService.cs
 │   │   └── PortfolioTradeAppService.cs
-│   └── DividendStrategy/               # 模型参数、单股分析和组合建议
+│   └── Recommendations/                # Recommendation module：模型、单股分析和组合建议
+│       ├── Contracts/                   # 推荐与模型参数 Interface
+│       ├── Dtos/                        # 分析、建议、快照和模型参数 DTO
+│       ├── Validators/                  # 分析和模型参数请求验证器
 │       ├── StockModelParameterAppService.cs
 │       ├── StockAnalysisAppService.cs
 │       ├── StockRecommendationAppService.cs
@@ -189,7 +192,7 @@ src/
 │       └── stock-display.ts           # 股票身份与名称展示
 ```
 
-Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfolio` 和 `DividendStrategy` 四个目录。目录归并不等于合并 HTTP 契约：价格、股息和财务同步仍然保持独立的 Interface 与 AppService，因为它们具有不同的数据校验、幂等键和结果类型；资料、行情、股息和财务四类事实的共同摄取、Security 解析、FTShare 调用、幂等写入和逐类失败策略由 `IStockFactSyncAppService` / `StockFactSyncAppService` 这个深模块承载，三个 HTTP AppService 只是验证后转发。单股分析、组合分配和建议快照也保持独立的用例边界。`Contracts`、`Dtos`、`Exceptions` 和 `Validators` 继续作为 Application 根目录的规范容器，不在每个业务目录下重复创建，避免物理目录再次膨胀。前端按相同的业务边界拆分 feature，但只通过版本化 HTTP API 访问后端，不直接引用 Application 或 Infrastructure。
+Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfolio` 和 `Recommendations` 四个 module。每个 module 共置自己拥有的 Interface、DTO、Validator、实现和测试；因此修改一个用例时，主要知识和验证都集中在同一目录。`Contracts`、`Dtos` 和 `Validators` 根目录只保留真正跨 module 的错误、本地化、诊断、共享持仓 DTO 和通用 A 股规则，避免技术桶重新变成所有业务的汇聚点。目录归并不等于合并 HTTP 契约：价格、股息和财务同步仍然保持独立的 Interface 与 AppService，因为它们具有不同的数据校验、幂等键和结果类型；资料、行情、股息和财务四类事实的共同摄取、Security 解析、FTShare 调用、幂等写入和逐类失败策略由 `IStockFactSyncAppService` / `StockFactSyncAppService` 这个深模块承载，三个 HTTP AppService 只是验证后转发。单股分析、组合分配和建议快照也保持独立的用例边界。前端按相同的业务边界拆分 feature，但只通过版本化 HTTP API 访问后端，不直接引用 Application 或 Infrastructure。
 
 前端公共页面框架由 `SiteHeader`、`SiteFooter`、`PageFrame`、`PageTitle`、`SectionHeading` 和 `site-navigation` 组成，禁止使用 `app-shell` 作为公共组件名称；所有页面通过 `PageFrame` 复用框架，页面专属状态与布局留在对应 feature。`src/lib/navigation.ts` 是页面 shell 的导航 module：它集中路由识别、Setup gate 所需的路径判断、浏览器 history/popstate Adapter、查询参数更新和组合股票选择的 session 持久化；`App.tsx` 只负责把 Setup 状态映射为页面，feature 通过 `onNavigate`/`onReplaceQuery` seam 操作导航，不直接写 `window.history` 或 `sessionStorage`。查询参数优先于旧 session 选择，避免从今日决策跳转到组合页面时恢复错误股票。操作建议的代码归类、买卖方向、展示状态、价格区间和未知代码降级统一由 `src/lib/recommendation-display.ts` 提供；页面和组件只消费归一化后的展示结果，不自行解析 `recommendation_code` 或 `price_zone_code`。`index.css` 只承载 token、reset 和跨页面共享原子样式；今日决策页的布局、等待态、就绪态、骨架屏、装饰和响应式样式统一位于 `features/recommendations/recommendations.css`。交互控件优先使用 `src/components/ui` 中的 shadcn/ui 原语，feature 样式只负责业务变体与布局。
 
@@ -197,17 +200,17 @@ Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfo
 
 前端 HTTP 类型不再手工复制 Controller DTO。Host 构建通过 `Microsoft.Extensions.ApiDescription.Server` 调用同一组 Controller、版本元数据和 `AddOpenApi` 配置，生成并提交 `src/Portwise.Web/openapi/portwise_v1.json`；前端的 `pnpm api:generate` 使用 `openapi-typescript` 生成 `src/lib/api-contract.generated.ts`。`api-contract.ts` 是生成类型与浏览器运行时 JSON 之间唯一的 Adapter，负责把 wire numeric（`number | string`）归一为 UI 使用的 `number`；feature 的 Axios module 只引用 `api-types.ts` 的领域友好别名，不直接依赖生成文件。新增或修改 Controller DTO 时，后端构建和前端生成都会暴露合约漂移，避免两套手工类型长期分叉。
 
-`Stocks` 同时承载交易日同步编排，因为该编排只围绕关注股票的外部事实更新；交易日同步通过 `IStockFactSyncAppService.SyncAsync` 一次传递单只股票的规范化引用，并消费包含资料、行情、股息、财务结果和逐类失败的 `StockFactSyncResult`。如果未来出现多个互不相关的调度任务，再单独引入 `Operations` 模块。`StockModelParameterAppService` 归入 `DividendStrategy`，因为模型参数是分析和组合建议的输入，而不是持仓或现金流水本身。
+`Stocks` 同时承载交易日同步编排，因为该编排只围绕关注股票的外部事实更新；交易日同步通过 `IStockFactSyncAppService.SyncAsync` 一次传递单只股票的规范化引用，并消费包含资料、行情、股息、财务结果和逐类失败的 `StockFactSyncResult`。如果未来出现多个互不相关的调度任务，再单独引入 `Operations` 模块。`StockModelParameterAppService` 与单股分析、组合分配、建议快照同属 `Recommendations` module，因为模型参数是建议规则的输入；Portfolio module 只拥有现金流水、交易和持仓不变量。
 
-各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddPortwiseApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddPortwiseInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddPortwiseHost`。Host 另提供 `HostServiceCollectionExtensions.AddPortwise(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库 migration 统一放在 `WebApplicationExtensions`；手动、每日定时和 Setup 后台同步都通过 `StockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器统一串行化执行、run ID、诊断上下文和取消语义，避免不同入口同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
+各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddPortwiseApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddPortwiseInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddPortwiseHost`。Application 根扩展只负责 FluentValidation、跨 module 的本地化/诊断和 `TimeProvider`，再调用 `AddPortwiseSetupModule`、`AddPortwiseStocksModule`、`AddPortwisePortfolioModule`、`AddPortwiseRecommendationsModule`；每个 module 自己拥有实现到 Interface 的注册清单，新增用例不会把具体类型重新塞回技术桶。Host 另提供 `HostServiceCollectionExtensions.AddPortwise(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库 migration 统一放在 `WebApplicationExtensions`；手动、每日定时和 Setup 后台同步都通过 `StockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器统一串行化执行、run ID、诊断上下文和取消语义，避免不同入口同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
 
 公共基础能力也遵循相同的组合边界：Swagger/Serilog 注册在 `HostServiceCollectionExtensions`，Swagger UI、Serilog HTTP 请求日志中间件和其他 `WebApplication` 行为在 `WebApplicationExtensions`；Application 的 Mapperly 映射定义集中在 `Mapping/ApplicationMapper.cs`，由构建期生成实际映射代码。
 
 约束：
 
-1. 本项目声明的所有 Interface 必须位于所属项目的 `Contracts/` 文件夹；一个文件只放一个 Interface。
-2. 所有 DTO 必须位于 `Dtos/` 文件夹；一个 DTO 文件只允许包含一个 DTO class/record。
-3. 所有自定义 Exception 必须位于 `Exceptions/` 文件夹；一个文件只放一个 Exception。错误码较多时使用通用异常类型和集中式错误码/参数工厂，不为每个业务错误码创建一个同构异常类。
+1. 本项目声明的所有 Interface 必须位于所属 module 的 `Contracts/` 文件夹；跨 module 的 Interface 才放在项目根 `Contracts/`；一个文件只放一个 Interface。
+2. 所有 DTO 必须位于所属 module 的 `Dtos/` 文件夹；跨 module 的 DTO 才放在项目根 `Dtos/`；一个 DTO 文件只允许包含一个 DTO class/record。
+3. 所有自定义 Exception 必须位于项目根 `Exceptions/` 文件夹；一个文件只放一个 Exception。错误码较多时使用通用异常类型和集中式错误码/参数工厂，不为每个业务错误码创建一个同构异常类。
 4. 如果新增真正的枚举，必须放到所属项目的 `Enums/` 文件夹；字符串业务代码集中放在 `Codes/`，不创建空的伪实现。
 5. `Application` 的业务实现类使用 `*AppService` 后缀；对应 Interface 使用 `I*AppService`。
 6. 数据访问实现按照 `salary-insights` 拆分到 `Infrastructure/Repositories/` 和 Infrastructure 根目录的 DbContext，不使用单独的 `Persistence` 命名层。
@@ -217,14 +220,14 @@ Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfo
 ### 5.1 Contracts 归属
 
 - `Domain/Contracts`：跨层需要依赖的通用持久化抽象，包括 `IRepository<TEntity>` 和 `IUow`。
-- `Application/Contracts`：用例和外部资料能力的抽象，包括 `ISetupAppService` 和 `IStockDataProvider`。
+- `Application/{Setup,Stocks,Portfolio,Recommendations}/Contracts`：各 module 的用例和外部资料 Interface；只有错误、本地化和诊断等跨 module Interface 位于 `Application/Contracts`。
 - `Infrastructure/Contracts`：Infrastructure 内部 Adapter 的可替换抽象，包括 `IFtShareMcpToolInvoker`。
 
 Application 不认识 EF Core、SQLite、HTTP 或 MCP SDK。Host 只依赖 Application 的 AppService Interface 和 Infrastructure 的组合注册扩展，不直接使用数据访问实现。
 
 ### 5.2 DTO
 
-Application 的 DTO 位于 `Application/Dtos/`，用于 Controller 与用例之间的输入输出，以及外部资料 Adapter 规范化后的结果。DTO 不承担数据库实体职责，也不包含 Repository、DbContext 或 MCP 客户端。
+Application 的 DTO 按所属 module 放在 `Application/{Setup,Stocks,Portfolio,Recommendations}/Dtos/`，用于 Controller 与用例之间的输入输出，以及外部资料 Adapter 规范化后的结果；`Application/Dtos/` 只保留跨 module 的共享 DTO。DTO 不承担数据库实体职责，也不包含 Repository、DbContext 或 MCP 客户端。
 
 一个 DTO 文件只能包含一个 DTO 类型，文件名必须与类型名一致。
 
@@ -396,7 +399,7 @@ Setup 不调用 `IStockDataProvider`，因此 FTShare 未配置、暂时不可�
 
 ### 8.1 Controller 与请求验证
 
-Controller 只负责 HTTP 绑定、调用 `I*AppService` 和返回响应，不包含业务计算、数据库访问、外部调用或手写输入判断。来自 HTTP、MCP 和定时任务的请求参数在 Application 边界通过 FluentValidation 验证；验证器位于 `Application/Validators/`，并通过 Application 程序集扫描注册。
+Controller 只负责 HTTP 绑定、调用 `I*AppService` 和返回响应，不包含业务计算、数据库访问、外部调用或手写输入判断。来自 HTTP、MCP 和定时任务的请求参数在 Application 边界通过 FluentValidation 验证；验证器位于所属 module 的 `Validators/`（跨 module 的通用规则位于 `Application/Validators/`），并通过 Application 程序集扫描注册。
 
 FluentValidation 负责请求形状、字段范围、跨字段关系和集合重复项；Domain 仍负责不可绕过的业务不变量。验证失败转换为统一的 400 ProblemDetails，已知 Application 异常由 Host 的统一异常处理器映射为稳定的 HTTP 响应，避免在每个 Controller 中复制异常分支。
 
@@ -628,5 +631,6 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | --- | --- | --- |
 | 01 前端推荐展示 module | 已修复：`recommendation-display.ts` 统一 recommendation/price-zone 的展示语义，feature 只消费归一化结果 | `58b1465` |
 | 02 后端 Recommendation module | 已修复：Domain `RecommendationModule` 集中单股分析与组合分配规则，Application AppService 变为薄 Adapter | `196a4ff` |
-| 03 HTTP contract 单一事实源 | 已修复：Host build-time 生成版本化 OpenAPI，前端从 `openapi-typescript` 生成 transport contract，`api-contract.ts` 是唯一 wire-to-UI Adapter | `c1e0757` |
-| 04 导航与 Setup gate module | 已修复：`navigation.ts` 集中路由、history、查询参数和 Setup gate seam，修复 query 与旧 session 选择冲突 | `ba441eb` |
+| 03 HTTP contract 单一事实源 | 已修复：Host build-time 生成版本化 OpenAPI，前端从 `openapi-typescript` 生成 transport contract，`api-contract.ts` 是唯一 wire-to-UI Adapter | `e97c070` |
+| 04 导航与 Setup gate module | 已修复：`navigation.ts` 集中路由、history、查询参数和 Setup gate seam，修复 query 与旧 session 选择冲突 | `e4ff8f3` |
+| 05 Application 领域 module locality | 已修复：Setup、Stocks、Portfolio、Recommendations 各自共置 contract/DTO/validator/实现/测试，根目录只保留跨 module 共享项 | `b535643` |
