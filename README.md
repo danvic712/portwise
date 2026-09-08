@@ -199,7 +199,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-此时开发服务器地址为 http://127.0.0.1:4173，并将 `/api`、`/healthz` 和 `/readyz` 代理到 `http://127.0.0.1:5276`（`vite.config.ts` 中的 `server.proxy` 配置）。前端生产构建会输出到 `src/Portwise/wwwroot`，Docker 构建会自动执行这一步；`Debug` 配置下的 SpaProxy 只用于开发期反代，不影响生产发布产物。
+此时开发服务器地址为 http://127.0.0.1:4173，并将 `/api`、`/healthz` 和 `/readyz` 代理到 `http://127.0.0.1:5276`（`vite.config.ts` 中的 `server.proxy` 配置）。Vite 显式绑定 IPv4 回环地址，保证 .NET SpaProxy 探测地址与浏览器访问地址一致。前端生产构建会输出到 `src/Portwise/wwwroot`，Docker 构建会自动执行这一步；`Debug` 配置下的 SpaProxy 只用于开发期反代，不影响生产发布产物。
 
 如果 Rider 启动时提示 `Couldn't start the SPA development server with command 'pnpm run dev'`，请在 Rider 的运行配置中将 Node.js 环境指定为 `24.16.x`，并确保该配置的 PATH 包含对应 Node 目录；不要依赖从 Dock 启动 Rider 时自动读取 shell 配置。项目已将 `packageManager` 固定为 `pnpm@12.3.4`，且启动 profile 禁止 Corepack 在无交互界面中等待下载确认。首次使用前请在 `src/Portwise.Web` 执行 `corepack install --global pnpm@12.3.4` 和 `pnpm install --frozen-lockfile`。
 

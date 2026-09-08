@@ -15,6 +15,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    host: "127.0.0.1",
     port: 4173,
     fs: {
       allow: [path.resolve(import.meta.dirname), path.resolve(import.meta.dirname, "../../locales")],
