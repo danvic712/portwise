@@ -45,7 +45,15 @@ public sealed class PortfolioAllocationAppService(
             })
             .ToArray();
 
-        var computedAt = timeProvider.GetUtcNow();
+        var computedAt = analyses.Count > 0
+            ? analyses[0].ComputedAt
+            : timeProvider.GetUtcNow();
+        if (analyses.Any(analysis => analysis.ComputedAt != computedAt))
+        {
+            throw new ArgumentException(
+                "组合建议中的单股分析必须来自同一计算时间点。",
+                nameof(analyses));
+        }
         var currentDate = DateOnly.FromDateTime(computedAt.UtcDateTime);
         var parameters = await uow.Get<ModelParameterSet>().ListAsync(
             parameter =>

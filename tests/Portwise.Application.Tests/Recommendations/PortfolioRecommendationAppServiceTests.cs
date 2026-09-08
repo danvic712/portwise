@@ -38,9 +38,9 @@ public sealed class PortfolioRecommendationAppServiceTests
         var stockAnalysis = new Mock<IStockAnalysisAppService>();
         stockAnalysis
             .Setup(x => x.GetAsync(
-                It.IsAny<GetStockAnalysisRequest>(),
+                It.IsAny<IReadOnlyList<StockWatchlistItem>>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(analysis);
+            .ReturnsAsync([analysis]);
         var budget = new Mock<IBudgetAppService>();
         budget
             .Setup(x => x.GetSummaryAsync(It.IsAny<CancellationToken>()))

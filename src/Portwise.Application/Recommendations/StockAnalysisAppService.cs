@@ -16,6 +16,82 @@ public sealed class StockAnalysisAppService(
     IValidator<GetStockAnalysisRequest> requestValidator,
     TimeProvider timeProvider) : IStockAnalysisAppService
 {
+    public async Task<IReadOnlyList<StockAnalysisResult>> GetAsync(
+        IReadOnlyList<StockWatchlistItem> stocks,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(stocks);
+        if (stocks.Count == 0)
+        {
+            return [];
+        }
+
+        var securityIds = stocks
+            .Select(stock => stock.SecurityId)
+            .Where(securityId => securityId != Guid.Empty)
+            .Distinct()
+            .ToArray();
+        var computedAt = timeProvider.GetUtcNow();
+        var currentDate = DateOnly.FromDateTime(computedAt.UtcDateTime);
+        var parameters = await uow.Get<ModelParameterSet>().ListAsync(
+            parameter => securityIds.Contains(parameter.SecurityId)
+                && parameter.EffectiveFromDate <= currentDate,
+            cancellationToken: cancellationToken);
+        var parametersBySecurityId = parameters
+            .GroupBy(parameter => parameter.SecurityId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.OrderByDescending(parameter => parameter.EffectiveFromDate).First());
+        var priceObservations = await uow.Get<PriceObservation>().ListAsync(
+            observation => securityIds.Contains(observation.SecurityId)
+                && observation.TradingDate <= currentDate
+                && observation.DataQualityCode == DataQualityCodes.Valid,
+            orderBy: [observation => observation.TradingDate],
+            descending: true,
+            cancellationToken: cancellationToken);
+        var dividendEvents = await uow.Get<DividendEvent>().ListAsync(
+            dividendEvent => securityIds.Contains(dividendEvent.SecurityId),
+            cancellationToken: cancellationToken);
+        var financialSnapshots = await uow.Get<FinancialSnapshot>().ListAsync(
+            snapshot => securityIds.Contains(snapshot.SecurityId),
+            cancellationToken: cancellationToken);
+        var pricesBySecurityId = priceObservations
+            .GroupBy(observation => observation.SecurityId)
+            .ToDictionary(group => group.Key, group => (IReadOnlyCollection<PriceObservation>)group.ToArray());
+        var dividendsBySecurityId = dividendEvents
+            .GroupBy(dividendEvent => dividendEvent.SecurityId)
+            .ToDictionary(group => group.Key, group => (IReadOnlyCollection<DividendEvent>)group.ToArray());
+        var financialsBySecurityId = financialSnapshots
+            .GroupBy(snapshot => snapshot.SecurityId)
+            .ToDictionary(group => group.Key, group => (IReadOnlyCollection<FinancialSnapshot>)group.ToArray());
+
+        return stocks
+            .Select(stock =>
+            {
+                var position = stock.Holding is null
+                    ? null
+                    : new PortfolioPosition
+                    {
+                        SecurityId = stock.SecurityId,
+                        HeldShares = stock.Holding.HeldShares,
+                        CoreShares = stock.Holding.CoreShares,
+                        TargetShares = stock.Holding.TargetShares
+                    };
+                var calculation = RecommendationModule.CalculateStock(
+                    new StockRecommendationInput(
+                        stock.SecurityId,
+                        parametersBySecurityId.GetValueOrDefault(stock.SecurityId),
+                        pricesBySecurityId.GetValueOrDefault(stock.SecurityId) ?? [],
+                        dividendsBySecurityId.GetValueOrDefault(stock.SecurityId) ?? [],
+                        financialsBySecurityId.GetValueOrDefault(stock.SecurityId) ?? [],
+                        position,
+                        currentDate,
+                        computedAt));
+                return ToResult(stock, calculation);
+            })
+            .ToArray();
+    }
+
     public async Task<StockAnalysisResult> GetAsync(
         GetStockAnalysisRequest request,
         CancellationToken cancellationToken)
@@ -91,6 +167,36 @@ public sealed class StockAnalysisAppService(
 
         return ToResult(security, reference, calculation);
     }
+
+    private static StockAnalysisResult ToResult(
+        StockWatchlistItem stock,
+        StockRecommendationCalculation calculation)
+        => new(
+            stock.SecurityCode,
+            stock.ExchangeCode,
+            stock.SecurityName,
+            calculation.ModelStatusCode,
+            calculation.DividendReliabilityCode,
+            calculation.ClosePrice,
+            calculation.ModelDividendPerShare,
+            calculation.DividendModeCode,
+            calculation.DividendYield,
+            calculation.StrongBuyPrice,
+            calculation.AccumulatePrice,
+            calculation.PartialTrimPrice,
+            calculation.AggressiveTrimPrice,
+            calculation.ObservedPriceZoneCode,
+            calculation.PriceZoneCode,
+            calculation.PriceZoneConfirmed,
+            calculation.RecommendationCode,
+            calculation.HeldShares,
+            calculation.CoreShares,
+            calculation.SatelliteShares,
+            calculation.DataAsOfDate,
+            calculation.ModelParameterSetId,
+            calculation.ComputedAt,
+            calculation.Explanation,
+            stock.SecurityId);
 
     private static StockAnalysisResult ToResult(
         Security security,

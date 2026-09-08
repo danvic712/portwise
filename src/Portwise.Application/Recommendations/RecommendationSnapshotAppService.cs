@@ -8,8 +8,7 @@ namespace Portwise.Application.Recommendations;
 
 public sealed class RecommendationSnapshotAppService(
     IUow uow,
-    IPortfolioRecommendationAppService portfolioRecommendationAppService,
-    TimeProvider timeProvider) : IRecommendationSnapshotAppService
+    IPortfolioRecommendationAppService portfolioRecommendationAppService) : IRecommendationSnapshotAppService
 {
     public async Task<CreateRecommendationSnapshotResult> CreateAsync(
         CancellationToken cancellationToken)
@@ -65,7 +64,7 @@ public sealed class RecommendationSnapshotAppService(
             modelRunId,
             recommendation.PortfolioId,
             snapshots.Count,
-            timeProvider.GetUtcNow(),
+            recommendation.ComputedAt,
             recommendation.Stocks);
     }
 }

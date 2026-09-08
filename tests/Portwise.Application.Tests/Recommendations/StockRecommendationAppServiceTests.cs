@@ -36,6 +36,11 @@ public sealed class StockRecommendationAppServiceTests
                 It.IsAny<GetStockAnalysisRequest>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(analysis);
+        stockAnalysis
+            .Setup(x => x.GetAsync(
+                It.IsAny<IReadOnlyList<StockWatchlistItem>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync([analysis]);
         var budget = new Mock<IBudgetAppService>();
         budget
             .Setup(x => x.GetSummaryAsync(It.IsAny<CancellationToken>()))
@@ -89,11 +94,10 @@ public sealed class StockRecommendationAppServiceTests
             .ReturnsAsync([target, other]);
         var stockAnalysis = new Mock<IStockAnalysisAppService>();
         stockAnalysis
-            .SetupSequence(x => x.GetAsync(
-                It.IsAny<GetStockAnalysisRequest>(),
+            .Setup(x => x.GetAsync(
+                It.IsAny<IReadOnlyList<StockWatchlistItem>>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(targetAnalysis)
-            .ReturnsAsync(otherAnalysis);
+            .ReturnsAsync([targetAnalysis, otherAnalysis]);
         var budget = new Mock<IBudgetAppService>();
         var budgetSummary = new BudgetSummary(
             Guid.NewGuid(),
@@ -136,8 +140,8 @@ public sealed class StockRecommendationAppServiceTests
 
         Assert.Equal(target.SecurityId, result.Analysis.SecurityId);
         stockAnalysis.Verify(x => x.GetAsync(
-            It.IsAny<GetStockAnalysisRequest>(),
-            It.IsAny<CancellationToken>()), Times.Exactly(2));
+            It.IsAny<IReadOnlyList<StockWatchlistItem>>(),
+            It.IsAny<CancellationToken>()), Times.Once);
         allocation.Verify(x => x.RunAsync(
             It.Is<IReadOnlyList<StockWatchlistItem>>(items => items.Count == 2),
             It.Is<IReadOnlyList<StockAnalysisResult>>(items =>

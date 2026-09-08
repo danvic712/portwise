@@ -50,9 +50,7 @@ public sealed class RecommendationSnapshotAppServiceTests
             .Returns(snapshotRepository.Object);
         var service = new RecommendationSnapshotAppService(
             unitOfWork.Object,
-            portfolioRecommendationAppService.Object,
-            new FixedTimeProvider(
-                new DateTimeOffset(2026, 9, 2, 12, 1, 0, TimeSpan.Zero)));
+            portfolioRecommendationAppService.Object);
 
         var result = await service.CreateAsync(CancellationToken.None);
 
@@ -96,8 +94,7 @@ public sealed class RecommendationSnapshotAppServiceTests
         var unitOfWork = new Mock<IUow>();
         var service = new RecommendationSnapshotAppService(
             unitOfWork.Object,
-            portfolioRecommendationAppService.Object,
-            TimeProvider.System);
+            portfolioRecommendationAppService.Object);
 
         await Assert.ThrowsAsync<ApplicationErrorException>(() =>
             service.CreateAsync(CancellationToken.None));

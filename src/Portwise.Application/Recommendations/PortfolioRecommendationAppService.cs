@@ -14,13 +14,7 @@ public sealed class PortfolioRecommendationAppService(
         CancellationToken cancellationToken)
     {
         var watchlist = await stockWatchlistAppService.GetAsync(cancellationToken);
-        var analyses = new List<StockAnalysisResult>(watchlist.Count);
-        foreach (var stock in watchlist)
-        {
-            analyses.Add(await stockAnalysisAppService.GetAsync(
-                new GetStockAnalysisRequest(stock.SecurityCode, stock.ExchangeCode),
-                cancellationToken));
-        }
+        var analyses = await stockAnalysisAppService.GetAsync(watchlist, cancellationToken);
 
         var budgetSummary = await budgetAppService.GetSummaryAsync(cancellationToken);
         return await portfolioAllocationAppService.RunAsync(

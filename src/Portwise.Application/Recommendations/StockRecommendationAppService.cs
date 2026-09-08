@@ -15,30 +15,18 @@ public sealed class StockRecommendationAppService(
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        var analysis = await stockAnalysisAppService.GetAsync(
-            request,
-            cancellationToken);
         var watchlist = await stockWatchlistAppService.GetAsync(cancellationToken);
         var requestedStock = watchlist.FirstOrDefault(item =>
-            item.SecurityCode == analysis.SecurityCode
-            && item.ExchangeCode == analysis.ExchangeCode
-            && item.SecurityId == analysis.SecurityId);
+            item.SecurityCode == request.SecurityCode.Trim()
+            && item.ExchangeCode == request.ExchangeCode.Trim());
         if (requestedStock is null)
         {
-            return new StockRecommendationResult(analysis, 0, 0, 0m, 0m);
+            var fallbackAnalysis = await stockAnalysisAppService.GetAsync(request, cancellationToken);
+            return new StockRecommendationResult(fallbackAnalysis, 0, 0, 0m, 0m);
         }
 
-        var analyses = new List<StockAnalysisResult>(watchlist.Count);
-        foreach (var stock in watchlist)
-        {
-            analyses.Add(stock.SecurityId == analysis.SecurityId
-                ? analysis
-                : await stockAnalysisAppService.GetAsync(
-                    new GetStockAnalysisRequest(
-                        stock.SecurityCode,
-                        stock.ExchangeCode),
-                    cancellationToken));
-        }
+        var analyses = await stockAnalysisAppService.GetAsync(watchlist, cancellationToken);
+        var analysis = analyses.Single(item => item.SecurityId == requestedStock.SecurityId);
 
         var budgetSummary = await budgetAppService.GetSummaryAsync(cancellationToken);
         var recommendation = await portfolioAllocationAppService.RunAsync(

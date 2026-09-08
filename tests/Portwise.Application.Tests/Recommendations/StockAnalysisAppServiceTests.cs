@@ -15,6 +15,92 @@ namespace Portwise.Application.Tests;
 public sealed class StockAnalysisAppServiceTests
 {
     [Fact]
+    public async Task GetAsync_for_watchlist_batches_fact_reads_and_uses_one_computed_at()
+    {
+        var firstSecurity = CreateSecurity();
+        var secondSecurity = new Security
+        {
+            Id = Guid.NewGuid(),
+            SecurityCode = "600001",
+            ExchangeCode = "SSE",
+            SecurityName = "示例银行",
+            MarketCode = "A-share",
+            CurrencyCode = "CNY"
+        };
+        var portfolio = new PortfolioEntity
+        {
+            Id = Guid.NewGuid(),
+            Name = "长期股息组合"
+        };
+        var parameterRepository = CreateRepository([
+            CreateParameters(portfolio.Id, firstSecurity.Id),
+            CreateParameters(portfolio.Id, secondSecurity.Id)]);
+        var priceRepository = CreateRepository<PriceObservation>([]);
+        var dividendRepository = CreateRepository<DividendEvent>([]);
+        var financialRepository = CreateRepository<FinancialSnapshot>([]);
+        var unitOfWork = CreateUnitOfWork(
+            CreateRepository<Security>([]),
+            parameterRepository,
+            priceRepository,
+            dividendRepository,
+            financialRepository,
+            CreateRepository<PortfolioPosition>([]));
+        var service = CreateService(unitOfWork.Object);
+        var watchlist = new[]
+        {
+            new StockWatchlistItem(
+                firstSecurity.SecurityCode,
+                firstSecurity.ExchangeCode,
+                firstSecurity.SecurityName,
+                firstSecurity.MarketCode,
+                firstSecurity.CurrencyCode,
+                null)
+            {
+                SecurityId = firstSecurity.Id
+            },
+            new StockWatchlistItem(
+                secondSecurity.SecurityCode,
+                secondSecurity.ExchangeCode,
+                secondSecurity.SecurityName,
+                secondSecurity.MarketCode,
+                secondSecurity.CurrencyCode,
+                null)
+            {
+                SecurityId = secondSecurity.Id
+            }
+        };
+
+        var results = await service.GetAsync(watchlist, CancellationToken.None);
+
+        Assert.Equal(2, results.Count);
+        Assert.Single(results.Select(result => result.ComputedAt).Distinct());
+        parameterRepository.Verify(x => x.ListAsync(
+            It.IsAny<Expression<Func<ModelParameterSet, bool>>>(),
+            null,
+            false,
+            It.IsAny<CancellationToken>(),
+            true), Times.Once);
+        priceRepository.Verify(x => x.ListAsync(
+            It.IsAny<Expression<Func<PriceObservation, bool>>>(),
+            It.IsAny<IReadOnlyList<Expression<Func<PriceObservation, object>>>>(),
+            true,
+            It.IsAny<CancellationToken>(),
+            true), Times.Once);
+        dividendRepository.Verify(x => x.ListAsync(
+            It.IsAny<Expression<Func<DividendEvent, bool>>>(),
+            null,
+            false,
+            It.IsAny<CancellationToken>(),
+            true), Times.Once);
+        financialRepository.Verify(x => x.ListAsync(
+            It.IsAny<Expression<Func<FinancialSnapshot, bool>>>(),
+            null,
+            false,
+            It.IsAny<CancellationToken>(),
+            true), Times.Once);
+    }
+
+    [Fact]
     public async Task GetAsync_calculates_ttm_dividend_yield_and_price_zone()
     {
         var security = CreateSecurity();
