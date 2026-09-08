@@ -178,7 +178,12 @@ src/
 │   │   ├── page-heading.tsx            # 页面标题与区块标题
 │   │   ├── site-navigation.ts          # 公共导航配置
 │   │   └── ui/                         # shadcn/ui 源码组件
-│   └── src/lib/                        # Axios client、DTO 类型和共享展示工具
+│   ├── openapi/                        # 从 Host Controller 元数据生成的版本化 HTTP 合约
+│   │   └── portwise_v1.json
+│   └── src/lib/                        # Axios client、HTTP 合约适配器和共享展示工具
+│       ├── api-contract.generated.ts  # openapi-typescript 生成；禁止手工修改
+│       ├── api-contract.ts             # 生成合约到前端运行时模型的唯一适配器
+│       ├── api-types.ts                # feature 使用的领域友好类型别名
 │       ├── recommendation-display.ts  # 操作建议展示语义与价格阶梯
 │       └── stock-display.ts           # 股票身份与名称展示
 ```
@@ -188,6 +193,8 @@ Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfo
 前端公共页面框架由 `SiteHeader`、`SiteFooter`、`PageFrame`、`PageTitle`、`SectionHeading` 和 `site-navigation` 组成，禁止使用 `app-shell` 作为公共组件名称；所有页面通过 `PageFrame` 复用框架，页面专属状态与布局留在对应 feature。操作建议的代码归类、买卖方向、展示状态、价格区间和未知代码降级统一由 `src/lib/recommendation-display.ts` 提供；页面和组件只消费归一化后的展示结果，不自行解析 `recommendation_code` 或 `price_zone_code`。`index.css` 只承载 token、reset 和跨页面共享原子样式；今日决策页的布局、等待态、就绪态、骨架屏、装饰和响应式样式统一位于 `features/recommendations/recommendations.css`。交互控件优先使用 `src/components/ui` 中的 shadcn/ui 原语，feature 样式只负责业务变体与布局。
 
 前端使用 Node `24.16.0` 与 pnpm `12.3.4` 构建静态资源，输出到 Host 的 `wwwroot/`；该目录是构建产物并保持本地生成，不提交源代码仓库。根目录 `Dockerfile` 使用 Node Alpine、.NET SDK Alpine 和 ASP.NET Core Alpine 三阶段构建：前两阶段只负责编译，最终镜像只保留 .NET publish 输出，因此不会携带 Node、pnpm、源码或测试依赖。单镜像构建流程必须先完成前端构建，再执行 ASP.NET Core publish；开发预览使用 Vite proxy 将 `/api` 转发到本地 Host。
+
+前端 HTTP 类型不再手工复制 Controller DTO。Host 构建通过 `Microsoft.Extensions.ApiDescription.Server` 调用同一组 Controller、版本元数据和 `AddOpenApi` 配置，生成并提交 `src/Portwise.Web/openapi/portwise_v1.json`；前端的 `pnpm api:generate` 使用 `openapi-typescript` 生成 `src/lib/api-contract.generated.ts`。`api-contract.ts` 是生成类型与浏览器运行时 JSON 之间唯一的 Adapter，负责把 wire numeric（`number | string`）归一为 UI 使用的 `number`；feature 的 Axios module 只引用 `api-types.ts` 的领域友好别名，不直接依赖生成文件。新增或修改 Controller DTO 时，后端构建和前端生成都会暴露合约漂移，避免两套手工类型长期分叉。
 
 `Stocks` 同时承载交易日同步编排，因为该编排只围绕关注股票的外部事实更新；交易日同步通过 `IStockFactSyncAppService.SyncAsync` 一次传递单只股票的规范化引用，并消费包含资料、行情、股息、财务结果和逐类失败的 `StockFactSyncResult`。如果未来出现多个互不相关的调度任务，再单独引入 `Operations` 模块。`StockModelParameterAppService` 归入 `DividendStrategy`，因为模型参数是分析和组合建议的输入，而不是持仓或现金流水本身。
 
@@ -505,6 +512,8 @@ FTShare 连接、协议、配置和超时失败先由 Adapter 转换为 Infrastr
 
 Host 使用 .NET 原生的 `Microsoft.AspNetCore.OpenApi`（`AddOpenApi`/`MapOpenApi`）生成 OpenAPI 文档，并通过 `Asp.Versioning.OpenApi` 与 API Versioning 集成，按版本生成独立文档；`Swashbuckle.AspNetCore.SwaggerUI` 只承担交互式 UI 渲染，不再负责文档生成。当前业务接口统一使用 URL path 版本 `/api/v1/...`，未带版本号的业务 URL 不会隐式映射到默认版本；`/swagger` 用于浏览和调用 Controller 接口，`/openapi/v1.json` 用于获取 v1 机器可读的 OpenAPI 文档。`app.MapOpenApi().WithDocumentPerVersion()` 按 `IApiVersionDescriptionProvider` 动态生成版本文档，未来增加 v2 时新增对应的 `[ApiVersion(2.0)]` Controller/Action，不需要修改文档生成逻辑，也不修改既有 v1 合约。OpenAPI 与 Swagger UI 的服务注册集中在 `HostServiceCollectionExtensions`，middleware 集中在 `WebApplicationExtensions`，不在 `Program.cs` 或 Controller 中重复配置。
 
+HTTP 合约的持久化副本由 Host 的 build-time document generation 生成，而不是由运行中的 `/openapi/{version}.json` 端点手工复制。`Portwise.csproj` 将文档写入前端 `openapi/` 目录；`Program.cs` 在 `GetDocument.Insider` 设计时入口使用 `CreateEmptyBuilder`，只注册 Controller、API Versioning 和 OpenAPI 元数据，避免生成合约时启动 SpaProxy 或外部基础设施。新增 v2 时生成新的 `portwise_v2.json` 与对应 TypeScript 文件，v1 仍保持独立。
+
 ### 10.2 Serilog
 
 Host 使用 Serilog 接管 ASP.NET Core 和应用的 `ILogger<T>` 日志，配置来源为 `appsettings.json`、`appsettings.Development.json`/`appsettings.Production.json`。`WriteTo` 同时配置 `Console` 和 `File` 两个 sink：`Console` 输出到标准输出（本地终端或容器标准输出，供实时观察和容器日志采集）；`File` 按天滚动写入进程工作目录下的 `logs/portwise-{Date}.log`（`retainedFileCountLimit: 31`，只保留最近 31 天），供本地排查历史问题和无容器日志采集设施时兜底查阅。`logs/` 目录已在 `.gitignore` 中排除，不提交任何运行日志文件；容器部署时 `logs/` 通过 Docker `VOLUME` 声明持久化到宿主机，与 `data/` 卷同一约定。`UseSerilogRequestLogging` 记录 HTTP 请求摘要，业务日志使用结构化属性；请求体、Authorization、FTShare 凭据和原始外部响应不得写入日志（对 Console 和 File 两个 sink 同样生效）。请求、后台同步和 FTShare 调用通过统一诊断上下文写入受控的关联字段。
@@ -609,3 +618,13 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | 10 股票事实 AppService | 保留独立事实类型契约；当前重复主要是入口校验与转发 | 出现共享事务、幂等或真实 adapter 复用需求后再提取内部 module |
 
 截至本记录，后端完整测试共 141 个通过；EF Core `has-pending-model-changes` 检查通过。
+
+## 15. 2026-09-08 架构深化处理记录
+
+本节记录本轮 HTML 审查中已逐项落地的深模块处理。每个项目都保持独立提交，并在提交前完成对应层的构建、Lint 或测试验证。
+
+| 审查候选项 | 处理结果 | 提交 |
+| --- | --- | --- |
+| 01 前端推荐展示 module | 已修复：`recommendation-display.ts` 统一 recommendation/price-zone 的展示语义，feature 只消费归一化结果 | `58b1465` |
+| 02 后端 Recommendation module | 已修复：Domain `RecommendationModule` 集中单股分析与组合分配规则，Application AppService 变为薄 Adapter | `196a4ff` |
+| 03 HTTP contract 单一事实源 | 已修复：Host build-time 生成版本化 OpenAPI，前端从 `openapi-typescript` 生成 transport contract，`api-contract.ts` 是唯一 wire-to-UI Adapter | `c1e0757` |

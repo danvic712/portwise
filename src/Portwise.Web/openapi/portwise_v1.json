@@ -1,0 +1,2247 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Portwise API",
+    "description": "Portwise A 股策略参考 API。",
+    "version": "1.0"
+  },
+  "paths": {
+    "/api/v1/budgets/summary": {
+      "get": {
+        "tags": [
+          "Budgets"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetSummary"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetSummary"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/budgets/entries": {
+      "post": {
+        "tags": [
+          "Budgets"
+        ],
+        "summary": "",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordCashLedgerEntryRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordCashLedgerEntryRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordCashLedgerEntryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashLedgerEntryResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashLedgerEntryResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashLedgerEntryResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolio/trades": {
+      "post": {
+        "tags": [
+          "Portfolio"
+        ],
+        "summary": "",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordPortfolioTradeRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordPortfolioTradeRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordPortfolioTradeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioTradeResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioTradeResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioTradeResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/recommendations": {
+      "get": {
+        "tags": [
+          "Recommendations"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioRecommendationResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioRecommendationResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioRecommendationResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/recommendations/snapshots": {
+      "post": {
+        "tags": [
+          "Recommendations"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateRecommendationSnapshotResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateRecommendationSnapshotResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateRecommendationSnapshotResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/setup/status": {
+      "get": {
+        "tags": [
+          "Setup"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupStatus"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupStatus"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/setup": {
+      "post": {
+        "tags": [
+          "Setup"
+        ],
+        "summary": "",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetupRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetupRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stocks": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockWatchlistItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockWatchlistItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockWatchlistItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stocks/sync": {
+      "post": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncRunResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncRunResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncRunResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stocks/{securityCode}/{exchangeCode}/model-parameters": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "",
+        "parameters": [
+          {
+            "name": "securityCode",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "exchangeCode",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockModelParameterSet"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockModelParameterSet"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockModelParameterSet"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stocks/model-parameters": {
+      "post": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveStockModelParametersRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveStockModelParametersRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveStockModelParametersRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockModelParameterSet"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockModelParameterSet"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockModelParameterSet"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stocks/{securityCode}/{exchangeCode}/price-observations/sync": {
+      "post": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "",
+        "parameters": [
+          {
+            "name": "securityCode",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "exchangeCode",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockPriceObservationResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockPriceObservationResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockPriceObservationResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stocks/{securityCode}/{exchangeCode}/dividend-events/sync": {
+      "post": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "",
+        "parameters": [
+          {
+            "name": "securityCode",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "exchangeCode",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockDividendEventResult"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockDividendEventResult"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockDividendEventResult"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stocks/{securityCode}/{exchangeCode}/financial-snapshots/sync": {
+      "post": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "",
+        "parameters": [
+          {
+            "name": "securityCode",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "exchangeCode",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockFinancialSnapshotResult"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockFinancialSnapshotResult"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockFinancialSnapshotResult"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stocks/{securityCode}/{exchangeCode}/analysis": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "",
+        "parameters": [
+          {
+            "name": "securityCode",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "exchangeCode",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockRecommendationResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockRecommendationResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockRecommendationResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BudgetSummary": {
+        "required": [
+          "portfolioId",
+          "portfolioName",
+          "totalInflowAmount",
+          "totalOutflowAmount",
+          "cashBalanceAmount",
+          "entryCount",
+          "computedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "portfolioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "totalInflowAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "totalOutflowAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "cashBalanceAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "entryCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "computedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CashLedgerEntryResult": {
+        "required": [
+          "cashLedgerEntryId",
+          "portfolioId",
+          "entryDate",
+          "entryTypeCode",
+          "cashDirectionCode",
+          "cashAmount",
+          "securityCode",
+          "exchangeCode",
+          "sourceRecordId"
+        ],
+        "type": "object",
+        "properties": {
+          "cashLedgerEntryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "portfolioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entryDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "entryTypeCode": {
+            "type": "string"
+          },
+          "cashDirectionCode": {
+            "type": "string"
+          },
+          "cashAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "securityCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "exchangeCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sourceRecordId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "CreateRecommendationSnapshotResult": {
+        "required": [
+          "modelRunId",
+          "portfolioId",
+          "snapshotCount",
+          "computedAt",
+          "stocks"
+        ],
+        "type": "object",
+        "properties": {
+          "modelRunId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "portfolioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "snapshotCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "computedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "stocks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockRecommendationResult"
+            }
+          }
+        }
+      },
+      "InitialHoldingInput": {
+        "required": [
+          "heldShares",
+          "coreShares",
+          "targetShares",
+          "averageCostPerShare"
+        ],
+        "type": "object",
+        "properties": {
+          "heldShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "coreShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "targetShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "averageCostPerShare": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "PortfolioRecommendationResult": {
+        "required": [
+          "portfolioId",
+          "startingAvailableBudgetAmount",
+          "remainingAvailableBudgetAmount",
+          "totalSuggestedTradeAmount",
+          "estimatedTransactionFeeAmount",
+          "stocks",
+          "computedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "portfolioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startingAvailableBudgetAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "remainingAvailableBudgetAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "totalSuggestedTradeAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "estimatedTransactionFeeAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "stocks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockRecommendationResult"
+            }
+          },
+          "computedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PortfolioTradeResult": {
+        "required": [
+          "portfolioTradeId",
+          "portfolioId",
+          "securityCode",
+          "exchangeCode",
+          "tradeDate",
+          "tradeDirectionCode",
+          "shareQuantity",
+          "pricePerShare",
+          "transactionFeeAmount",
+          "heldShares",
+          "coreShares",
+          "targetShares",
+          "averageCostPerShare",
+          "tradePrincipalAmount"
+        ],
+        "type": "object",
+        "properties": {
+          "portfolioTradeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "portfolioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "securityCode": {
+            "type": "string"
+          },
+          "exchangeCode": {
+            "type": "string"
+          },
+          "tradeDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "tradeDirectionCode": {
+            "type": "string"
+          },
+          "shareQuantity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pricePerShare": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "transactionFeeAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "heldShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "coreShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "targetShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "averageCostPerShare": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "tradePrincipalAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "RecordCashLedgerEntryRequest": {
+        "required": [
+          "entryDate",
+          "entryTypeCode",
+          "cashDirectionCode",
+          "cashAmount",
+          "securityCode",
+          "exchangeCode",
+          "sourceRecordId"
+        ],
+        "type": "object",
+        "properties": {
+          "entryDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "entryTypeCode": {
+            "type": "string"
+          },
+          "cashDirectionCode": {
+            "type": "string"
+          },
+          "cashAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "securityCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "exchangeCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sourceRecordId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RecordPortfolioTradeRequest": {
+        "required": [
+          "securityCode",
+          "exchangeCode",
+          "tradeDate",
+          "tradeDirectionCode",
+          "shareQuantity",
+          "pricePerShare",
+          "transactionFeeAmount",
+          "sourceRecordId"
+        ],
+        "type": "object",
+        "properties": {
+          "securityCode": {
+            "type": "string"
+          },
+          "exchangeCode": {
+            "type": "string"
+          },
+          "tradeDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "tradeDirectionCode": {
+            "type": "string"
+          },
+          "shareQuantity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pricePerShare": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "transactionFeeAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "sourceRecordId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "SaveStockModelParametersRequest": {
+        "required": [
+          "securityCode",
+          "exchangeCode",
+          "modelVersion",
+          "strongBuyYieldThreshold",
+          "accumulationYieldThreshold",
+          "partialTrimYieldThreshold",
+          "aggressiveTrimYieldThreshold",
+          "strongBuyBudgetRatio",
+          "accumulateBudgetRatio",
+          "partialTrimRatio",
+          "aggressiveTrimRatio",
+          "maxSecurityWeight",
+          "maxSectorWeight",
+          "cashReserveRatio",
+          "maxSingleTradeAmount",
+          "maxPeriodBudgetAmount",
+          "transactionFeeRatio",
+          "minimumTransactionFeeAmount",
+          "tradingLotSize",
+          "effectiveFromDate"
+        ],
+        "type": "object",
+        "properties": {
+          "securityCode": {
+            "type": "string"
+          },
+          "exchangeCode": {
+            "type": "string"
+          },
+          "modelVersion": {
+            "type": "string"
+          },
+          "strongBuyYieldThreshold": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "accumulationYieldThreshold": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "partialTrimYieldThreshold": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "aggressiveTrimYieldThreshold": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "strongBuyBudgetRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "accumulateBudgetRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "partialTrimRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "aggressiveTrimRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "maxSecurityWeight": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "maxSectorWeight": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "cashReserveRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "maxSingleTradeAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "maxPeriodBudgetAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "transactionFeeRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "minimumTransactionFeeAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "tradingLotSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "effectiveFromDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "SetupRequest": {
+        "required": [
+          "portfolioName",
+          "stocks"
+        ],
+        "type": "object",
+        "properties": {
+          "portfolioName": {
+            "type": "string"
+          },
+          "stocks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupStockRequest"
+            }
+          }
+        }
+      },
+      "SetupResult": {
+        "required": [
+          "portfolioId",
+          "portfolioName",
+          "stockDataSyncScheduled",
+          "stocks"
+        ],
+        "type": "object",
+        "properties": {
+          "portfolioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "stockDataSyncScheduled": {
+            "type": "boolean"
+          },
+          "stocks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupStockResult"
+            }
+          }
+        }
+      },
+      "SetupStatus": {
+        "required": [
+          "isComplete",
+          "missingRequirements"
+        ],
+        "type": "object",
+        "properties": {
+          "isComplete": {
+            "type": "boolean"
+          },
+          "missingRequirements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "SetupStockRequest": {
+        "required": [
+          "securityCode",
+          "exchangeCode",
+          "initialHolding"
+        ],
+        "type": "object",
+        "properties": {
+          "securityCode": {
+            "type": "string"
+          },
+          "exchangeCode": {
+            "type": "string"
+          },
+          "initialHolding": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InitialHoldingInput"
+              }
+            ]
+          }
+        }
+      },
+      "SetupStockResult": {
+        "required": [
+          "securityCode",
+          "exchangeCode",
+          "securityName"
+        ],
+        "type": "object",
+        "properties": {
+          "securityCode": {
+            "type": "string"
+          },
+          "exchangeCode": {
+            "type": "string"
+          },
+          "securityName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "StockAnalysisResult": {
+        "required": [
+          "securityCode",
+          "exchangeCode",
+          "securityName",
+          "modelStatusCode",
+          "dividendReliabilityCode",
+          "closePrice",
+          "modelDividendPerShare",
+          "dividendModeCode",
+          "dividendYield",
+          "strongBuyPrice",
+          "accumulatePrice",
+          "partialTrimPrice",
+          "aggressiveTrimPrice",
+          "observedPriceZoneCode",
+          "priceZoneCode",
+          "priceZoneConfirmed",
+          "recommendationCode",
+          "heldShares",
+          "coreShares",
+          "satelliteShares",
+          "dataAsOfDate",
+          "modelParameterSetId",
+          "computedAt",
+          "explanation",
+          "securityId"
+        ],
+        "type": "object",
+        "properties": {
+          "securityCode": {
+            "type": "string"
+          },
+          "exchangeCode": {
+            "type": "string"
+          },
+          "securityName": {
+            "type": "string"
+          },
+          "modelStatusCode": {
+            "type": "string"
+          },
+          "dividendReliabilityCode": {
+            "type": "string"
+          },
+          "closePrice": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "modelDividendPerShare": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "dividendModeCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dividendYield": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "strongBuyPrice": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "accumulatePrice": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "partialTrimPrice": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "aggressiveTrimPrice": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "observedPriceZoneCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "priceZoneCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "priceZoneConfirmed": {
+            "type": "boolean"
+          },
+          "recommendationCode": {
+            "type": "string"
+          },
+          "heldShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "coreShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "satelliteShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "dataAsOfDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "modelParameterSetId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "computedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "securityId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "StockDataSyncFailure": {
+        "required": [
+          "securityCode",
+          "exchangeCode",
+          "dataKind",
+          "errorCode",
+          "parameters"
+        ],
+        "type": "object",
+        "properties": {
+          "securityCode": {
+            "type": "string"
+          },
+          "exchangeCode": {
+            "type": "string"
+          },
+          "dataKind": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          },
+          "parameters": {
+            "type": "object"
+          }
+        }
+      },
+      "StockDataSyncRunResult": {
+        "required": [
+          "attemptedStockCount",
+          "fullyCompletedStockCount",
+          "partiallyFailedStockCount",
+          "failures",
+          "completedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "attemptedStockCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "fullyCompletedStockCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "partiallyFailedStockCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "failures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockDataSyncFailure"
+            }
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "StockDividendEventResult": {
+        "required": [
+          "dividendEventId",
+          "securityCode",
+          "exchangeCode",
+          "dividendPerShare",
+          "dividendTypeCode",
+          "dividendStatusCode",
+          "announcementDate",
+          "exDividendDate",
+          "paymentDate",
+          "isSpecialDividend",
+          "publishedAt",
+          "capturedAt",
+          "dataSource",
+          "sourceRecordId",
+          "dataQualityCode"
+        ],
+        "type": "object",
+        "properties": {
+          "dividendEventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "securityCode": {
+            "type": "string"
+          },
+          "exchangeCode": {
+            "type": "string"
+          },
+          "dividendPerShare": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "dividendTypeCode": {
+            "type": "string"
+          },
+          "dividendStatusCode": {
+            "type": "string"
+          },
+          "announcementDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "exDividendDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "paymentDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "isSpecialDividend": {
+            "type": "boolean"
+          },
+          "publishedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "capturedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dataSource": {
+            "type": "string"
+          },
+          "sourceRecordId": {
+            "type": "string"
+          },
+          "dataQualityCode": {
+            "type": "string"
+          }
+        }
+      },
+      "StockFinancialSnapshotResult": {
+        "required": [
+          "financialSnapshotId",
+          "securityCode",
+          "exchangeCode",
+          "dataAsOfDate",
+          "capturedAt",
+          "publishedAt",
+          "earningsPerShare",
+          "dividendPayoutRatio",
+          "threeYearAverageDividendPayoutRatio",
+          "priceToBookRatio",
+          "returnOnEquity",
+          "dataSource",
+          "sourceRecordId",
+          "dataQualityCode"
+        ],
+        "type": "object",
+        "properties": {
+          "financialSnapshotId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "securityCode": {
+            "type": "string"
+          },
+          "exchangeCode": {
+            "type": "string"
+          },
+          "dataAsOfDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "capturedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "publishedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "earningsPerShare": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "dividendPayoutRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "threeYearAverageDividendPayoutRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "priceToBookRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "returnOnEquity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "dataSource": {
+            "type": "string"
+          },
+          "sourceRecordId": {
+            "type": "string"
+          },
+          "dataQualityCode": {
+            "type": "string"
+          }
+        }
+      },
+      "StockHoldingSnapshot": {
+        "required": [
+          "heldShares",
+          "coreShares",
+          "targetShares",
+          "averageCostPerShare"
+        ],
+        "type": "object",
+        "properties": {
+          "heldShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "coreShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "targetShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "averageCostPerShare": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StockModelParameterSet": {
+        "required": [
+          "modelParameterSetId",
+          "securityCode",
+          "exchangeCode",
+          "modelVersion",
+          "strongBuyYieldThreshold",
+          "accumulationYieldThreshold",
+          "partialTrimYieldThreshold",
+          "aggressiveTrimYieldThreshold",
+          "strongBuyBudgetRatio",
+          "accumulateBudgetRatio",
+          "partialTrimRatio",
+          "aggressiveTrimRatio",
+          "maxSecurityWeight",
+          "maxSectorWeight",
+          "cashReserveRatio",
+          "maxSingleTradeAmount",
+          "maxPeriodBudgetAmount",
+          "transactionFeeRatio",
+          "minimumTransactionFeeAmount",
+          "tradingLotSize",
+          "effectiveFromDate"
+        ],
+        "type": "object",
+        "properties": {
+          "modelParameterSetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "securityCode": {
+            "type": "string"
+          },
+          "exchangeCode": {
+            "type": "string"
+          },
+          "modelVersion": {
+            "type": "string"
+          },
+          "strongBuyYieldThreshold": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "accumulationYieldThreshold": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "partialTrimYieldThreshold": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "aggressiveTrimYieldThreshold": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "strongBuyBudgetRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "accumulateBudgetRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "partialTrimRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "aggressiveTrimRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "maxSecurityWeight": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "maxSectorWeight": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "cashReserveRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "maxSingleTradeAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "maxPeriodBudgetAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "transactionFeeRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "minimumTransactionFeeAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "tradingLotSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "effectiveFromDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "StockPriceObservationResult": {
+        "required": [
+          "priceObservationId",
+          "securityCode",
+          "exchangeCode",
+          "tradingDate",
+          "closePrice",
+          "priceObservedAt",
+          "dataSource",
+          "sourceRecordId",
+          "dataQualityCode"
+        ],
+        "type": "object",
+        "properties": {
+          "priceObservationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "securityCode": {
+            "type": "string"
+          },
+          "exchangeCode": {
+            "type": "string"
+          },
+          "tradingDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "closePrice": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "priceObservedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dataSource": {
+            "type": "string"
+          },
+          "sourceRecordId": {
+            "type": "string"
+          },
+          "dataQualityCode": {
+            "type": "string"
+          }
+        }
+      },
+      "StockRecommendationResult": {
+        "required": [
+          "analysis",
+          "suggestedBuyShares",
+          "suggestedSellShares",
+          "suggestedTradeAmount",
+          "estimatedTransactionFeeAmount"
+        ],
+        "type": "object",
+        "properties": {
+          "analysis": {
+            "$ref": "#/components/schemas/StockAnalysisResult"
+          },
+          "suggestedBuyShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "suggestedSellShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "suggestedTradeAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "estimatedTransactionFeeAmount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "StockWatchlistItem": {
+        "required": [
+          "securityCode",
+          "exchangeCode",
+          "securityName",
+          "marketCode",
+          "currencyCode",
+          "holding"
+        ],
+        "type": "object",
+        "properties": {
+          "securityCode": {
+            "type": "string"
+          },
+          "exchangeCode": {
+            "type": "string"
+          },
+          "securityName": {
+            "type": "string"
+          },
+          "marketCode": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "holding": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StockHoldingSnapshot"
+              }
+            ]
+          },
+          "sectorCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "securityId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Budgets"
+    },
+    {
+      "name": "Portfolio"
+    },
+    {
+      "name": "Recommendations"
+    },
+    {
+      "name": "Setup"
+    },
+    {
+      "name": "Stocks"
+    }
+  ]
+}

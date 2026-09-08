@@ -3,6 +3,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- XML docs are consumed by the OpenAPI/Swagger integration; undocumented public members do not block the build. -->
     <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <OpenApiGenerateDocuments>true</OpenApiGenerateDocuments>
+    <OpenApiGenerateDocumentsOnBuild>true</OpenApiGenerateDocumentsOnBuild>
+    <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/../Portwise.Web/openapi</OpenApiDocumentsDirectory>
+    <OpenApiGenerateDocumentsOptions>--file-name portwise_v1</OpenApiGenerateDocumentsOptions>
     <SpaRoot>../Portwise.Web/</SpaRoot>
     <SpaProxyServerUrl>http://127.0.0.1:4173</SpaProxyServerUrl>
     <SpaProxyLaunchCommand>pnpm run dev</SpaProxyLaunchCommand>
@@ -15,6 +19,7 @@
     <PackageReference Include="Serilog.Sinks.File" />
     <PackageReference Include="Serilog.Enrichers.Span" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" PrivateAssets="all" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" />
     <PackageReference Include="Asp.Versioning.Mvc" />
     <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
