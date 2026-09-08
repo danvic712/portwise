@@ -23,6 +23,7 @@ export type BrowserNavigation = {
   read: () => NavigationLocation
   navigate: (path: string, replace?: boolean) => void
   replaceQuery: (patch: QueryPatch) => void
+  readPersistedPortfolioStock: () => string
   persistPortfolioStock: (stockKey: string) => void
   subscribe: (listener: (location: NavigationLocation) => void) => () => void
 }
@@ -96,6 +97,10 @@ export function createBrowserNavigation(browserWindow: Window = window): Browser
     replaceQuery({ stock: stockKey, code: null, exchange: null })
   }
 
+  function readPersistedPortfolioStock() {
+    return browserWindow.sessionStorage.getItem(portfolioStockStorageKey) ?? ""
+  }
+
   function subscribe(listener: (location: NavigationLocation) => void) {
     if (listeners.size === 0) browserWindow.addEventListener("popstate", notify)
     listeners.add(listener)
@@ -105,5 +110,5 @@ export function createBrowserNavigation(browserWindow: Window = window): Browser
     }
   }
 
-  return { read, navigate: updateHistory, replaceQuery, persistPortfolioStock, subscribe }
+  return { read, navigate: updateHistory, replaceQuery, readPersistedPortfolioStock, persistPortfolioStock, subscribe }
 }

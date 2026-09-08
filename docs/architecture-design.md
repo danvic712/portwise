@@ -643,3 +643,4 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | --- | --- | --- |
 | 01 HTTP contract publication module | 已完成：集中运行时与 build-time OpenAPI 注册，前端请求消费生成路径约束，增加 wire numeric 运行时归一化与 contract drift 检查；CI/Docker 先生成并校验 contract，再构建前端 | `dotnet test`、`pnpm api:check`、`pnpm build`；提交 `refactor: close HTTP contract publication loop` |
 | 02 Recommendation 事实装配 module | 已完成：`StockAnalysisAppService` 增加关注列表批量事实读取，单股与组合入口共享一次计算时间和分析结果；组合分配拒绝混合计算时间，快照复用组合结果时间 | `dotnet test`（82 Application tests）；提交 `refactor: batch recommendation fact assembly` |
+| 03 Frontend application shell module | 已完成：路由选择、Setup gate、浏览器 session 读取和 feature 装载集中到 `application-shell.tsx`；feature 页面按路由懒加载；navigation 纯策略增加 Node 原生测试与 `pnpm test` 脚本 | `pnpm test`（4 tests）、`pnpm build`、`pnpm lint`；提交 `refactor: deepen frontend application shell` |

@@ -12,6 +12,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test src/lib/navigation.test.ts",
     "api:generate": "openapi-typescript openapi/portwise_v1.json -o src/lib/api-contract.generated.ts",
     "api:check": "node scripts/check-api-contract.mjs",
     "preview": "vite preview"
