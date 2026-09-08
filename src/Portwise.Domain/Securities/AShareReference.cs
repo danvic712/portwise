@@ -21,12 +21,12 @@ public sealed record AShareReference
 
         if (normalizedCode.Length != 6 || normalizedCode.Any(character => character is < '0' or > '9'))
         {
-            throw new ArgumentException("A 股股票代码必须是 6 位数字。", nameof(securityCode));
+            throw new ArgumentException("Security code must contain exactly 6 digits.", nameof(securityCode));
         }
 
         if (!SupportedExchanges.Contains(normalizedExchange, StringComparer.Ordinal))
         {
-            throw new ArgumentException("交易所必须是 SSE、SZSE 或 BSE。", nameof(exchangeCode));
+            throw new ArgumentException("Exchange code must be SSE, SZSE or BSE.", nameof(exchangeCode));
         }
 
         return new AShareReference(normalizedCode, normalizedExchange);

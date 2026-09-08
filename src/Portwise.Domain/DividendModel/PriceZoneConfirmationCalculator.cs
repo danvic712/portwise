@@ -25,7 +25,7 @@ public static class PriceZoneConfirmationCalculator
             .ToArray();
         if (latestObservations.Length == 0)
         {
-            throw new ArgumentException("至少需要一条有效行情。", nameof(observations));
+            throw new ArgumentException("At least one valid price observation is required.", nameof(observations));
         }
 
         var observedZone = DividendPriceZoneCalculator.Calculate(

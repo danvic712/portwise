@@ -74,30 +74,30 @@ public sealed class RecommendationSnapshot
     {
         if (modelRunId == Guid.Empty)
         {
-            throw new ArgumentException("模型运行标识不能为空。", nameof(modelRunId));
+            throw new ArgumentException("Model run identifier is required.", nameof(modelRunId));
         }
 
         if (portfolioId == Guid.Empty)
         {
-            throw new ArgumentException("投资组合标识不能为空。", nameof(portfolioId));
+            throw new ArgumentException("Portfolio identifier is required.", nameof(portfolioId));
         }
 
         if (securityId == Guid.Empty)
         {
-            throw new ArgumentException("股票标识不能为空。", nameof(securityId));
+            throw new ArgumentException("Security identifier is required.", nameof(securityId));
         }
 
-        ValidateOptionalPositive(closePrice, nameof(closePrice), "收盘价必须大于零。");
+        ValidateOptionalPositive(closePrice, nameof(closePrice), "Close price must be greater than zero.");
         ValidateOptionalPositive(
             modelDividendPerShare,
             nameof(modelDividendPerShare),
-            "模型股息必须大于零。");
+            "Model dividend per share must be greater than zero.");
         ValidateOptionalRatio(dividendYield, nameof(dividendYield));
 
         var normalizedModelStatus = modelStatusCode?.Trim().ToLowerInvariant() ?? string.Empty;
         if (!ModelStatusCodes.IsSupported(normalizedModelStatus))
         {
-            throw new ArgumentException("模型状态代码不受支持。", nameof(modelStatusCode));
+            throw new ArgumentException("Model status code is not supported.", nameof(modelStatusCode));
         }
 
         var normalizedReliability =
@@ -105,7 +105,7 @@ public sealed class RecommendationSnapshot
         if (!DividendReliabilityCodes.IsSupported(normalizedReliability))
         {
             throw new ArgumentException(
-                "股息可靠性代码不受支持。",
+                "Dividend reliability code is not supported.",
                 nameof(dividendReliabilityCode));
         }
 
@@ -113,7 +113,7 @@ public sealed class RecommendationSnapshot
         if (normalizedDividendMode is not null
             && !DividendModeCodes.IsSupported(normalizedDividendMode))
         {
-            throw new ArgumentException("股息模式代码不受支持。", nameof(dividendModeCode));
+            throw new ArgumentException("Dividend mode code is not supported.", nameof(dividendModeCode));
         }
 
         var normalizedObservedPriceZone = NormalizeOptionalCode(observedPriceZoneCode);
@@ -121,20 +121,20 @@ public sealed class RecommendationSnapshot
             && !PriceZoneCodes.IsSupported(normalizedObservedPriceZone))
         {
             throw new ArgumentException(
-                "观测价格区域代码不受支持。",
+                "Observed price-zone code is not supported.",
                 nameof(observedPriceZoneCode));
         }
 
         var normalizedPriceZone = NormalizeOptionalCode(priceZoneCode);
         if (normalizedPriceZone is not null && !PriceZoneCodes.IsSupported(normalizedPriceZone))
         {
-            throw new ArgumentException("确认价格区域代码不受支持。", nameof(priceZoneCode));
+            throw new ArgumentException("Confirmed price-zone code is not supported.", nameof(priceZoneCode));
         }
 
         var normalizedRecommendation = recommendationCode?.Trim().ToLowerInvariant() ?? string.Empty;
         if (!RecommendationCodes.IsSupported(normalizedRecommendation))
         {
-            throw new ArgumentException("建议代码不受支持。", nameof(recommendationCode));
+            throw new ArgumentException("Recommendation code is not supported.", nameof(recommendationCode));
         }
 
         if (suggestedBuyShares < 0)
@@ -142,7 +142,7 @@ public sealed class RecommendationSnapshot
             throw new ArgumentOutOfRangeException(
                 nameof(suggestedBuyShares),
                 suggestedBuyShares,
-                "建议买入股数不能为负数。");
+                "Suggested buy shares cannot be negative.");
         }
 
         if (suggestedSellShares < 0)
@@ -150,19 +150,19 @@ public sealed class RecommendationSnapshot
             throw new ArgumentOutOfRangeException(
                 nameof(suggestedSellShares),
                 suggestedSellShares,
-                "建议卖出股数不能为负数。");
+                "Suggested sell shares cannot be negative.");
         }
 
         if (suggestedTradeAmount < 0 || estimatedTransactionFeeAmount < 0)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(suggestedTradeAmount),
-                "建议交易金额和手续费不能为负数。");
+                "Suggested trade amount and fee cannot be negative.");
         }
 
         if (computedAt == default)
         {
-            throw new ArgumentException("计算时间不能为空。", nameof(computedAt));
+            throw new ArgumentException("Computation timestamp is required.", nameof(computedAt));
         }
 
         ValidateSnapshotSemantics(
@@ -224,7 +224,7 @@ public sealed class RecommendationSnapshot
             throw new ArgumentOutOfRangeException(
                 parameterName,
                 value,
-                "股息率必须介于 0 和 1 之间。");
+                "Dividend yield must be between 0 and 1.");
         }
     }
 
@@ -250,13 +250,13 @@ public sealed class RecommendationSnapshot
     {
         if ((modelDividendPerShare is null) != (dividendModeCode is null))
         {
-            throw new ArgumentException("模型股息和股息模式必须同时存在或同时为空。", nameof(dividendModeCode));
+            throw new ArgumentException("Model dividend and dividend mode must both be present or both be empty.", nameof(dividendModeCode));
         }
 
         if (priceZoneConfirmed != (priceZoneCode is not null))
         {
             throw new ArgumentException(
-                "价格区域确认标识必须与确认价格区域同时存在。",
+                "Price-zone confirmation must be provided together with a confirmed price zone.",
                 nameof(priceZoneConfirmed));
         }
 
@@ -264,7 +264,7 @@ public sealed class RecommendationSnapshot
             && !string.Equals(observedPriceZoneCode, priceZoneCode, StringComparison.Ordinal))
         {
             throw new ArgumentException(
-                "确认价格区域必须与最新观测价格区域一致。",
+                "Confirmed price zone must match the latest observed price zone.",
                 nameof(priceZoneCode));
         }
 
@@ -272,7 +272,7 @@ public sealed class RecommendationSnapshot
             && (observedPriceZoneCode is not null || priceZoneCode is not null))
         {
             throw new ArgumentException(
-                "模型不可用时不能保存价格区域。",
+                "Price zones cannot be saved when the model is unavailable.",
                 nameof(priceZoneCode));
         }
 
@@ -280,7 +280,7 @@ public sealed class RecommendationSnapshot
             && reliabilityCode != DividendReliabilityCodes.Passed)
         {
             throw new ArgumentException(
-                "模型可用时股息可靠性必须为 passed。",
+                "Dividend reliability must be passed when the model is available.",
                 nameof(reliabilityCode));
         }
 
@@ -292,7 +292,7 @@ public sealed class RecommendationSnapshot
         if (mustHaveNoTrade && (suggestedBuyShares > 0 || suggestedSellShares > 0))
         {
             throw new ArgumentException(
-                "模型未处于可用状态时不能生成交易股数。",
+                "Trade shares cannot be generated when the model is not available.",
                 nameof(suggestedBuyShares));
         }
 
@@ -304,33 +304,33 @@ public sealed class RecommendationSnapshot
                 or RecommendationCodes.NoAction
                 ? recommendationCode
                 : throw new ArgumentException(
-                    "谨慎参考状态只能使用 hold 或 no_action。",
+                    "Cautious status can only use hold or no_action.",
                     nameof(recommendationCode)),
             _ when priceZoneCode is null => recommendationCode is RecommendationCodes.Hold
                 or RecommendationCodes.NoAction
                 ? recommendationCode
                 : throw new ArgumentException(
-                    "尚未确认价格区域时只能使用 hold 或 no_action。",
+                    "An unconfirmed price zone can only use hold or no_action.",
                     nameof(recommendationCode)),
             _ => priceZoneCode
         };
         if (!string.Equals(expectedRecommendation, recommendationCode, StringComparison.Ordinal))
         {
             throw new ArgumentException(
-                "建议代码与模型状态或价格区域不一致。",
+                "Recommendation code does not match the model status or price zone.",
                 nameof(recommendationCode));
         }
 
         if (suggestedBuyShares > 0 && suggestedSellShares > 0)
         {
-            throw new ArgumentException("同一建议快照不能同时包含买入和卖出股数。", nameof(suggestedBuyShares));
+            throw new ArgumentException("A recommendation snapshot cannot contain both buy and sell shares.", nameof(suggestedBuyShares));
         }
 
         if (suggestedBuyShares > 0 || suggestedSellShares > 0)
         {
             if (closePrice is null)
             {
-                throw new ArgumentException("存在建议股数时必须提供收盘价。", nameof(closePrice));
+                throw new ArgumentException("Close price is required when suggested shares are present.", nameof(closePrice));
             }
 
             var expectedTradeAmount =
@@ -338,21 +338,21 @@ public sealed class RecommendationSnapshot
             if (suggestedTradeAmount != expectedTradeAmount)
             {
                 throw new ArgumentException(
-                    "建议交易金额必须等于建议股数乘以收盘价。",
+                    "Suggested trade amount must equal suggested shares multiplied by close price.",
                     nameof(suggestedTradeAmount));
             }
         }
         else if (suggestedTradeAmount != 0m || estimatedTransactionFeeAmount != 0m)
         {
             throw new ArgumentException(
-                "没有建议股数时建议交易金额和手续费必须为零。",
+                "Suggested trade amount and fee must be zero when no suggested shares exist.",
                 nameof(suggestedTradeAmount));
         }
 
         if (estimatedTransactionFeeAmount > 0m && suggestedTradeAmount == 0m)
         {
             throw new ArgumentException(
-                "存在交易手续费时必须同时存在建议交易金额。",
+                "Suggested trade amount is required when a transaction fee is present.",
                 nameof(estimatedTransactionFeeAmount));
         }
     }

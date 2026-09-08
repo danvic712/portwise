@@ -6,11 +6,10 @@ using Serilog.Context;
 namespace Portwise.Diagnostics;
 
 /// <summary>
-/// 基于 <see cref="Activity"/>（W3C Trace Context）的 <see cref="IDiagnosticContext"/> 实现，
-/// 取代早期只依赖 Serilog <see cref="LogContext"/> 的定制关联方案。每个作用域会启动一个 Activity，
-/// 允许字段作为 Activity Tag 附加（可被未来接入的 OpenTelemetry 导出器采集），同时仍然写入
-/// LogContext，保证既有结构化日志字段（correlation_id、run_id、security_code 等）不受影响；
-/// TraceId/SpanId 由 <c>Serilog.Enrichers.Span</c> 的 <c>Enrich.WithSpan()</c> 自动注入日志。
+/// An <see cref="IDiagnosticContext"/> implementation based on <see cref="Activity"/>
+/// and W3C Trace Context. Each scope starts an Activity, attaches fields as tags,
+/// and continues writing to <see cref="LogContext"/> so existing structured fields
+/// remain available. TraceId and SpanId are added by <c>Serilog.Enrichers.Span</c>.
 /// </summary>
 public sealed class ActivityDiagnosticContext : IDiagnosticContext
 {

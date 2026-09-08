@@ -11,22 +11,22 @@ public sealed class SetupRequestValidator : AbstractValidator<SetupRequest>
         RuleFor(x => x.PortfolioName)
             .Cascade(CascadeMode.Stop)
             .Must(value => !string.IsNullOrWhiteSpace(value))
-            .WithMessage("投资组合名称必须为 1 到 100 个字符。")
+            .WithMessage("Portfolio name must contain 1 to 100 characters.")
             .Must(value => value.Trim().Length <= 100)
-            .WithMessage("投资组合名称必须为 1 到 100 个字符。");
+            .WithMessage("Portfolio name must contain 1 to 100 characters.");
 
         RuleFor(x => x.Stocks)
             .Must(stocks => stocks is { Count: > 0 })
-            .WithMessage("至少需要配置一只 A 股股票。");
+            .WithMessage("At least one A-share security must be configured.");
 
         RuleFor(x => x.Stocks)
             .Must(HaveUniqueStockReferences)
-            .WithMessage("不能重复配置同一只股票。");
+            .WithMessage("The same security cannot be configured more than once.");
 
         RuleForEach(x => x.Stocks)
             .Cascade(CascadeMode.Stop)
             .NotNull()
-            .WithMessage("股票配置不能为空。")
+            .WithMessage("Stock configuration is required.")
             .SetValidator(stockValidator);
     }
 

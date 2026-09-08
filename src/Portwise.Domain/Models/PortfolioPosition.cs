@@ -24,7 +24,7 @@ public sealed class PortfolioPosition
             throw new ArgumentOutOfRangeException(
                 nameof(shareQuantity),
                 shareQuantity,
-                "买入股数必须大于零。");
+                "Buy share quantity must be greater than zero.");
         }
 
         if (pricePerShare <= 0)
@@ -32,7 +32,7 @@ public sealed class PortfolioPosition
             throw new ArgumentOutOfRangeException(
                 nameof(pricePerShare),
                 pricePerShare,
-                "成交价格必须大于零。");
+                "Execution price must be greater than zero.");
         }
 
         if (transactionFeeAmount < 0)
@@ -40,7 +40,7 @@ public sealed class PortfolioPosition
             throw new ArgumentOutOfRangeException(
                 nameof(transactionFeeAmount),
                 transactionFeeAmount,
-                "交易费用不能为负数。");
+                "Transaction fee cannot be negative.");
         }
 
         var existingCost = HeldShares * AverageCostPerShare;
@@ -57,12 +57,12 @@ public sealed class PortfolioPosition
             throw new ArgumentOutOfRangeException(
                 nameof(shareQuantity),
                 shareQuantity,
-                "卖出股数必须大于零。");
+                "Sell share quantity must be greater than zero.");
         }
 
         if (shareQuantity > HeldShares)
         {
-            throw new InvalidOperationException("卖出股数不能超过当前持股数量。");
+            throw new InvalidOperationException("Sell share quantity cannot exceed held shares.");
         }
 
         HeldShares -= shareQuantity;

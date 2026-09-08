@@ -9,7 +9,7 @@ public static class HistoricalDataAvailability
         if (dataAsOfDate == DateOnly.MinValue)
         {
             throw new ArgumentException(
-                "历史数据截至日期不能为空。",
+                "Historical data-as-of date is required.",
                 nameof(dataAsOfDate));
         }
 

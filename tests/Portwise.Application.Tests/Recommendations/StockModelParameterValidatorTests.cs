@@ -17,7 +17,7 @@ public sealed class StockModelParameterValidatorTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, error =>
             error.PropertyName == "PartialTrimYieldThreshold"
-            && error.ErrorMessage == "分批加仓收益率阈值必须高于减仓候选收益率阈值。");
+            && error.ErrorMessage == "Accumulation yield threshold must exceed the partial-trim threshold.");
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public sealed class StockModelParameterValidatorTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, error =>
             error.PropertyName == "StrongBuyBudgetRatio"
-            && error.ErrorMessage == "强买入预算比例必须介于 0 和 1 之间。");
+            && error.ErrorMessage == "Strong-buy budget ratio must be between 0 and 1.");
     }
 
     private static SaveStockModelParametersRequest CreateRequest(

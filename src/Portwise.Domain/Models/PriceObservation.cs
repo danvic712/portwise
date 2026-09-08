@@ -35,12 +35,12 @@ public sealed class PriceObservation
     {
         if (securityId == Guid.Empty)
         {
-            throw new ArgumentException("股票标识不能为空。", nameof(securityId));
+            throw new ArgumentException("Security identifier is required.", nameof(securityId));
         }
 
         if (tradingDate == DateOnly.MinValue)
         {
-            throw new ArgumentException("交易日期不能为空。", nameof(tradingDate));
+            throw new ArgumentException("Trading date is required.", nameof(tradingDate));
         }
 
         if (closePrice <= 0)
@@ -48,28 +48,28 @@ public sealed class PriceObservation
             throw new ArgumentOutOfRangeException(
                 nameof(closePrice),
                 closePrice,
-                "收盘价必须大于零。");
+                "Close price must be greater than zero.");
         }
 
         if (priceObservedAt == default)
         {
-            throw new ArgumentException("行情观测时间不能为空。", nameof(priceObservedAt));
+            throw new ArgumentException("Price observation timestamp is required.", nameof(priceObservedAt));
         }
 
         if (string.IsNullOrWhiteSpace(dataSource))
         {
-            throw new ArgumentException("数据来源不能为空。", nameof(dataSource));
+            throw new ArgumentException("Data source is required.", nameof(dataSource));
         }
 
         if (string.IsNullOrWhiteSpace(sourceRecordId))
         {
-            throw new ArgumentException("来源记录标识不能为空。", nameof(sourceRecordId));
+            throw new ArgumentException("Source record identifier is required.", nameof(sourceRecordId));
         }
 
         var normalizedQualityCode = dataQualityCode?.Trim().ToLowerInvariant() ?? string.Empty;
         if (!DataQualityCodes.IsSupported(normalizedQualityCode))
         {
-            throw new ArgumentException("数据质量代码不受支持。", nameof(dataQualityCode));
+            throw new ArgumentException("Data quality code is not supported.", nameof(dataQualityCode));
         }
 
         return new PriceObservation

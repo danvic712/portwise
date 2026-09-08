@@ -11,6 +11,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Returns the current portfolio cash budget summary. */
         get: {
             parameters: {
                 query?: never;
@@ -50,6 +51,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Records a cash ledger entry and returns the created entry. */
         post: {
             parameters: {
                 query?: never;
@@ -93,6 +95,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Records a simulated portfolio trade. */
         post: {
             parameters: {
                 query?: never;
@@ -134,6 +137,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Returns the current portfolio recommendation. */
         get: {
             parameters: {
                 query?: never;
@@ -173,6 +177,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Persists a snapshot of the current recommendation. */
         post: {
             parameters: {
                 query?: never;
@@ -208,6 +213,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Returns whether the initial portfolio setup is complete. */
         get: {
             parameters: {
                 query?: never;
@@ -247,6 +253,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Creates the initial portfolio and configured stock watchlist. */
         post: {
             parameters: {
                 query?: never;
@@ -288,6 +295,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Returns all stocks configured in the portfolio watchlist. */
         get: {
             parameters: {
                 query?: never;
@@ -327,6 +335,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Runs a manual synchronization for all configured stocks. */
         post: {
             parameters: {
                 query?: never;
@@ -362,12 +371,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Returns the active model parameters for one stock. */
         get: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
+                    /** @description Six-digit A-share security code. */
                     securityCode: string;
+                    /** @description Exchange code: SSE, SZSE or BSE. */
                     exchangeCode: string;
                 };
                 cookie?: never;
@@ -404,6 +416,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Creates a new model-parameter version for one stock. */
         post: {
             parameters: {
                 query?: never;
@@ -447,12 +460,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Synchronizes the latest price observation for one stock. */
         post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
+                    /** @description Six-digit A-share security code. */
                     securityCode: string;
+                    /** @description Exchange code: SSE, SZSE or BSE. */
                     exchangeCode: string;
                 };
                 cookie?: never;
@@ -487,12 +503,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Synchronizes dividend events for one stock. */
         post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
+                    /** @description Six-digit A-share security code. */
                     securityCode: string;
+                    /** @description Exchange code: SSE, SZSE or BSE. */
                     exchangeCode: string;
                 };
                 cookie?: never;
@@ -527,12 +546,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Synchronizes financial snapshots for one stock. */
         post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
+                    /** @description Six-digit A-share security code. */
                     securityCode: string;
+                    /** @description Exchange code: SSE, SZSE or BSE. */
                     exchangeCode: string;
                 };
                 cookie?: never;
@@ -565,12 +587,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Returns the current recommendation analysis for one stock. */
         get: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
+                    /** @description Six-digit A-share security code. */
                     securityCode: string;
+                    /** @description Exchange code: SSE, SZSE or BSE. */
                     exchangeCode: string;
                 };
                 cookie?: never;
@@ -602,382 +627,857 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Aggregated cash budget information for the configured portfolio. */
         BudgetSummary: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identifier of the portfolio.
+             */
             portfolioId: string;
+            /** @description Display name of the portfolio. */
             portfolioName: string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Total cash inflow recorded to date.
+             */
             totalInflowAmount: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Total cash outflow recorded to date.
+             */
             totalOutflowAmount: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Current cash balance.
+             */
             cashBalanceAmount: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Number of ledger entries included in the calculation.
+             */
             entryCount: number | string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description UTC timestamp when the summary was computed.
+             */
             computedAt: string;
         };
+        /** @description Result returned after a cash ledger entry is recorded. */
         CashLedgerEntryResult: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identifier of the created cash ledger entry.
+             */
             cashLedgerEntryId: string;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identifier of the portfolio.
+             */
             portfolioId: string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Date of the ledger entry.
+             */
             entryDate: string;
+            /** @description Normalized ledger entry type code. */
             entryTypeCode: string;
+            /** @description Normalized cash direction code. */
             cashDirectionCode: string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Cash amount recorded.
+             */
             cashAmount: number | string;
+            /** @description Optional security code associated with the entry. */
             securityCode: null | string;
+            /** @description Optional exchange code associated with the entry. */
             exchangeCode: null | string;
+            /** @description Optional source-system record identifier. */
             sourceRecordId: null | string;
         };
+        /** @description Result of persisting a portfolio recommendation snapshot. */
         CreateRecommendationSnapshotResult: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identifier of the model run.
+             */
             modelRunId: string;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identifier of the portfolio.
+             */
             portfolioId: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Number of stock snapshots persisted.
+             */
             snapshotCount: number | string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description UTC timestamp when the recommendation was computed.
+             */
             computedAt: string;
+            /** @description Persisted stock recommendation snapshots. */
             stocks: components["schemas"]["StockRecommendationResult"][];
         };
+        /** @description Optional initial holding values. */
         InitialHoldingInput: {
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Initial total held shares.
+             */
             heldShares: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Initial core shares.
+             */
             coreShares: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Initial target share quantity.
+             */
             targetShares: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Initial average cost per share.
+             */
             averageCostPerShare: number | string;
         };
+        /** @description Portfolio-level recommendation and budget allocation result. */
         PortfolioRecommendationResult: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identifier of the portfolio.
+             */
             portfolioId: string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Available budget before allocation.
+             */
             startingAvailableBudgetAmount: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Available budget after allocation.
+             */
             remainingAvailableBudgetAmount: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Total suggested trade amount.
+             */
             totalSuggestedTradeAmount: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Estimated fees for suggested trades.
+             */
             estimatedTransactionFeeAmount: number | string;
+            /** @description Per-stock recommendation results. */
             stocks: components["schemas"]["StockRecommendationResult"][];
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description UTC timestamp when the recommendation was computed.
+             */
             computedAt: string;
         };
+        /** @description Result returned after a portfolio trade is recorded. */
         PortfolioTradeResult: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identifier of the created trade.
+             */
             portfolioTradeId: string;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identifier of the portfolio.
+             */
             portfolioId: string;
+            /** @description Traded security code. */
             securityCode: string;
+            /** @description Traded exchange code. */
             exchangeCode: string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Trade execution date.
+             */
             tradeDate: string;
+            /** @description Normalized trade direction code. */
             tradeDirectionCode: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Number of shares traded.
+             */
             shareQuantity: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Execution price per share.
+             */
             pricePerShare: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Transaction fee charged.
+             */
             transactionFeeAmount: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Shares held after the trade.
+             */
             heldShares: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Core shares after the trade.
+             */
             coreShares: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Target shares after the trade.
+             */
             targetShares: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Average cost per share after the trade.
+             */
             averageCostPerShare: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Trade principal amount.
+             */
             tradePrincipalAmount: number | string;
         };
+        /** @description Request to record a cash ledger entry. */
         RecordCashLedgerEntryRequest: {
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Date of the ledger entry.
+             */
             entryDate: string;
+            /** @description Ledger entry type code. */
             entryTypeCode: string;
+            /** @description Cash direction code. */
             cashDirectionCode: string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Cash amount to record.
+             */
             cashAmount: number | string;
+            /** @description Optional security code associated with the entry. */
             securityCode: null | string;
+            /** @description Optional exchange code associated with the entry. */
             exchangeCode: null | string;
+            /** @description Optional source-system record identifier. */
             sourceRecordId: null | string;
         };
+        /** @description Request to record a simulated portfolio trade. */
         RecordPortfolioTradeRequest: {
+            /** @description Security code to trade. */
             securityCode: string;
+            /** @description Exchange code for the security. */
             exchangeCode: string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Trade execution date.
+             */
             tradeDate: string;
+            /** @description Trade direction code. */
             tradeDirectionCode: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Number of shares to trade.
+             */
             shareQuantity: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Execution price per share.
+             */
             pricePerShare: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Transaction fee amount.
+             */
             transactionFeeAmount: number | string;
+            /** @description Optional source-system record identifier. */
             sourceRecordId: null | string;
         };
+        /** @description Request to create a versioned model-parameter set for one stock. */
         SaveStockModelParametersRequest: {
+            /** @description Six-digit security code. */
             securityCode: string;
+            /** @description Exchange code. */
             exchangeCode: string;
+            /** @description Client-defined model version label. */
             modelVersion: string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Yield threshold for strong-buy recommendations.
+             */
             strongBuyYieldThreshold: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Yield threshold for accumulation recommendations.
+             */
             accumulationYieldThreshold: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Yield threshold for partial-trim recommendations.
+             */
             partialTrimYieldThreshold: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Yield threshold for aggressive-trim recommendations.
+             */
             aggressiveTrimYieldThreshold: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Budget ratio for strong-buy recommendations.
+             */
             strongBuyBudgetRatio: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Budget ratio for accumulation recommendations.
+             */
             accumulateBudgetRatio: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Position ratio for partial trims.
+             */
             partialTrimRatio: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Position ratio for aggressive trims.
+             */
             aggressiveTrimRatio: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Maximum security portfolio weight.
+             */
             maxSecurityWeight: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Maximum sector portfolio weight.
+             */
             maxSectorWeight: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Portfolio cash reserve ratio.
+             */
             cashReserveRatio: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Maximum amount for one trade.
+             */
             maxSingleTradeAmount: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Maximum budget for one period.
+             */
             maxPeriodBudgetAmount: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Transaction fee ratio.
+             */
             transactionFeeRatio: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Minimum transaction fee amount.
+             */
             minimumTransactionFeeAmount: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Trading lot size in shares.
+             */
             tradingLotSize: number | string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Date from which the parameters apply.
+             */
             effectiveFromDate: string;
         };
+        /** @description Request to initialize the local portfolio workspace. */
         SetupRequest: {
+            /** @description Display name of the portfolio. */
             portfolioName: string;
+            /** @description Stock watchlist to configure. */
             stocks: components["schemas"]["SetupStockRequest"][];
         };
+        /** @description Result of initial portfolio setup. */
         SetupResult: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identifier of the created portfolio.
+             */
             portfolioId: string;
+            /** @description Display name of the created portfolio. */
             portfolioName: string;
+            /** @description Whether initial stock synchronization was scheduled. */
             stockDataSyncScheduled: boolean;
+            /** @description Stocks created during setup. */
             stocks: components["schemas"]["SetupStockResult"][];
         };
+        /** @description Reports whether first-run setup has been completed. */
         SetupStatus: {
+            /** @description Whether all setup requirements are complete. */
             isComplete: boolean;
+            /** @description Requirement codes that are still missing. */
             missingRequirements: string[];
         };
+        /** @description Stock identity and optional initial holding used during setup. */
         SetupStockRequest: {
+            /** @description Six-digit security code. */
             securityCode: string;
+            /** @description Exchange code. */
             exchangeCode: string;
             initialHolding: null | components["schemas"]["InitialHoldingInput"];
         };
+        /** @description Result describing a stock created during setup. */
         SetupStockResult: {
+            /** @description Created security code. */
             securityCode: string;
+            /** @description Created exchange code. */
             exchangeCode: string;
+            /** @description Resolved display name, when available. */
             securityName: null | string;
         };
+        /** @description Underlying stock analysis. */
         StockAnalysisResult: {
+            /** @description Security code. */
             securityCode: string;
+            /** @description Exchange code. */
             exchangeCode: string;
+            /** @description Display name of the security. */
             securityName: string;
+            /** @description Model availability status code. */
             modelStatusCode: string;
+            /** @description Dividend reliability status code. */
             dividendReliabilityCode: string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Latest valid close price.
+             */
             closePrice: null | number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Model dividend per share.
+             */
             modelDividendPerShare: null | number | string;
+            /** @description Dividend mode code, when available. */
             dividendModeCode: null | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Latest model dividend yield.
+             */
             dividendYield: null | number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Strong-buy price threshold.
+             */
             strongBuyPrice: null | number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Accumulation price threshold.
+             */
             accumulatePrice: null | number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Partial-trim price threshold.
+             */
             partialTrimPrice: null | number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Aggressive-trim price threshold.
+             */
             aggressiveTrimPrice: null | number | string;
+            /** @description Latest observed price-zone code. */
             observedPriceZoneCode: null | string;
+            /** @description Confirmed price-zone code. */
             priceZoneCode: null | string;
+            /** @description Whether the price zone is confirmed. */
             priceZoneConfirmed: boolean;
+            /** @description Recommendation code. */
             recommendationCode: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Current held shares.
+             */
             heldShares: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Current core shares.
+             */
             coreShares: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Current satellite shares.
+             */
             satelliteShares: number | string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Date through which source data is valid.
+             */
             dataAsOfDate: null | string;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identifier of the applied parameter set.
+             */
             modelParameterSetId: null | string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description UTC timestamp when the analysis was computed.
+             */
             computedAt: string;
+            /** @description Stable explanation code emitted by the domain. */
             explanation: string;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Persistent identifier of the security.
+             */
             securityId: string;
         };
+        /** @description Describes one stock data synchronization failure. */
         StockDataSyncFailure: {
+            /** @description Security code that failed. */
             securityCode: string;
+            /** @description Exchange code that failed. */
             exchangeCode: string;
+            /** @description Kind of data that failed to synchronize. */
             dataKind: string;
+            /** @description Stable failure code. */
             errorCode: string;
+            /** @description Structured failure parameters. */
             parameters: Record<string, never>;
         };
+        /** @description Summary of a stock data synchronization run. */
         StockDataSyncRunResult: {
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Number of stocks attempted.
+             */
             attemptedStockCount: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Number of fully synchronized stocks.
+             */
             fullyCompletedStockCount: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Number of stocks with partial failures.
+             */
             partiallyFailedStockCount: number | string;
+            /** @description Failures collected during synchronization. */
             failures: components["schemas"]["StockDataSyncFailure"][];
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description UTC completion timestamp.
+             */
             completedAt: string;
         };
+        /** @description Persisted dividend event returned by the API. */
         StockDividendEventResult: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identifier of the persisted dividend event.
+             */
             dividendEventId: string;
+            /** @description Security code. */
             securityCode: string;
+            /** @description Exchange code. */
             exchangeCode: string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Dividend amount per share.
+             */
             dividendPerShare: number | string;
+            /** @description Normalized dividend type code. */
             dividendTypeCode: string;
+            /** @description Normalized dividend status code. */
             dividendStatusCode: string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Announcement date, when available.
+             */
             announcementDate: null | string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Ex-dividend date, when available.
+             */
             exDividendDate: null | string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Payment date, when available.
+             */
             paymentDate: null | string;
+            /** @description Whether the dividend is special. */
             isSpecialDividend: boolean;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description Publication timestamp, when available.
+             */
             publishedAt: null | string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description UTC capture timestamp.
+             */
             capturedAt: string;
+            /** @description Source-system name. */
             dataSource: string;
+            /** @description Source-system record identifier. */
             sourceRecordId: string;
+            /** @description Normalized data quality code. */
             dataQualityCode: string;
         };
+        /** @description Persisted financial snapshot returned by the API. */
         StockFinancialSnapshotResult: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identifier of the persisted financial snapshot.
+             */
             financialSnapshotId: string;
+            /** @description Security code. */
             securityCode: string;
+            /** @description Exchange code. */
             exchangeCode: string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Date through which the data is valid.
+             */
             dataAsOfDate: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description UTC capture timestamp.
+             */
             capturedAt: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description Publication timestamp, when available.
+             */
             publishedAt: null | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Earnings per share, when available.
+             */
             earningsPerShare: null | number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Dividend payout ratio, when available.
+             */
             dividendPayoutRatio: null | number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Three-year average payout ratio.
+             */
             threeYearAverageDividendPayoutRatio: null | number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Price-to-book ratio, when available.
+             */
             priceToBookRatio: null | number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Return on equity, when available.
+             */
             returnOnEquity: null | number | string;
+            /** @description Source-system name. */
             dataSource: string;
+            /** @description Source-system record identifier. */
             sourceRecordId: string;
+            /** @description Normalized data quality code. */
             dataQualityCode: string;
         };
+        /** @description Latest holding snapshot, when available. */
         StockHoldingSnapshot: {
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Total shares currently held.
+             */
             heldShares: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Shares assigned to the core position.
+             */
             coreShares: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Desired target share quantity.
+             */
             targetShares: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Average acquisition cost per share.
+             */
             averageCostPerShare: number | string;
         };
+        /** @description Effective model parameters for one configured stock. */
         StockModelParameterSet: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identifier of the parameter set.
+             */
             modelParameterSetId: string;
+            /** @description Security code. */
             securityCode: string;
+            /** @description Exchange code. */
             exchangeCode: string;
+            /** @description Model version label. */
             modelVersion: string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Yield threshold for strong-buy recommendations.
+             */
             strongBuyYieldThreshold: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Yield threshold for accumulation recommendations.
+             */
             accumulationYieldThreshold: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Yield threshold for partial-trim recommendations.
+             */
             partialTrimYieldThreshold: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Yield threshold for aggressive-trim recommendations.
+             */
             aggressiveTrimYieldThreshold: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Budget ratio for strong-buy recommendations.
+             */
             strongBuyBudgetRatio: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Budget ratio for accumulation recommendations.
+             */
             accumulateBudgetRatio: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Position ratio for partial trims.
+             */
             partialTrimRatio: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Position ratio for aggressive trims.
+             */
             aggressiveTrimRatio: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Maximum security portfolio weight.
+             */
             maxSecurityWeight: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Maximum sector portfolio weight.
+             */
             maxSectorWeight: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Portfolio cash reserve ratio.
+             */
             cashReserveRatio: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Maximum amount for one trade.
+             */
             maxSingleTradeAmount: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Maximum budget for one period.
+             */
             maxPeriodBudgetAmount: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Transaction fee ratio.
+             */
             transactionFeeRatio: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Minimum transaction fee amount.
+             */
             minimumTransactionFeeAmount: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Trading lot size in shares.
+             */
             tradingLotSize: number | string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Date from which the parameters apply.
+             */
             effectiveFromDate: string;
         };
+        /** @description Persisted price observation returned by the API. */
         StockPriceObservationResult: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identifier of the persisted observation.
+             */
             priceObservationId: string;
+            /** @description Security code. */
             securityCode: string;
+            /** @description Exchange code. */
             exchangeCode: string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Trading date.
+             */
             tradingDate: string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Closing price.
+             */
             closePrice: number | string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description UTC observation timestamp.
+             */
             priceObservedAt: string;
+            /** @description Source-system name. */
             dataSource: string;
+            /** @description Source-system record identifier. */
             sourceRecordId: string;
+            /** @description Normalized data quality code. */
             dataQualityCode: string;
         };
+        /** @description Recommendation and suggested trade quantities for one stock. */
         StockRecommendationResult: {
             analysis: components["schemas"]["StockAnalysisResult"];
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Suggested buy quantity in shares.
+             */
             suggestedBuyShares: number | string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Suggested sell quantity in shares.
+             */
             suggestedSellShares: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Suggested trade amount.
+             */
             suggestedTradeAmount: number | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Estimated transaction fee.
+             */
             estimatedTransactionFeeAmount: number | string;
         };
+        /** @description Configured stock identity with its latest holding snapshot. */
         StockWatchlistItem: {
+            /** @description Security code. */
             securityCode: string;
+            /** @description Exchange code. */
             exchangeCode: string;
+            /** @description Display name of the security. */
             securityName: string;
+            /** @description Normalized market code. */
             marketCode: string;
+            /** @description Normalized currency code. */
             currencyCode: string;
             holding: null | components["schemas"]["StockHoldingSnapshot"];
+            /** @description Optional normalized sector code. */
             sectorCode?: null | string;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Persistent identifier of the configured security.
+             */
             securityId?: string;
         };
     };

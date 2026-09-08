@@ -26,22 +26,22 @@ public sealed record InitialHolding
     {
         if (heldShares < 0)
         {
-            throw new ArgumentException("持股数量不能为负数。", nameof(heldShares));
+            throw new ArgumentException("Held shares cannot be negative.", nameof(heldShares));
         }
 
         if (coreShares < 0 || coreShares > heldShares)
         {
-            throw new ArgumentException("核心仓数量不能为负数或超过持股数量。", nameof(coreShares));
+            throw new ArgumentException("Core shares cannot be negative or exceed held shares.", nameof(coreShares));
         }
 
         if (targetShares < 0)
         {
-            throw new ArgumentException("目标股数不能为负数。", nameof(targetShares));
+            throw new ArgumentException("Target shares cannot be negative.", nameof(targetShares));
         }
 
         if (averageCostPerShare < 0)
         {
-            throw new ArgumentException("平均成本不能为负数。", nameof(averageCostPerShare));
+            throw new ArgumentException("Average cost per share cannot be negative.", nameof(averageCostPerShare));
         }
 
         return new InitialHolding(heldShares, coreShares, targetShares, averageCostPerShare);

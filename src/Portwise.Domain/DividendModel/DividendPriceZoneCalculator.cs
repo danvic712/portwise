@@ -17,7 +17,7 @@ public static class DividendPriceZoneCalculator
             throw new ArgumentOutOfRangeException(
                 nameof(modelDividendPerShare),
                 modelDividendPerShare,
-                "模型股息必须大于零。");
+                "Model dividend per share must be greater than zero.");
         }
 
         if (closePrice <= 0)
@@ -25,7 +25,7 @@ public static class DividendPriceZoneCalculator
             throw new ArgumentOutOfRangeException(
                 nameof(closePrice),
                 closePrice,
-                "当前价格必须大于零。");
+                "Current price must be greater than zero.");
         }
 
         var strongBuyPrice =

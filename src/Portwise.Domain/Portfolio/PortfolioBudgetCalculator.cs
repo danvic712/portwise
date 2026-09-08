@@ -14,7 +14,7 @@ public static class PortfolioBudgetCalculator
             throw new ArgumentOutOfRangeException(
                 nameof(portfolioMarketValue),
                 portfolioMarketValue,
-                "组合市值不能为负数。");
+                "Portfolio market value cannot be negative.");
         }
 
         if (cashReserveRatio is < 0 or > 1)
@@ -22,7 +22,7 @@ public static class PortfolioBudgetCalculator
             throw new ArgumentOutOfRangeException(
                 nameof(cashReserveRatio),
                 cashReserveRatio,
-                "现金保留比例必须介于 0 和 1 之间。");
+                "Cash reserve ratio must be between 0 and 1.");
         }
 
         return Math.Max(
@@ -49,7 +49,7 @@ public static class PortfolioBudgetCalculator
 
         if (currentDate == DateOnly.MinValue)
         {
-            throw new ArgumentException("参数日期不能为空。", nameof(currentDate));
+            throw new ArgumentException("Parameter date is required.", nameof(currentDate));
         }
 
         return parameters

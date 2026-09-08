@@ -6,11 +6,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Portwise.Controllers;
 
+/// <summary>Provides first-run portfolio setup endpoints.</summary>
 [ApiController]
 [ApiVersion(1.0)]
 [Route("api/v{version:apiVersion}/setup")]
 public sealed class SetupController(ISetupAppService setupAppService) : ControllerBase
 {
+    /// <summary>Returns whether the initial portfolio setup is complete.</summary>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpGet("status")]
     public async Task<ActionResult<SetupStatus>> GetStatus(CancellationToken cancellationToken)
     {
@@ -18,6 +21,9 @@ public sealed class SetupController(ISetupAppService setupAppService) : Controll
         return Ok(status);
     }
 
+    /// <summary>Creates the initial portfolio and configured stock watchlist.</summary>
+    /// <param name="request">Portfolio name, stocks and optional initial holdings.</param>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpPost]
     public async Task<ActionResult<SetupResult>> Initialize(
         [FromBody] SetupRequest request,

@@ -123,7 +123,7 @@ public static class RecommendationModule
 
         if (input.PortfolioId == Guid.Empty)
         {
-            throw new ArgumentException("投资组合标识不能为空。", nameof(input.PortfolioId));
+            throw new ArgumentException("Portfolio identifier is required.", nameof(input.PortfolioId));
         }
 
         if (input.CashBalanceAmount < 0)
@@ -131,7 +131,7 @@ public static class RecommendationModule
             throw new ArgumentOutOfRangeException(
                 nameof(input.CashBalanceAmount),
                 input.CashBalanceAmount,
-                "现金余额不能为负数。");
+                "Cash balance cannot be negative.");
         }
 
         var parametersById = input.ParameterSets.ToDictionary(parameter => parameter.Id);
@@ -332,7 +332,7 @@ public static class RecommendationModule
     {
         if (date == DateOnly.MinValue)
         {
-            throw new ArgumentException("参数日期不能为空。", parameterName);
+            throw new ArgumentException("Parameter date is required.", parameterName);
         }
     }
 
@@ -340,7 +340,7 @@ public static class RecommendationModule
     {
         if (computedAt == default)
         {
-            throw new ArgumentException("计算时间不能为空。", nameof(computedAt));
+            throw new ArgumentException("Computation timestamp is required.", nameof(computedAt));
         }
     }
 }

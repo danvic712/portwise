@@ -14,7 +14,7 @@ public static class TtmDividendCalculator
         if (dataAsOfDate == DateOnly.MinValue)
         {
             throw new ArgumentException(
-                "股息数据截至日期不能为空。",
+                "Dividend data-as-of date is required.",
                 nameof(dataAsOfDate));
         }
 

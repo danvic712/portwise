@@ -26,7 +26,7 @@ public sealed class PortfolioAllocationAppService(
         if (watchlist.Count != analyses.Count)
         {
             throw new ArgumentException(
-                "关注股票和单股分析结果的数量必须一致。",
+                "Watchlist and stock-analysis counts must match.",
                 nameof(analyses));
         }
 
@@ -40,7 +40,7 @@ public sealed class PortfolioAllocationAppService(
                     || analysis.ExchangeCode != stock.ExchangeCode)
                 {
                     throw new ArgumentException(
-                        $"股票 {stock.SecurityCode}/{stock.ExchangeCode} 的单股分析身份不匹配。",
+                        $"Stock analysis identity does not match {stock.SecurityCode}/{stock.ExchangeCode}.",
                         nameof(analyses));
                 }
 
@@ -54,7 +54,7 @@ public sealed class PortfolioAllocationAppService(
         if (analyses.Any(analysis => analysis.ComputedAt != computedAt))
         {
             throw new ArgumentException(
-                "组合建议中的单股分析必须来自同一计算时间点。",
+                "All stock analyses in a portfolio recommendation must share one computation timestamp.",
                 nameof(analyses));
         }
         var currentDate = DateOnly.FromDateTime(computedAt.UtcDateTime);

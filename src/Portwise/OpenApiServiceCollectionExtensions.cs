@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.DependencyInjection;
+using Portwise.OpenApi;
 
 namespace Portwise;
 
@@ -25,13 +26,18 @@ public static class OpenApiServiceCollectionExtensions
                 options.GroupNameFormat = "'v'VVV";
                 options.SubstituteApiVersionInUrl = true;
             })
-            .AddOpenApi(options => options.Document.AddDocumentTransformer(
-                (document, _, _) =>
-                {
-                    document.Info.Title = "Portwise API";
-                    document.Info.Description = "Portwise A 股策略参考 API。";
-                    return Task.CompletedTask;
-                }));
+            .AddOpenApi(options =>
+            {
+                options.Document.AddDocumentTransformer(
+                    (document, _, _) =>
+                    {
+                        document.Info.Title = "Portwise API";
+                        document.Info.Description = "Personal portfolio strategy reference API.";
+                        return Task.CompletedTask;
+                    });
+                options.Document.AddOperationTransformer<XmlDocumentationOperationTransformer>();
+                options.Document.AddSchemaTransformer<XmlDocumentationSchemaTransformer>();
+            });
 
         return services;
     }

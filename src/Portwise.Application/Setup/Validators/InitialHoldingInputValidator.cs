@@ -9,18 +9,18 @@ public sealed class InitialHoldingInputValidator : AbstractValidator<InitialHold
     {
         RuleFor(x => x.HeldShares)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("持股数量不能为负数。");
+            .WithMessage("Held shares cannot be negative.");
 
         RuleFor(x => x.CoreShares)
             .Must((input, coreShares) => coreShares >= 0 && coreShares <= input.HeldShares)
-            .WithMessage("核心仓数量不能为负数或超过持股数量。");
+            .WithMessage("Core shares cannot be negative or exceed held shares.");
 
         RuleFor(x => x.TargetShares)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("目标股数不能为负数。");
+            .WithMessage("Target shares cannot be negative.");
 
         RuleFor(x => x.AverageCostPerShare)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("平均成本不能为负数。");
+            .WithMessage("Average cost per share cannot be negative.");
     }
 }

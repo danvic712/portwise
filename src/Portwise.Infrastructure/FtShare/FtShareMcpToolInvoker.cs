@@ -38,7 +38,7 @@ public sealed class FtShareMcpToolInvoker(
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
                 lastTransientException = new TimeoutException(
-                    "FTShare MCP 工具调用超时。");
+                    "FTShare MCP tool call timed out.");
             }
             catch (Exception exception) when (IsTransient(exception))
             {
@@ -96,7 +96,7 @@ public sealed class FtShareMcpToolInvoker(
                 .OfType<TextContentBlock>()
                 .Select(content => content.Text)
                 .FirstOrDefault(text => !string.IsNullOrWhiteSpace(text))
-                ?? "FTShare MCP 工具调用失败。";
+                ?? "FTShare MCP tool call failed.";
 
             throw new McpException(message);
         }

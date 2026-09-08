@@ -26,7 +26,7 @@ public static class TradeQuantityCalculator
             throw new ArgumentOutOfRangeException(
                 nameof(closePrice),
                 closePrice,
-                "当前价格必须大于零。");
+                "Current price must be greater than zero.");
         }
 
         if (heldShares < 0)
@@ -34,7 +34,7 @@ public static class TradeQuantityCalculator
             throw new ArgumentOutOfRangeException(
                 nameof(heldShares),
                 heldShares,
-                "当前持股数量不能为负数。");
+                "Current held shares cannot be negative.");
         }
 
         if (coreShares < 0 || coreShares > heldShares)
@@ -42,7 +42,7 @@ public static class TradeQuantityCalculator
             throw new ArgumentOutOfRangeException(
                 nameof(coreShares),
                 coreShares,
-                "核心仓数量不能为负数或超过当前持股数量。");
+                "Core shares cannot be negative or exceed current held shares.");
         }
 
         if (targetShares < 0)
@@ -50,7 +50,7 @@ public static class TradeQuantityCalculator
             throw new ArgumentOutOfRangeException(
                 nameof(targetShares),
                 targetShares,
-                "目标股数不能为负数。");
+                "Target shares cannot be negative.");
         }
 
         if (availableBudgetAmount < 0)
@@ -58,7 +58,7 @@ public static class TradeQuantityCalculator
             throw new ArgumentOutOfRangeException(
                 nameof(availableBudgetAmount),
                 availableBudgetAmount,
-                "可用预算不能为负数。");
+                "Available budget cannot be negative.");
         }
 
         if (totalPortfolioValue is < 0)
@@ -66,7 +66,7 @@ public static class TradeQuantityCalculator
             throw new ArgumentOutOfRangeException(
                 nameof(totalPortfolioValue),
                 totalPortfolioValue,
-                "组合总市值不能为负数。");
+                "Total portfolio value cannot be negative.");
         }
 
         if (currentSecurityMarketValue < 0)
@@ -74,7 +74,7 @@ public static class TradeQuantityCalculator
             throw new ArgumentOutOfRangeException(
                 nameof(currentSecurityMarketValue),
                 currentSecurityMarketValue,
-                "单只股票当前市值不能为负数。");
+                "Current security market value cannot be negative.");
         }
 
         var normalizedModelStatusCode = NormalizeRequiredCode(modelStatusCode, ModelStatusCodes.IsSupported, nameof(modelStatusCode));
@@ -237,7 +237,7 @@ public static class TradeQuantityCalculator
         var normalized = value?.Trim().ToLowerInvariant() ?? string.Empty;
         if (!isSupported(normalized))
         {
-            throw new ArgumentException("业务代码不受支持。", parameterName);
+            throw new ArgumentException("Business code is not supported.", parameterName);
         }
 
         return normalized;

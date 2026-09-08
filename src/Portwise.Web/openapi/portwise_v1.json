@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "Portwise API",
-    "description": "Portwise A 股策略参考 API。",
+    "description": "Personal portfolio strategy reference API.",
     "version": "1.0"
   },
   "paths": {
@@ -11,7 +11,7 @@
         "tags": [
           "Budgets"
         ],
-        "summary": "",
+        "summary": "Returns the current portfolio cash budget summary.",
         "responses": {
           "200": {
             "description": "OK",
@@ -41,7 +41,7 @@
         "tags": [
           "Budgets"
         ],
-        "summary": "",
+        "summary": "Records a cash ledger entry and returns the created entry.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -91,7 +91,7 @@
         "tags": [
           "Portfolio"
         ],
-        "summary": "",
+        "summary": "Records a simulated portfolio trade.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -141,7 +141,7 @@
         "tags": [
           "Recommendations"
         ],
-        "summary": "",
+        "summary": "Returns the current portfolio recommendation.",
         "responses": {
           "200": {
             "description": "OK",
@@ -171,7 +171,7 @@
         "tags": [
           "Recommendations"
         ],
-        "summary": "",
+        "summary": "Persists a snapshot of the current recommendation.",
         "responses": {
           "200": {
             "description": "OK",
@@ -201,7 +201,7 @@
         "tags": [
           "Setup"
         ],
-        "summary": "",
+        "summary": "Returns whether the initial portfolio setup is complete.",
         "responses": {
           "200": {
             "description": "OK",
@@ -231,7 +231,7 @@
         "tags": [
           "Setup"
         ],
-        "summary": "",
+        "summary": "Creates the initial portfolio and configured stock watchlist.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -281,7 +281,7 @@
         "tags": [
           "Stocks"
         ],
-        "summary": "",
+        "summary": "Returns all stocks configured in the portfolio watchlist.",
         "responses": {
           "200": {
             "description": "OK",
@@ -320,7 +320,7 @@
         "tags": [
           "Stocks"
         ],
-        "summary": "",
+        "summary": "Runs a manual synchronization for all configured stocks.",
         "responses": {
           "200": {
             "description": "OK",
@@ -350,12 +350,12 @@
         "tags": [
           "Stocks"
         ],
-        "summary": "",
+        "summary": "Returns the active model parameters for one stock.",
         "parameters": [
           {
             "name": "securityCode",
             "in": "path",
-            "description": "",
+            "description": "Six-digit A-share security code.",
             "required": true,
             "schema": {
               "type": "string"
@@ -364,7 +364,7 @@
           {
             "name": "exchangeCode",
             "in": "path",
-            "description": "",
+            "description": "Exchange code: SSE, SZSE or BSE.",
             "required": true,
             "schema": {
               "type": "string"
@@ -400,7 +400,7 @@
         "tags": [
           "Stocks"
         ],
-        "summary": "",
+        "summary": "Creates a new model-parameter version for one stock.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -450,12 +450,12 @@
         "tags": [
           "Stocks"
         ],
-        "summary": "",
+        "summary": "Synchronizes the latest price observation for one stock.",
         "parameters": [
           {
             "name": "securityCode",
             "in": "path",
-            "description": "",
+            "description": "Six-digit A-share security code.",
             "required": true,
             "schema": {
               "type": "string"
@@ -464,7 +464,7 @@
           {
             "name": "exchangeCode",
             "in": "path",
-            "description": "",
+            "description": "Exchange code: SSE, SZSE or BSE.",
             "required": true,
             "schema": {
               "type": "string"
@@ -500,12 +500,12 @@
         "tags": [
           "Stocks"
         ],
-        "summary": "",
+        "summary": "Synchronizes dividend events for one stock.",
         "parameters": [
           {
             "name": "securityCode",
             "in": "path",
-            "description": "",
+            "description": "Six-digit A-share security code.",
             "required": true,
             "schema": {
               "type": "string"
@@ -514,7 +514,7 @@
           {
             "name": "exchangeCode",
             "in": "path",
-            "description": "",
+            "description": "Exchange code: SSE, SZSE or BSE.",
             "required": true,
             "schema": {
               "type": "string"
@@ -559,12 +559,12 @@
         "tags": [
           "Stocks"
         ],
-        "summary": "",
+        "summary": "Synchronizes financial snapshots for one stock.",
         "parameters": [
           {
             "name": "securityCode",
             "in": "path",
-            "description": "",
+            "description": "Six-digit A-share security code.",
             "required": true,
             "schema": {
               "type": "string"
@@ -573,7 +573,7 @@
           {
             "name": "exchangeCode",
             "in": "path",
-            "description": "",
+            "description": "Exchange code: SSE, SZSE or BSE.",
             "required": true,
             "schema": {
               "type": "string"
@@ -618,12 +618,12 @@
         "tags": [
           "Stocks"
         ],
-        "summary": "",
+        "summary": "Returns the current recommendation analysis for one stock.",
         "parameters": [
           {
             "name": "securityCode",
             "in": "path",
-            "description": "",
+            "description": "Six-digit A-share security code.",
             "required": true,
             "schema": {
               "type": "string"
@@ -632,7 +632,7 @@
           {
             "name": "exchangeCode",
             "in": "path",
-            "description": "",
+            "description": "Exchange code: SSE, SZSE or BSE.",
             "required": true,
             "schema": {
               "type": "string"
@@ -680,10 +680,12 @@
         "properties": {
           "portfolioId": {
             "type": "string",
+            "description": "Identifier of the portfolio.",
             "format": "uuid"
           },
           "portfolioName": {
-            "type": "string"
+            "type": "string",
+            "description": "Display name of the portfolio."
           },
           "totalInflowAmount": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
@@ -691,6 +693,7 @@
               "number",
               "string"
             ],
+            "description": "Total cash inflow recorded to date.",
             "format": "double"
           },
           "totalOutflowAmount": {
@@ -699,6 +702,7 @@
               "number",
               "string"
             ],
+            "description": "Total cash outflow recorded to date.",
             "format": "double"
           },
           "cashBalanceAmount": {
@@ -707,6 +711,7 @@
               "number",
               "string"
             ],
+            "description": "Current cash balance.",
             "format": "double"
           },
           "entryCount": {
@@ -715,13 +720,16 @@
               "integer",
               "string"
             ],
+            "description": "Number of ledger entries included in the calculation.",
             "format": "int32"
           },
           "computedAt": {
             "type": "string",
+            "description": "UTC timestamp when the summary was computed.",
             "format": "date-time"
           }
-        }
+        },
+        "description": "Aggregated cash budget information for the configured portfolio."
       },
       "CashLedgerEntryResult": {
         "required": [
@@ -739,21 +747,26 @@
         "properties": {
           "cashLedgerEntryId": {
             "type": "string",
+            "description": "Identifier of the created cash ledger entry.",
             "format": "uuid"
           },
           "portfolioId": {
             "type": "string",
+            "description": "Identifier of the portfolio.",
             "format": "uuid"
           },
           "entryDate": {
             "type": "string",
+            "description": "Date of the ledger entry.",
             "format": "date"
           },
           "entryTypeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Normalized ledger entry type code."
           },
           "cashDirectionCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Normalized cash direction code."
           },
           "cashAmount": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
@@ -761,27 +774,32 @@
               "number",
               "string"
             ],
+            "description": "Cash amount recorded.",
             "format": "double"
           },
           "securityCode": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "Optional security code associated with the entry."
           },
           "exchangeCode": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "Optional exchange code associated with the entry."
           },
           "sourceRecordId": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "Optional source-system record identifier."
           }
-        }
+        },
+        "description": "Result returned after a cash ledger entry is recorded."
       },
       "CreateRecommendationSnapshotResult": {
         "required": [
@@ -795,10 +813,12 @@
         "properties": {
           "modelRunId": {
             "type": "string",
+            "description": "Identifier of the model run.",
             "format": "uuid"
           },
           "portfolioId": {
             "type": "string",
+            "description": "Identifier of the portfolio.",
             "format": "uuid"
           },
           "snapshotCount": {
@@ -807,19 +827,23 @@
               "integer",
               "string"
             ],
+            "description": "Number of stock snapshots persisted.",
             "format": "int32"
           },
           "computedAt": {
             "type": "string",
+            "description": "UTC timestamp when the recommendation was computed.",
             "format": "date-time"
           },
           "stocks": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/StockRecommendationResult"
-            }
+            },
+            "description": "Persisted stock recommendation snapshots."
           }
-        }
+        },
+        "description": "Result of persisting a portfolio recommendation snapshot."
       },
       "InitialHoldingInput": {
         "required": [
@@ -836,6 +860,7 @@
               "integer",
               "string"
             ],
+            "description": "Initial total held shares.",
             "format": "int32"
           },
           "coreShares": {
@@ -844,6 +869,7 @@
               "integer",
               "string"
             ],
+            "description": "Initial core shares.",
             "format": "int32"
           },
           "targetShares": {
@@ -852,6 +878,7 @@
               "integer",
               "string"
             ],
+            "description": "Initial target share quantity.",
             "format": "int32"
           },
           "averageCostPerShare": {
@@ -860,9 +887,11 @@
               "number",
               "string"
             ],
+            "description": "Initial average cost per share.",
             "format": "double"
           }
-        }
+        },
+        "description": "Optional initial holding values."
       },
       "PortfolioRecommendationResult": {
         "required": [
@@ -878,6 +907,7 @@
         "properties": {
           "portfolioId": {
             "type": "string",
+            "description": "Identifier of the portfolio.",
             "format": "uuid"
           },
           "startingAvailableBudgetAmount": {
@@ -886,6 +916,7 @@
               "number",
               "string"
             ],
+            "description": "Available budget before allocation.",
             "format": "double"
           },
           "remainingAvailableBudgetAmount": {
@@ -894,6 +925,7 @@
               "number",
               "string"
             ],
+            "description": "Available budget after allocation.",
             "format": "double"
           },
           "totalSuggestedTradeAmount": {
@@ -902,6 +934,7 @@
               "number",
               "string"
             ],
+            "description": "Total suggested trade amount.",
             "format": "double"
           },
           "estimatedTransactionFeeAmount": {
@@ -910,19 +943,23 @@
               "number",
               "string"
             ],
+            "description": "Estimated fees for suggested trades.",
             "format": "double"
           },
           "stocks": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/StockRecommendationResult"
-            }
+            },
+            "description": "Per-stock recommendation results."
           },
           "computedAt": {
             "type": "string",
+            "description": "UTC timestamp when the recommendation was computed.",
             "format": "date-time"
           }
-        }
+        },
+        "description": "Portfolio-level recommendation and budget allocation result."
       },
       "PortfolioTradeResult": {
         "required": [
@@ -945,24 +982,30 @@
         "properties": {
           "portfolioTradeId": {
             "type": "string",
+            "description": "Identifier of the created trade.",
             "format": "uuid"
           },
           "portfolioId": {
             "type": "string",
+            "description": "Identifier of the portfolio.",
             "format": "uuid"
           },
           "securityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Traded security code."
           },
           "exchangeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Traded exchange code."
           },
           "tradeDate": {
             "type": "string",
+            "description": "Trade execution date.",
             "format": "date"
           },
           "tradeDirectionCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Normalized trade direction code."
           },
           "shareQuantity": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -970,6 +1013,7 @@
               "integer",
               "string"
             ],
+            "description": "Number of shares traded.",
             "format": "int32"
           },
           "pricePerShare": {
@@ -978,6 +1022,7 @@
               "number",
               "string"
             ],
+            "description": "Execution price per share.",
             "format": "double"
           },
           "transactionFeeAmount": {
@@ -986,6 +1031,7 @@
               "number",
               "string"
             ],
+            "description": "Transaction fee charged.",
             "format": "double"
           },
           "heldShares": {
@@ -994,6 +1040,7 @@
               "integer",
               "string"
             ],
+            "description": "Shares held after the trade.",
             "format": "int32"
           },
           "coreShares": {
@@ -1002,6 +1049,7 @@
               "integer",
               "string"
             ],
+            "description": "Core shares after the trade.",
             "format": "int32"
           },
           "targetShares": {
@@ -1010,6 +1058,7 @@
               "integer",
               "string"
             ],
+            "description": "Target shares after the trade.",
             "format": "int32"
           },
           "averageCostPerShare": {
@@ -1018,6 +1067,7 @@
               "number",
               "string"
             ],
+            "description": "Average cost per share after the trade.",
             "format": "double"
           },
           "tradePrincipalAmount": {
@@ -1026,9 +1076,11 @@
               "number",
               "string"
             ],
+            "description": "Trade principal amount.",
             "format": "double"
           }
-        }
+        },
+        "description": "Result returned after a portfolio trade is recorded."
       },
       "RecordCashLedgerEntryRequest": {
         "required": [
@@ -1044,13 +1096,16 @@
         "properties": {
           "entryDate": {
             "type": "string",
+            "description": "Date of the ledger entry.",
             "format": "date"
           },
           "entryTypeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Ledger entry type code."
           },
           "cashDirectionCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Cash direction code."
           },
           "cashAmount": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
@@ -1058,27 +1113,32 @@
               "number",
               "string"
             ],
+            "description": "Cash amount to record.",
             "format": "double"
           },
           "securityCode": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "Optional security code associated with the entry."
           },
           "exchangeCode": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "Optional exchange code associated with the entry."
           },
           "sourceRecordId": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "Optional source-system record identifier."
           }
-        }
+        },
+        "description": "Request to record a cash ledger entry."
       },
       "RecordPortfolioTradeRequest": {
         "required": [
@@ -1094,17 +1154,21 @@
         "type": "object",
         "properties": {
           "securityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Security code to trade."
           },
           "exchangeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Exchange code for the security."
           },
           "tradeDate": {
             "type": "string",
+            "description": "Trade execution date.",
             "format": "date"
           },
           "tradeDirectionCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Trade direction code."
           },
           "shareQuantity": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -1112,6 +1176,7 @@
               "integer",
               "string"
             ],
+            "description": "Number of shares to trade.",
             "format": "int32"
           },
           "pricePerShare": {
@@ -1120,6 +1185,7 @@
               "number",
               "string"
             ],
+            "description": "Execution price per share.",
             "format": "double"
           },
           "transactionFeeAmount": {
@@ -1128,15 +1194,18 @@
               "number",
               "string"
             ],
+            "description": "Transaction fee amount.",
             "format": "double"
           },
           "sourceRecordId": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "Optional source-system record identifier."
           }
-        }
+        },
+        "description": "Request to record a simulated portfolio trade."
       },
       "SaveStockModelParametersRequest": {
         "required": [
@@ -1164,13 +1233,16 @@
         "type": "object",
         "properties": {
           "securityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Six-digit security code."
           },
           "exchangeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Exchange code."
           },
           "modelVersion": {
-            "type": "string"
+            "type": "string",
+            "description": "Client-defined model version label."
           },
           "strongBuyYieldThreshold": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
@@ -1178,6 +1250,7 @@
               "number",
               "string"
             ],
+            "description": "Yield threshold for strong-buy recommendations.",
             "format": "double"
           },
           "accumulationYieldThreshold": {
@@ -1186,6 +1259,7 @@
               "number",
               "string"
             ],
+            "description": "Yield threshold for accumulation recommendations.",
             "format": "double"
           },
           "partialTrimYieldThreshold": {
@@ -1194,6 +1268,7 @@
               "number",
               "string"
             ],
+            "description": "Yield threshold for partial-trim recommendations.",
             "format": "double"
           },
           "aggressiveTrimYieldThreshold": {
@@ -1202,6 +1277,7 @@
               "number",
               "string"
             ],
+            "description": "Yield threshold for aggressive-trim recommendations.",
             "format": "double"
           },
           "strongBuyBudgetRatio": {
@@ -1210,6 +1286,7 @@
               "number",
               "string"
             ],
+            "description": "Budget ratio for strong-buy recommendations.",
             "format": "double"
           },
           "accumulateBudgetRatio": {
@@ -1218,6 +1295,7 @@
               "number",
               "string"
             ],
+            "description": "Budget ratio for accumulation recommendations.",
             "format": "double"
           },
           "partialTrimRatio": {
@@ -1226,6 +1304,7 @@
               "number",
               "string"
             ],
+            "description": "Position ratio for partial trims.",
             "format": "double"
           },
           "aggressiveTrimRatio": {
@@ -1234,6 +1313,7 @@
               "number",
               "string"
             ],
+            "description": "Position ratio for aggressive trims.",
             "format": "double"
           },
           "maxSecurityWeight": {
@@ -1242,6 +1322,7 @@
               "number",
               "string"
             ],
+            "description": "Maximum security portfolio weight.",
             "format": "double"
           },
           "maxSectorWeight": {
@@ -1250,6 +1331,7 @@
               "number",
               "string"
             ],
+            "description": "Maximum sector portfolio weight.",
             "format": "double"
           },
           "cashReserveRatio": {
@@ -1258,6 +1340,7 @@
               "number",
               "string"
             ],
+            "description": "Portfolio cash reserve ratio.",
             "format": "double"
           },
           "maxSingleTradeAmount": {
@@ -1266,6 +1349,7 @@
               "number",
               "string"
             ],
+            "description": "Maximum amount for one trade.",
             "format": "double"
           },
           "maxPeriodBudgetAmount": {
@@ -1274,6 +1358,7 @@
               "number",
               "string"
             ],
+            "description": "Maximum budget for one period.",
             "format": "double"
           },
           "transactionFeeRatio": {
@@ -1282,6 +1367,7 @@
               "number",
               "string"
             ],
+            "description": "Transaction fee ratio.",
             "format": "double"
           },
           "minimumTransactionFeeAmount": {
@@ -1290,6 +1376,7 @@
               "number",
               "string"
             ],
+            "description": "Minimum transaction fee amount.",
             "format": "double"
           },
           "tradingLotSize": {
@@ -1298,13 +1385,16 @@
               "integer",
               "string"
             ],
+            "description": "Trading lot size in shares.",
             "format": "int32"
           },
           "effectiveFromDate": {
             "type": "string",
+            "description": "Date from which the parameters apply.",
             "format": "date"
           }
-        }
+        },
+        "description": "Request to create a versioned model-parameter set for one stock."
       },
       "SetupRequest": {
         "required": [
@@ -1314,15 +1404,18 @@
         "type": "object",
         "properties": {
           "portfolioName": {
-            "type": "string"
+            "type": "string",
+            "description": "Display name of the portfolio."
           },
           "stocks": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SetupStockRequest"
-            }
+            },
+            "description": "Stock watchlist to configure."
           }
-        }
+        },
+        "description": "Request to initialize the local portfolio workspace."
       },
       "SetupResult": {
         "required": [
@@ -1335,21 +1428,26 @@
         "properties": {
           "portfolioId": {
             "type": "string",
+            "description": "Identifier of the created portfolio.",
             "format": "uuid"
           },
           "portfolioName": {
-            "type": "string"
+            "type": "string",
+            "description": "Display name of the created portfolio."
           },
           "stockDataSyncScheduled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether initial stock synchronization was scheduled."
           },
           "stocks": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SetupStockResult"
-            }
+            },
+            "description": "Stocks created during setup."
           }
-        }
+        },
+        "description": "Result of initial portfolio setup."
       },
       "SetupStatus": {
         "required": [
@@ -1359,15 +1457,18 @@
         "type": "object",
         "properties": {
           "isComplete": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether all setup requirements are complete."
           },
           "missingRequirements": {
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Requirement codes that are still missing."
           }
-        }
+        },
+        "description": "Reports whether first-run setup has been completed."
       },
       "SetupStockRequest": {
         "required": [
@@ -1378,10 +1479,12 @@
         "type": "object",
         "properties": {
           "securityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Six-digit security code."
           },
           "exchangeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Exchange code."
           },
           "initialHolding": {
             "oneOf": [
@@ -1393,7 +1496,8 @@
               }
             ]
           }
-        }
+        },
+        "description": "Stock identity and optional initial holding used during setup."
       },
       "SetupStockResult": {
         "required": [
@@ -1404,18 +1508,22 @@
         "type": "object",
         "properties": {
           "securityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Created security code."
           },
           "exchangeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Created exchange code."
           },
           "securityName": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "Resolved display name, when available."
           }
-        }
+        },
+        "description": "Result describing a stock created during setup."
       },
       "StockAnalysisResult": {
         "required": [
@@ -1448,19 +1556,24 @@
         "type": "object",
         "properties": {
           "securityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Security code."
           },
           "exchangeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Exchange code."
           },
           "securityName": {
-            "type": "string"
+            "type": "string",
+            "description": "Display name of the security."
           },
           "modelStatusCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Model availability status code."
           },
           "dividendReliabilityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Dividend reliability status code."
           },
           "closePrice": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
@@ -1469,6 +1582,7 @@
               "number",
               "string"
             ],
+            "description": "Latest valid close price.",
             "format": "double"
           },
           "modelDividendPerShare": {
@@ -1478,13 +1592,15 @@
               "number",
               "string"
             ],
+            "description": "Model dividend per share.",
             "format": "double"
           },
           "dividendModeCode": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "Dividend mode code, when available."
           },
           "dividendYield": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
@@ -1493,6 +1609,7 @@
               "number",
               "string"
             ],
+            "description": "Latest model dividend yield.",
             "format": "double"
           },
           "strongBuyPrice": {
@@ -1502,6 +1619,7 @@
               "number",
               "string"
             ],
+            "description": "Strong-buy price threshold.",
             "format": "double"
           },
           "accumulatePrice": {
@@ -1511,6 +1629,7 @@
               "number",
               "string"
             ],
+            "description": "Accumulation price threshold.",
             "format": "double"
           },
           "partialTrimPrice": {
@@ -1520,6 +1639,7 @@
               "number",
               "string"
             ],
+            "description": "Partial-trim price threshold.",
             "format": "double"
           },
           "aggressiveTrimPrice": {
@@ -1529,25 +1649,30 @@
               "number",
               "string"
             ],
+            "description": "Aggressive-trim price threshold.",
             "format": "double"
           },
           "observedPriceZoneCode": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "Latest observed price-zone code."
           },
           "priceZoneCode": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "Confirmed price-zone code."
           },
           "priceZoneConfirmed": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether the price zone is confirmed."
           },
           "recommendationCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Recommendation code."
           },
           "heldShares": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -1555,6 +1680,7 @@
               "integer",
               "string"
             ],
+            "description": "Current held shares.",
             "format": "int32"
           },
           "coreShares": {
@@ -1563,6 +1689,7 @@
               "integer",
               "string"
             ],
+            "description": "Current core shares.",
             "format": "int32"
           },
           "satelliteShares": {
@@ -1571,6 +1698,7 @@
               "integer",
               "string"
             ],
+            "description": "Current satellite shares.",
             "format": "int32"
           },
           "dataAsOfDate": {
@@ -1578,6 +1706,7 @@
               "null",
               "string"
             ],
+            "description": "Date through which source data is valid.",
             "format": "date"
           },
           "modelParameterSetId": {
@@ -1585,20 +1714,25 @@
               "null",
               "string"
             ],
+            "description": "Identifier of the applied parameter set.",
             "format": "uuid"
           },
           "computedAt": {
             "type": "string",
+            "description": "UTC timestamp when the analysis was computed.",
             "format": "date-time"
           },
           "explanation": {
-            "type": "string"
+            "type": "string",
+            "description": "Stable explanation code emitted by the domain."
           },
           "securityId": {
             "type": "string",
+            "description": "Persistent identifier of the security.",
             "format": "uuid"
           }
-        }
+        },
+        "description": "Underlying stock analysis."
       },
       "StockDataSyncFailure": {
         "required": [
@@ -1611,21 +1745,27 @@
         "type": "object",
         "properties": {
           "securityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Security code that failed."
           },
           "exchangeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Exchange code that failed."
           },
           "dataKind": {
-            "type": "string"
+            "type": "string",
+            "description": "Kind of data that failed to synchronize."
           },
           "errorCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Stable failure code."
           },
           "parameters": {
-            "type": "object"
+            "type": "object",
+            "description": "Structured failure parameters."
           }
-        }
+        },
+        "description": "Describes one stock data synchronization failure."
       },
       "StockDataSyncRunResult": {
         "required": [
@@ -1643,6 +1783,7 @@
               "integer",
               "string"
             ],
+            "description": "Number of stocks attempted.",
             "format": "int32"
           },
           "fullyCompletedStockCount": {
@@ -1651,6 +1792,7 @@
               "integer",
               "string"
             ],
+            "description": "Number of fully synchronized stocks.",
             "format": "int32"
           },
           "partiallyFailedStockCount": {
@@ -1659,19 +1801,23 @@
               "integer",
               "string"
             ],
+            "description": "Number of stocks with partial failures.",
             "format": "int32"
           },
           "failures": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/StockDataSyncFailure"
-            }
+            },
+            "description": "Failures collected during synchronization."
           },
           "completedAt": {
             "type": "string",
+            "description": "UTC completion timestamp.",
             "format": "date-time"
           }
-        }
+        },
+        "description": "Summary of a stock data synchronization run."
       },
       "StockDividendEventResult": {
         "required": [
@@ -1695,13 +1841,16 @@
         "properties": {
           "dividendEventId": {
             "type": "string",
+            "description": "Identifier of the persisted dividend event.",
             "format": "uuid"
           },
           "securityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Security code."
           },
           "exchangeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Exchange code."
           },
           "dividendPerShare": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
@@ -1709,19 +1858,23 @@
               "number",
               "string"
             ],
+            "description": "Dividend amount per share.",
             "format": "double"
           },
           "dividendTypeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Normalized dividend type code."
           },
           "dividendStatusCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Normalized dividend status code."
           },
           "announcementDate": {
             "type": [
               "null",
               "string"
             ],
+            "description": "Announcement date, when available.",
             "format": "date"
           },
           "exDividendDate": {
@@ -1729,6 +1882,7 @@
               "null",
               "string"
             ],
+            "description": "Ex-dividend date, when available.",
             "format": "date"
           },
           "paymentDate": {
@@ -1736,32 +1890,40 @@
               "null",
               "string"
             ],
+            "description": "Payment date, when available.",
             "format": "date"
           },
           "isSpecialDividend": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether the dividend is special."
           },
           "publishedAt": {
             "type": [
               "null",
               "string"
             ],
+            "description": "Publication timestamp, when available.",
             "format": "date-time"
           },
           "capturedAt": {
             "type": "string",
+            "description": "UTC capture timestamp.",
             "format": "date-time"
           },
           "dataSource": {
-            "type": "string"
+            "type": "string",
+            "description": "Source-system name."
           },
           "sourceRecordId": {
-            "type": "string"
+            "type": "string",
+            "description": "Source-system record identifier."
           },
           "dataQualityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Normalized data quality code."
           }
-        }
+        },
+        "description": "Persisted dividend event returned by the API."
       },
       "StockFinancialSnapshotResult": {
         "required": [
@@ -1784,20 +1946,25 @@
         "properties": {
           "financialSnapshotId": {
             "type": "string",
+            "description": "Identifier of the persisted financial snapshot.",
             "format": "uuid"
           },
           "securityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Security code."
           },
           "exchangeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Exchange code."
           },
           "dataAsOfDate": {
             "type": "string",
+            "description": "Date through which the data is valid.",
             "format": "date"
           },
           "capturedAt": {
             "type": "string",
+            "description": "UTC capture timestamp.",
             "format": "date-time"
           },
           "publishedAt": {
@@ -1805,6 +1972,7 @@
               "null",
               "string"
             ],
+            "description": "Publication timestamp, when available.",
             "format": "date-time"
           },
           "earningsPerShare": {
@@ -1814,6 +1982,7 @@
               "number",
               "string"
             ],
+            "description": "Earnings per share, when available.",
             "format": "double"
           },
           "dividendPayoutRatio": {
@@ -1823,6 +1992,7 @@
               "number",
               "string"
             ],
+            "description": "Dividend payout ratio, when available.",
             "format": "double"
           },
           "threeYearAverageDividendPayoutRatio": {
@@ -1832,6 +2002,7 @@
               "number",
               "string"
             ],
+            "description": "Three-year average payout ratio.",
             "format": "double"
           },
           "priceToBookRatio": {
@@ -1841,6 +2012,7 @@
               "number",
               "string"
             ],
+            "description": "Price-to-book ratio, when available.",
             "format": "double"
           },
           "returnOnEquity": {
@@ -1850,18 +2022,23 @@
               "number",
               "string"
             ],
+            "description": "Return on equity, when available.",
             "format": "double"
           },
           "dataSource": {
-            "type": "string"
+            "type": "string",
+            "description": "Source-system name."
           },
           "sourceRecordId": {
-            "type": "string"
+            "type": "string",
+            "description": "Source-system record identifier."
           },
           "dataQualityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Normalized data quality code."
           }
-        }
+        },
+        "description": "Persisted financial snapshot returned by the API."
       },
       "StockHoldingSnapshot": {
         "required": [
@@ -1878,6 +2055,7 @@
               "integer",
               "string"
             ],
+            "description": "Total shares currently held.",
             "format": "int32"
           },
           "coreShares": {
@@ -1886,6 +2064,7 @@
               "integer",
               "string"
             ],
+            "description": "Shares assigned to the core position.",
             "format": "int32"
           },
           "targetShares": {
@@ -1894,6 +2073,7 @@
               "integer",
               "string"
             ],
+            "description": "Desired target share quantity.",
             "format": "int32"
           },
           "averageCostPerShare": {
@@ -1902,9 +2082,11 @@
               "number",
               "string"
             ],
+            "description": "Average acquisition cost per share.",
             "format": "double"
           }
-        }
+        },
+        "description": "Latest holding snapshot, when available."
       },
       "StockModelParameterSet": {
         "required": [
@@ -1934,16 +2116,20 @@
         "properties": {
           "modelParameterSetId": {
             "type": "string",
+            "description": "Identifier of the parameter set.",
             "format": "uuid"
           },
           "securityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Security code."
           },
           "exchangeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Exchange code."
           },
           "modelVersion": {
-            "type": "string"
+            "type": "string",
+            "description": "Model version label."
           },
           "strongBuyYieldThreshold": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
@@ -1951,6 +2137,7 @@
               "number",
               "string"
             ],
+            "description": "Yield threshold for strong-buy recommendations.",
             "format": "double"
           },
           "accumulationYieldThreshold": {
@@ -1959,6 +2146,7 @@
               "number",
               "string"
             ],
+            "description": "Yield threshold for accumulation recommendations.",
             "format": "double"
           },
           "partialTrimYieldThreshold": {
@@ -1967,6 +2155,7 @@
               "number",
               "string"
             ],
+            "description": "Yield threshold for partial-trim recommendations.",
             "format": "double"
           },
           "aggressiveTrimYieldThreshold": {
@@ -1975,6 +2164,7 @@
               "number",
               "string"
             ],
+            "description": "Yield threshold for aggressive-trim recommendations.",
             "format": "double"
           },
           "strongBuyBudgetRatio": {
@@ -1983,6 +2173,7 @@
               "number",
               "string"
             ],
+            "description": "Budget ratio for strong-buy recommendations.",
             "format": "double"
           },
           "accumulateBudgetRatio": {
@@ -1991,6 +2182,7 @@
               "number",
               "string"
             ],
+            "description": "Budget ratio for accumulation recommendations.",
             "format": "double"
           },
           "partialTrimRatio": {
@@ -1999,6 +2191,7 @@
               "number",
               "string"
             ],
+            "description": "Position ratio for partial trims.",
             "format": "double"
           },
           "aggressiveTrimRatio": {
@@ -2007,6 +2200,7 @@
               "number",
               "string"
             ],
+            "description": "Position ratio for aggressive trims.",
             "format": "double"
           },
           "maxSecurityWeight": {
@@ -2015,6 +2209,7 @@
               "number",
               "string"
             ],
+            "description": "Maximum security portfolio weight.",
             "format": "double"
           },
           "maxSectorWeight": {
@@ -2023,6 +2218,7 @@
               "number",
               "string"
             ],
+            "description": "Maximum sector portfolio weight.",
             "format": "double"
           },
           "cashReserveRatio": {
@@ -2031,6 +2227,7 @@
               "number",
               "string"
             ],
+            "description": "Portfolio cash reserve ratio.",
             "format": "double"
           },
           "maxSingleTradeAmount": {
@@ -2039,6 +2236,7 @@
               "number",
               "string"
             ],
+            "description": "Maximum amount for one trade.",
             "format": "double"
           },
           "maxPeriodBudgetAmount": {
@@ -2047,6 +2245,7 @@
               "number",
               "string"
             ],
+            "description": "Maximum budget for one period.",
             "format": "double"
           },
           "transactionFeeRatio": {
@@ -2055,6 +2254,7 @@
               "number",
               "string"
             ],
+            "description": "Transaction fee ratio.",
             "format": "double"
           },
           "minimumTransactionFeeAmount": {
@@ -2063,6 +2263,7 @@
               "number",
               "string"
             ],
+            "description": "Minimum transaction fee amount.",
             "format": "double"
           },
           "tradingLotSize": {
@@ -2071,13 +2272,16 @@
               "integer",
               "string"
             ],
+            "description": "Trading lot size in shares.",
             "format": "int32"
           },
           "effectiveFromDate": {
             "type": "string",
+            "description": "Date from which the parameters apply.",
             "format": "date"
           }
-        }
+        },
+        "description": "Effective model parameters for one configured stock."
       },
       "StockPriceObservationResult": {
         "required": [
@@ -2095,16 +2299,20 @@
         "properties": {
           "priceObservationId": {
             "type": "string",
+            "description": "Identifier of the persisted observation.",
             "format": "uuid"
           },
           "securityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Security code."
           },
           "exchangeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Exchange code."
           },
           "tradingDate": {
             "type": "string",
+            "description": "Trading date.",
             "format": "date"
           },
           "closePrice": {
@@ -2113,22 +2321,28 @@
               "number",
               "string"
             ],
+            "description": "Closing price.",
             "format": "double"
           },
           "priceObservedAt": {
             "type": "string",
+            "description": "UTC observation timestamp.",
             "format": "date-time"
           },
           "dataSource": {
-            "type": "string"
+            "type": "string",
+            "description": "Source-system name."
           },
           "sourceRecordId": {
-            "type": "string"
+            "type": "string",
+            "description": "Source-system record identifier."
           },
           "dataQualityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Normalized data quality code."
           }
-        }
+        },
+        "description": "Persisted price observation returned by the API."
       },
       "StockRecommendationResult": {
         "required": [
@@ -2149,6 +2363,7 @@
               "integer",
               "string"
             ],
+            "description": "Suggested buy quantity in shares.",
             "format": "int32"
           },
           "suggestedSellShares": {
@@ -2157,6 +2372,7 @@
               "integer",
               "string"
             ],
+            "description": "Suggested sell quantity in shares.",
             "format": "int32"
           },
           "suggestedTradeAmount": {
@@ -2165,6 +2381,7 @@
               "number",
               "string"
             ],
+            "description": "Suggested trade amount.",
             "format": "double"
           },
           "estimatedTransactionFeeAmount": {
@@ -2173,9 +2390,11 @@
               "number",
               "string"
             ],
+            "description": "Estimated transaction fee.",
             "format": "double"
           }
-        }
+        },
+        "description": "Recommendation and suggested trade quantities for one stock."
       },
       "StockWatchlistItem": {
         "required": [
@@ -2189,19 +2408,24 @@
         "type": "object",
         "properties": {
           "securityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Security code."
           },
           "exchangeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Exchange code."
           },
           "securityName": {
-            "type": "string"
+            "type": "string",
+            "description": "Display name of the security."
           },
           "marketCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Normalized market code."
           },
           "currencyCode": {
-            "type": "string"
+            "type": "string",
+            "description": "Normalized currency code."
           },
           "holding": {
             "oneOf": [
@@ -2217,13 +2441,16 @@
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "Optional normalized sector code."
           },
           "securityId": {
             "type": "string",
+            "description": "Persistent identifier of the configured security.",
             "format": "uuid"
           }
-        }
+        },
+        "description": "Configured stock identity with its latest holding snapshot."
       }
     }
   },

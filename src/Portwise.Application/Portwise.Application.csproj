@@ -1,4 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
@@ -11,6 +15,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="../../locales/**/*.json"
-                      Link="locales/%(RecursiveDir)%(Filename)%(Extension)" />
+                      Link="Locales/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

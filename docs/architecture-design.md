@@ -55,6 +55,7 @@ Application 项目通过 `EmbeddedResource` 将根目录 `locales/**/*.json` 编
 - Domain 推荐计算只返回稳定的解释代码（例如 `unavailable`、`confirmed:<zone>`），由 Web 层使用 `dividend-strategy.ui.overview.decision.explanations` 渲染；领域层不依赖 UI 语言资源。
 - 股票未同步时 API 保持名称为空，由 Web 的 `stocks.ui.identity.pendingName` 负责显示本地化占位名称；交易所名称同样由 locale 提供。
 - 金额、数字、百分比和日期格式必须跟随当前 `portwise-locale`，不得固定为单一语言格式。
+- Backend validation, domain, infrastructure and health-check diagnostics must not embed Chinese prose. They use English diagnostic text or stable codes; Chinese locale resources remain the only source for user-facing Chinese responses. External-provider protocol aliases are not UI copy and must be treated as data normalization rules.
 
 ## 4. Repo 分层布局
 
@@ -527,6 +528,8 @@ FTShare 连接、协议、配置和超时失败先由 Adapter 转换为 Infrastr
 
 Host 使用 .NET 原生的 `Microsoft.AspNetCore.OpenApi`（`AddOpenApi`/`MapOpenApi`）生成 OpenAPI 文档，并通过 `Asp.Versioning.OpenApi` 与 API Versioning 集成，按版本生成独立文档；`Swashbuckle.AspNetCore.SwaggerUI` 只承担交互式 UI 渲染，不再负责文档生成。当前业务接口统一使用 URL path 版本 `/api/v1/...`，未带版本号的业务 URL 不会隐式映射到默认版本；`/swagger` 用于浏览和调用 Controller 接口，`/openapi/v1.json` 用于获取 v1 机器可读的 OpenAPI 文档。`app.MapOpenApi().WithDocumentPerVersion()` 按 `IApiVersionDescriptionProvider` 动态生成版本文档，未来增加 v2 时新增对应的 `[ApiVersion(2.0)]` Controller/Action，不需要修改文档生成逻辑，也不修改既有 v1 合约。OpenAPI 与 Swagger UI 的服务注册集中在 `HostServiceCollectionExtensions`，middleware 集中在 `WebApplicationExtensions`，不在 `Program.cs` 或 Controller 中重复配置。
 
+所有公开 Controller、Action 和 API DTO 都必须提供 .NET XML 文档注释（至少包含类型/操作 `summary`，公开参数提供 `param`）。Application 与 Domain 项目开启 `GenerateDocumentationFile`，Host 通过 `XmlDocumentationOperationTransformer` 和 `XmlDocumentationSchemaTransformer` 从相邻程序集的 XML 文件读取摘要，并把操作、schema 及属性说明写入同一份原生 OpenAPI 文档。构建期生成的 `src/Portwise.Web/openapi/portwise_v1.json` 必须包含非空操作摘要和 DTO schema 描述；Swagger UI 直接消费该文档，因此不需要 Swashbuckle 的 XML 配置或第三方文档生成器。
+
 HTTP 合约的持久化副本由 Host 的 build-time document generation 生成，而不是由运行中的 `/openapi/{version}.json` 端点手工复制。`Portwise.csproj` 将文档写入前端 `openapi/` 目录；`Program.cs` 在 `GetDocument.Insider` 设计时入口使用 `CreateEmptyBuilder`，只注册 Controller、API Versioning 和 OpenAPI 元数据，避免生成合约时启动 SpaProxy 或外部基础设施。新增 v2 时生成新的 `portwise_v2.json` 与对应 TypeScript 文件，v1 仍保持独立。
 
 ### 10.2 Serilog
@@ -657,3 +660,4 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | 03 Frontend application shell module | 已完成：路由选择、Setup gate、浏览器 session 读取和 feature 装载集中到 `application-shell.tsx`；feature 页面按路由懒加载；navigation 纯策略增加 Node 原生测试与 `pnpm test` 脚本 | `pnpm test`（4 tests）、`pnpm build`、`pnpm lint`；提交 `refactor: deepen frontend application shell` |
 | 04 Application module ownership executable | 已完成：module-specific Contracts/DTOs/Validators 使用 module namespace，Mapperly 映射拆分为 `StocksMapper`、`PortfolioMapper`、`RecommendationsMapper`；新增架构测试防止类型泄漏回根技术桶 | `dotnet test`（84 Application tests）、`dotnet build Portwise.slnx`；提交 `refactor: enforce application module ownership` |
 | 05 CONTEXT/ADR authority | 已完成：修正根上下文产品名与文档权威声明，新增 `docs/adr/` 索引及单组合、单 Host、HTTP 合约、Application module locality 四项 Accepted ADR，并清理实现地图中的过时路径 | `git diff --check`、全文旧路径扫描；提交 `docs: establish architecture decision authority` |
+| 06 Backend localization and native XML documentation | 已完成：移除后端源码中的中文诊断硬编码，为全部 Controller/DTO 增加 XML 注释；由 .NET 原生 OpenAPI transformer 读取各项目 XML 文档并写入操作、schema 和属性描述 | `dotnet build`、`dotnet test`、OpenAPI 摘要/schema 检查、中文源码扫描；本次提交 |

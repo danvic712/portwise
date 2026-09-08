@@ -72,17 +72,17 @@ public sealed class ModelParameterSet
     {
         if (portfolioId == Guid.Empty)
         {
-            throw new ArgumentException("投资组合标识不能为空。", nameof(portfolioId));
+            throw new ArgumentException("Portfolio identifier is required.", nameof(portfolioId));
         }
 
         if (securityId == Guid.Empty)
         {
-            throw new ArgumentException("股票标识不能为空。", nameof(securityId));
+            throw new ArgumentException("Security identifier is required.", nameof(securityId));
         }
 
         if (string.IsNullOrWhiteSpace(modelVersion))
         {
-            throw new ArgumentException("模型版本不能为空。", nameof(modelVersion));
+            throw new ArgumentException("Model version is required.", nameof(modelVersion));
         }
 
         EnsurePositiveRatio(strongBuyYieldThreshold, nameof(strongBuyYieldThreshold));
@@ -93,21 +93,21 @@ public sealed class ModelParameterSet
         if (strongBuyYieldThreshold <= accumulationYieldThreshold)
         {
             throw new ArgumentException(
-                "强买入收益率阈值必须高于分批加仓收益率阈值。",
+                "Strong-buy yield threshold must exceed the accumulation threshold.",
                 nameof(strongBuyYieldThreshold));
         }
 
         if (accumulationYieldThreshold <= partialTrimYieldThreshold)
         {
             throw new ArgumentException(
-                "分批加仓收益率阈值必须高于减仓候选收益率阈值。",
+                "Accumulation yield threshold must exceed the partial-trim threshold.",
                 nameof(partialTrimYieldThreshold));
         }
 
         if (partialTrimYieldThreshold <= aggressiveTrimYieldThreshold)
         {
             throw new ArgumentException(
-                "减仓候选收益率阈值必须高于激进减仓收益率阈值。",
+                "Partial-trim yield threshold must exceed the aggressive-trim threshold.",
                 nameof(aggressiveTrimYieldThreshold));
         }
 
@@ -128,12 +128,12 @@ public sealed class ModelParameterSet
             throw new ArgumentOutOfRangeException(
                 nameof(tradingLotSize),
                 tradingLotSize,
-                "交易单位必须大于零。");
+                "Trading lot size must be greater than zero.");
         }
 
         if (effectiveFromDate == DateOnly.MinValue)
         {
-            throw new ArgumentException("参数生效日期不能为空。", nameof(effectiveFromDate));
+            throw new ArgumentException("Effective-from date is required.", nameof(effectiveFromDate));
         }
 
         return new ModelParameterSet
@@ -169,7 +169,7 @@ public sealed class ModelParameterSet
             throw new ArgumentOutOfRangeException(
                 parameterName,
                 value,
-                "收益率阈值必须大于零。");
+                "Yield threshold must be greater than zero.");
         }
     }
 
@@ -180,7 +180,7 @@ public sealed class ModelParameterSet
             throw new ArgumentOutOfRangeException(
                 parameterName,
                 value,
-                "比例必须介于 0 和 1 之间。");
+                "Ratio must be between 0 and 1.");
         }
     }
 
@@ -191,7 +191,7 @@ public sealed class ModelParameterSet
             throw new ArgumentOutOfRangeException(
                 parameterName,
                 value,
-                "金额不能为负数。");
+                "Amount cannot be negative.");
         }
     }
 }

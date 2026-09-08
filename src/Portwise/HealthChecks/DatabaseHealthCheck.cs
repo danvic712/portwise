@@ -16,7 +16,7 @@ public sealed class DatabaseHealthCheck(IServiceScopeFactory serviceScopeFactory
                 .GetRequiredService<IDatabaseLifecycle>();
             return await databaseLifecycle.CanConnectAsync(cancellationToken)
                 ? HealthCheckResult.Healthy()
-                : HealthCheckResult.Unhealthy("数据库不可用。");
+                : HealthCheckResult.Unhealthy("Database is unavailable.");
         }
         catch (OperationCanceledException)
         {
@@ -24,7 +24,7 @@ public sealed class DatabaseHealthCheck(IServiceScopeFactory serviceScopeFactory
         }
         catch (Exception exception)
         {
-            return HealthCheckResult.Unhealthy("数据库检查失败。", exception);
+            return HealthCheckResult.Unhealthy("Database health check failed.", exception);
         }
     }
 }

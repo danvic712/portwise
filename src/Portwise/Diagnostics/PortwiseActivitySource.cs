@@ -3,9 +3,9 @@ using System.Diagnostics;
 namespace Portwise.Diagnostics;
 
 /// <summary>
-/// Host 唯一的 <see cref="ActivitySource"/>，遵循 W3C Trace Context 标准生成 Activity。
-/// 静态构造函数注册一个基础 <see cref="ActivityListener"/>，使 Activity 在没有接入完整
-/// OpenTelemetry SDK/导出器时也能被创建和记录（当前只用于日志关联，不做跨进程导出）。
+/// The host's shared <see cref="ActivitySource"/> that creates activities using W3C Trace Context.
+/// A basic <see cref="ActivityListener"/> allows activities to be created and recorded without
+/// a full OpenTelemetry SDK/exporter; they are currently used for log correlation only.
 /// </summary>
 internal static class PortwiseActivitySource
 {

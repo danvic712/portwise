@@ -14,23 +14,23 @@ public sealed class RecordPortfolioTradeRequestValidator
 
         RuleFor(x => x.TradeDate)
             .NotEqual(DateOnly.MinValue)
-            .WithMessage("交易日期不能为空。");
+            .WithMessage("Trade date is required.");
         RuleFor(x => x.TradeDirectionCode)
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .Must(TradeDirectionCodes.IsSupported)
-            .WithMessage("交易方向必须是 buy 或 sell。");
+            .WithMessage("Trade direction must be buy or sell.");
         RuleFor(x => x.ShareQuantity)
             .GreaterThan(0)
-            .WithMessage("交易股数必须大于零。");
+            .WithMessage("Trade share quantity must be greater than zero.");
         RuleFor(x => x.PricePerShare)
             .GreaterThan(0)
-            .WithMessage("成交价格必须大于零。");
+            .WithMessage("Trade price must be greater than zero.");
         RuleFor(x => x.TransactionFeeAmount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("交易费用不能为负数。");
+            .WithMessage("Transaction fee cannot be negative.");
         RuleFor(x => x.SourceRecordId)
             .MaximumLength(200)
-            .WithMessage("来源记录标识不能超过 200 个字符。");
+            .WithMessage("Source record identifier cannot exceed 200 characters.");
     }
 }

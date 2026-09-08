@@ -15,13 +15,13 @@ internal sealed class DailySyncOptionsValidator : IValidateOptions<DailySyncOpti
                 DateTimeStyles.None,
                 out _))
         {
-            failures.Add("DailySync:LocalTime 必须使用 HH:mm 格式。");
+            failures.Add("DailySync:LocalTime must use the HH:mm format.");
         }
 
         if (string.IsNullOrWhiteSpace(options.TimeZoneId)
             || !TimeZoneInfo.TryFindSystemTimeZoneById(options.TimeZoneId, out _))
         {
-            failures.Add("DailySync:TimeZoneId 必须是当前系统支持的时区标识。");
+            failures.Add("DailySync:TimeZoneId must identify a time zone supported by the host.");
         }
 
         return failures.Count == 0

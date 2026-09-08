@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Portwise.Controllers;
 
+/// <summary>Provides portfolio recommendation and snapshot endpoints.</summary>
 [ApiController]
 [ApiVersion(1.0)]
 [Route("api/v{version:apiVersion}/recommendations")]
@@ -14,6 +15,8 @@ public sealed class RecommendationsController(
     IRecommendationSnapshotAppService recommendationSnapshotAppService)
     : ControllerBase
 {
+    /// <summary>Returns the current portfolio recommendation.</summary>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpGet]
     public async Task<ActionResult<PortfolioRecommendationResult>> Get(
         CancellationToken cancellationToken)
@@ -22,6 +25,8 @@ public sealed class RecommendationsController(
         return Ok(result);
     }
 
+    /// <summary>Persists a snapshot of the current recommendation.</summary>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpPost("snapshots")]
     public async Task<ActionResult<CreateRecommendationSnapshotResult>> CreateSnapshot(
         CancellationToken cancellationToken)

@@ -32,7 +32,7 @@ public sealed class FtShareStockDataProvider(
             currentOptions.StockProfileToolName,
             cancellationToken,
             "profile",
-            "FTShare MCP 请求超时。");
+            "FTShare MCP profile request timed out.");
         return ParseStockData(reference, payload);
     }
 
@@ -49,7 +49,7 @@ public sealed class FtShareStockDataProvider(
             currentOptions.StockMarketDataToolName,
             cancellationToken,
             "market",
-            "FTShare MCP 行情请求超时。");
+            "FTShare MCP market-data request timed out.");
         return ParseMarketData(reference, payload);
     }
 
@@ -66,7 +66,7 @@ public sealed class FtShareStockDataProvider(
             currentOptions.StockDividendEventsToolName,
             cancellationToken,
             "dividend",
-            "FTShare MCP 股息请求超时。");
+            "FTShare MCP dividend request timed out.");
         return ParseDividendData(reference, payload);
     }
 
@@ -83,7 +83,7 @@ public sealed class FtShareStockDataProvider(
             currentOptions.StockFinancialSnapshotsToolName,
             cancellationToken,
             "financial",
-            "FTShare MCP 财务请求超时。");
+            "FTShare MCP financial-data request timed out.");
         return ParseFinancialData(reference, payload);
     }
 

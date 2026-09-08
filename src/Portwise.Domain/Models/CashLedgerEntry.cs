@@ -35,34 +35,34 @@ public sealed class CashLedgerEntry
     {
         if (portfolioId == Guid.Empty)
         {
-            throw new ArgumentException("投资组合标识不能为空。", nameof(portfolioId));
+            throw new ArgumentException("Portfolio identifier is required.", nameof(portfolioId));
         }
 
         if (securityId == Guid.Empty)
         {
-            throw new ArgumentException("股票标识不能为空。", nameof(securityId));
+            throw new ArgumentException("Security identifier is required.", nameof(securityId));
         }
 
         if (entryDate == DateOnly.MinValue)
         {
-            throw new ArgumentException("现金流水日期不能为空。", nameof(entryDate));
+            throw new ArgumentException("Cash ledger date is required.", nameof(entryDate));
         }
 
         var normalizedEntryType = entryTypeCode?.Trim().ToLowerInvariant() ?? string.Empty;
         if (!CashLedgerCodes.IsSupportedEntryType(normalizedEntryType))
         {
-            throw new ArgumentException("现金流水类型不受支持。", nameof(entryTypeCode));
+            throw new ArgumentException("Cash ledger type is not supported.", nameof(entryTypeCode));
         }
 
         var normalizedDirection = cashDirectionCode?.Trim().ToLowerInvariant() ?? string.Empty;
         if (!CashLedgerCodes.IsSupportedDirection(normalizedDirection))
         {
-            throw new ArgumentException("现金流水方向不受支持。", nameof(cashDirectionCode));
+            throw new ArgumentException("Cash ledger direction is not supported.", nameof(cashDirectionCode));
         }
 
         if (!CashLedgerCodes.IsCompatible(normalizedEntryType, normalizedDirection))
         {
-            throw new ArgumentException("现金流水类型和方向不匹配。", nameof(cashDirectionCode));
+            throw new ArgumentException("Cash ledger type and direction do not match.", nameof(cashDirectionCode));
         }
 
         if (cashAmount <= 0)
@@ -70,7 +70,7 @@ public sealed class CashLedgerEntry
             throw new ArgumentOutOfRangeException(
                 nameof(cashAmount),
                 cashAmount,
-                "现金流水金额必须大于零。");
+                "Cash ledger amount must be greater than zero.");
         }
 
         return new CashLedgerEntry

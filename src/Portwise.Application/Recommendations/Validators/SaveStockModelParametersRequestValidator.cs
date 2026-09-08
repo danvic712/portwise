@@ -15,57 +15,57 @@ public sealed class SaveStockModelParametersRequestValidator
         RuleFor(x => x.ModelVersion)
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
-            .WithMessage("模型版本不能为空。")
+            .WithMessage("Model version is required.")
             .MaximumLength(32)
-            .WithMessage("模型版本不能超过 32 个字符。");
+            .WithMessage("Model version cannot exceed 32 characters.");
 
         RuleFor(x => x.StrongBuyYieldThreshold)
             .GreaterThan(0)
-            .WithMessage("收益率阈值必须大于零。");
+            .WithMessage("Yield threshold must be greater than zero.");
         RuleFor(x => x.AccumulationYieldThreshold)
             .GreaterThan(0)
-            .WithMessage("收益率阈值必须大于零。");
+            .WithMessage("Yield threshold must be greater than zero.");
         RuleFor(x => x.PartialTrimYieldThreshold)
             .GreaterThan(0)
-            .WithMessage("收益率阈值必须大于零。");
+            .WithMessage("Yield threshold must be greater than zero.");
         RuleFor(x => x.AggressiveTrimYieldThreshold)
             .GreaterThan(0)
-            .WithMessage("收益率阈值必须大于零。");
+            .WithMessage("Yield threshold must be greater than zero.");
 
         RuleFor(x => x.AccumulationYieldThreshold)
             .Must((request, value) => request.StrongBuyYieldThreshold > value)
-            .WithMessage("强买入收益率阈值必须高于分批加仓收益率阈值。");
+            .WithMessage("Strong-buy yield threshold must exceed the accumulation threshold.");
         RuleFor(x => x.PartialTrimYieldThreshold)
             .Must((request, value) => request.AccumulationYieldThreshold > value)
-            .WithMessage("分批加仓收益率阈值必须高于减仓候选收益率阈值。");
+            .WithMessage("Accumulation yield threshold must exceed the partial-trim threshold.");
         RuleFor(x => x.AggressiveTrimYieldThreshold)
             .Must((request, value) => request.PartialTrimYieldThreshold > value)
-            .WithMessage("减仓候选收益率阈值必须高于激进减仓收益率阈值。");
+            .WithMessage("Partial-trim yield threshold must exceed the aggressive-trim threshold.");
 
-        AddRatioRule(x => x.StrongBuyBudgetRatio, "强买入预算比例");
-        AddRatioRule(x => x.AccumulateBudgetRatio, "分批加仓预算比例");
-        AddRatioRule(x => x.PartialTrimRatio, "减仓候选比例");
-        AddRatioRule(x => x.AggressiveTrimRatio, "激进减仓比例");
-        AddRatioRule(x => x.MaxSecurityWeight, "单只股票最大权重");
-        AddRatioRule(x => x.MaxSectorWeight, "单一行业最大权重");
-        AddRatioRule(x => x.CashReserveRatio, "现金保留比例");
-        AddRatioRule(x => x.TransactionFeeRatio, "交易费用比例");
+        AddRatioRule(x => x.StrongBuyBudgetRatio, "Strong-buy budget ratio");
+        AddRatioRule(x => x.AccumulateBudgetRatio, "Accumulation budget ratio");
+        AddRatioRule(x => x.PartialTrimRatio, "Partial-trim ratio");
+        AddRatioRule(x => x.AggressiveTrimRatio, "Aggressive-trim ratio");
+        AddRatioRule(x => x.MaxSecurityWeight, "Maximum security weight");
+        AddRatioRule(x => x.MaxSectorWeight, "Maximum sector weight");
+        AddRatioRule(x => x.CashReserveRatio, "Cash reserve ratio");
+        AddRatioRule(x => x.TransactionFeeRatio, "Transaction fee ratio");
 
         RuleFor(x => x.MaxSingleTradeAmount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("单次交易金额上限不能为负数。");
+            .WithMessage("Maximum single-trade amount cannot be negative.");
         RuleFor(x => x.MaxPeriodBudgetAmount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("单期预算上限不能为负数。");
+            .WithMessage("Maximum period budget cannot be negative.");
         RuleFor(x => x.MinimumTransactionFeeAmount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("最低交易费用不能为负数。");
+            .WithMessage("Minimum transaction fee cannot be negative.");
         RuleFor(x => x.TradingLotSize)
             .GreaterThan(0)
-            .WithMessage("交易单位必须大于零。");
+            .WithMessage("Trading lot size must be greater than zero.");
         RuleFor(x => x.EffectiveFromDate)
             .NotEqual(DateOnly.MinValue)
-            .WithMessage("参数生效日期不能为空。");
+            .WithMessage("Effective-from date is required.");
     }
 
     private void AddRatioRule(
@@ -74,6 +74,6 @@ public sealed class SaveStockModelParametersRequestValidator
     {
         RuleFor(selector)
             .InclusiveBetween(0, 1)
-            .WithMessage($"{label}必须介于 0 和 1 之间。");
+            .WithMessage($"{label} must be between 0 and 1.");
     }
 }

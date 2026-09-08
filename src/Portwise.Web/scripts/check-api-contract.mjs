@@ -10,6 +10,24 @@ const checkedInPath = resolve("src/lib/api-contract.generated.ts")
 const packageRunner = process.platform === "win32" ? "pnpm.cmd" : "pnpm"
 
 try {
+  const openapiDocument = JSON.parse(readFileSync(sourcePath, "utf8"))
+  const httpMethods = new Set(["get", "post", "put", "patch", "delete", "head", "options", "trace"])
+  const missingOperationSummaries = Object.values(openapiDocument.paths ?? {})
+    .flatMap((pathItem) => Object.entries(pathItem)
+      .filter(([method]) => httpMethods.has(method))
+      .map(([, operation]) => operation))
+    .filter((operation) => operation && typeof operation === "object")
+    .filter((operation) => !String(operation.summary ?? "").trim())
+  const missingSchemaDescriptions = Object.values(openapiDocument.components?.schemas ?? {})
+    .filter((schema) => !String(schema.description ?? "").trim())
+
+  if (missingOperationSummaries.length > 0 || missingSchemaDescriptions.length > 0) {
+    console.error(
+      `OpenAPI documentation is incomplete: ${missingOperationSummaries.length} operation summaries and ${missingSchemaDescriptions.length} schema descriptions are missing.`,
+    )
+    process.exitCode = 1
+  }
+
   const result = spawnSync(
     packageRunner,
     ["exec", "openapi-typescript", sourcePath, "-o", generatedPath],

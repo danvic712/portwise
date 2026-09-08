@@ -16,13 +16,13 @@ internal static class AShareValidationRules
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .Must(IsValidSecurityCode)
-            .WithMessage("A 股股票代码必须是 6 位数字。");
+            .WithMessage("Security code must contain exactly 6 digits.");
 
         validator.RuleFor(exchangeCode)
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .Must(IsSupportedExchange)
-            .WithMessage("交易所必须是 SSE、SZSE 或 BSE。");
+            .WithMessage("Exchange code must be SSE, SZSE or BSE.");
     }
 
     internal static bool IsValidSecurityCode(string? value)

@@ -53,7 +53,7 @@ public sealed class DividendEvent
     {
         if (securityId == Guid.Empty)
         {
-            throw new ArgumentException("股票标识不能为空。", nameof(securityId));
+            throw new ArgumentException("Security identifier is required.", nameof(securityId));
         }
 
         if (dividendPerShare <= 0)
@@ -61,14 +61,14 @@ public sealed class DividendEvent
             throw new ArgumentOutOfRangeException(
                 nameof(dividendPerShare),
                 dividendPerShare,
-                "每股股息必须大于零。");
+                "Dividend per share must be greater than zero.");
         }
 
         var normalizedDividendType = dividendTypeCode?.Trim().ToLowerInvariant() ?? string.Empty;
         if (!DividendTypeCodes.IsSupported(normalizedDividendType))
         {
             throw new ArgumentException(
-                "股息类型必须是 regular_cash 或 special_cash。",
+                "Dividend type must be regular_cash or special_cash.",
                 nameof(dividendTypeCode));
         }
 
@@ -76,7 +76,7 @@ public sealed class DividendEvent
         if (!DividendStatusCodes.IsSupported(normalizedDividendStatus))
         {
             throw new ArgumentException(
-                "股息状态必须是 implemented、proposed 或 cancelled。",
+                "Dividend status must be implemented, proposed or cancelled.",
                 nameof(dividendStatusCode));
         }
 
@@ -86,29 +86,29 @@ public sealed class DividendEvent
 
         if (publishedAt is { } published && published == default)
         {
-            throw new ArgumentException("股息公开时间不能为空。", nameof(publishedAt));
+            throw new ArgumentException("Dividend publication timestamp is required.", nameof(publishedAt));
         }
 
         if (capturedAt == default)
         {
-            throw new ArgumentException("抓取时间不能为空。", nameof(capturedAt));
+            throw new ArgumentException("Capture timestamp is required.", nameof(capturedAt));
         }
 
         if (string.IsNullOrWhiteSpace(dataSource))
         {
-            throw new ArgumentException("数据来源不能为空。", nameof(dataSource));
+            throw new ArgumentException("Data source is required.", nameof(dataSource));
         }
 
         if (string.IsNullOrWhiteSpace(sourceRecordId))
         {
-            throw new ArgumentException("来源记录标识不能为空。", nameof(sourceRecordId));
+            throw new ArgumentException("Source record identifier is required.", nameof(sourceRecordId));
         }
 
         var normalizedQualityCode = dataQualityCode?.Trim().ToLowerInvariant() ?? string.Empty;
         if (!DataQualityCodes.IsSupported(normalizedQualityCode))
         {
             throw new ArgumentException(
-                "数据质量代码不受支持。",
+                "Data quality code is not supported.",
                 nameof(dataQualityCode));
         }
 
@@ -135,7 +135,7 @@ public sealed class DividendEvent
     {
         if (date == DateOnly.MinValue)
         {
-            throw new ArgumentException("日期不能为空。", parameterName);
+            throw new ArgumentException("Date is required.", parameterName);
         }
     }
 }

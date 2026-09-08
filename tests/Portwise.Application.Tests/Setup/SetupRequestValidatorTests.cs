@@ -22,7 +22,7 @@ public sealed class SetupRequestValidatorTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, error =>
             error.PropertyName == "Stocks[0].InitialHolding.CoreShares"
-            && error.ErrorMessage == "核心仓数量不能为负数或超过持股数量。");
+            && error.ErrorMessage == "Core shares cannot be negative or exceed held shares.");
     }
 
     [Fact]
@@ -38,10 +38,10 @@ public sealed class SetupRequestValidatorTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, error =>
             error.PropertyName == "Stocks[0].SecurityCode"
-            && error.ErrorMessage == "A 股股票代码必须是 6 位数字。");
+            && error.ErrorMessage == "Security code must contain exactly 6 digits.");
         Assert.Contains(result.Errors, error =>
             error.PropertyName == "Stocks[0].ExchangeCode"
-            && error.ErrorMessage == "交易所必须是 SSE、SZSE 或 BSE。");
+            && error.ErrorMessage == "Exchange code must be SSE, SZSE or BSE.");
     }
 
     [Fact]
@@ -55,10 +55,10 @@ public sealed class SetupRequestValidatorTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, error =>
             error.PropertyName == "PortfolioName"
-            && error.ErrorMessage == "投资组合名称必须为 1 到 100 个字符。");
+            && error.ErrorMessage == "Portfolio name must contain 1 to 100 characters.");
         Assert.Contains(result.Errors, error =>
             error.PropertyName == "Stocks"
-            && error.ErrorMessage == "至少需要配置一只 A 股股票。");
+            && error.ErrorMessage == "At least one A-share security must be configured.");
     }
 
     [Fact]
@@ -77,16 +77,16 @@ public sealed class SetupRequestValidatorTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, error =>
             error.PropertyName == "Stocks[0].InitialHolding.HeldShares"
-            && error.ErrorMessage == "持股数量不能为负数。");
+            && error.ErrorMessage == "Held shares cannot be negative.");
         Assert.Contains(result.Errors, error =>
             error.PropertyName == "Stocks[0].InitialHolding.CoreShares"
-            && error.ErrorMessage == "核心仓数量不能为负数或超过持股数量。");
+            && error.ErrorMessage == "Core shares cannot be negative or exceed held shares.");
         Assert.Contains(result.Errors, error =>
             error.PropertyName == "Stocks[0].InitialHolding.TargetShares"
-            && error.ErrorMessage == "目标股数不能为负数。");
+            && error.ErrorMessage == "Target shares cannot be negative.");
         Assert.Contains(result.Errors, error =>
             error.PropertyName == "Stocks[0].InitialHolding.AverageCostPerShare"
-            && error.ErrorMessage == "平均成本不能为负数。");
+            && error.ErrorMessage == "Average cost per share cannot be negative.");
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public sealed class SetupRequestValidatorTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, error =>
             error.PropertyName == "Stocks"
-            && error.ErrorMessage == "不能重复配置同一只股票。");
+            && error.ErrorMessage == "The same security cannot be configured more than once.");
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public sealed class SetupRequestValidatorTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, error =>
             error.PropertyName == "Stocks[0]"
-            && error.ErrorMessage == "股票配置不能为空。");
+            && error.ErrorMessage == "Stock configuration is required.");
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public sealed class SetupRequestValidatorTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, error =>
             error.PropertyName == "Stocks"
-            && error.ErrorMessage == "至少需要配置一只 A 股股票。");
+            && error.ErrorMessage == "At least one A-share security must be configured.");
     }
 
     private static SetupRequestValidator CreateValidator()

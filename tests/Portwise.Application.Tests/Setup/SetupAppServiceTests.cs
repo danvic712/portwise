@@ -191,7 +191,7 @@ public sealed class SetupAppServiceTests
             CancellationToken.None));
 
         Assert.Contains(
-            "投资组合名称必须为 1 到 100 个字符。",
+            "Portfolio name must contain 1 to 100 characters.",
             exception.Parameters["message"]?.ToString());
         unitOfWork.Verify(x => x.Get<PortfolioEntity>(), Times.Never);
         scheduler.Verify(x => x.TrySchedule(), Times.Never);

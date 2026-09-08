@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Portwise.Controllers;
 
+/// <summary>Provides stock watchlist, market data and recommendation endpoints.</summary>
 [ApiController]
 [ApiVersion(1.0)]
 [Route("api/v{version:apiVersion}/stocks")]
@@ -22,6 +23,8 @@ public sealed class StocksController(
     IStockDataSyncRunner stockDataSyncRunner)
     : ControllerBase
 {
+    /// <summary>Returns all stocks configured in the portfolio watchlist.</summary>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<StockWatchlistItem>>> GetStocks(
         CancellationToken cancellationToken)
@@ -30,6 +33,8 @@ public sealed class StocksController(
         return Ok(stocks);
     }
 
+    /// <summary>Runs a manual synchronization for all configured stocks.</summary>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpPost("sync")]
     public async Task<ActionResult<StockDataSyncRunResult>> SyncStocks(
         CancellationToken cancellationToken)
@@ -41,6 +46,10 @@ public sealed class StocksController(
         return Ok(execution.Result);
     }
 
+    /// <summary>Returns the active model parameters for one stock.</summary>
+    /// <param name="securityCode">Six-digit A-share security code.</param>
+    /// <param name="exchangeCode">Exchange code: SSE, SZSE or BSE.</param>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpGet("{securityCode}/{exchangeCode}/model-parameters")]
     public async Task<ActionResult<StockModelParameterSet>> GetModelParameters(
         string securityCode,
@@ -53,6 +62,9 @@ public sealed class StocksController(
         return parameters is null ? NotFound() : Ok(parameters);
     }
 
+    /// <summary>Creates a new model-parameter version for one stock.</summary>
+    /// <param name="request">Model parameter values and effective date.</param>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpPost("model-parameters")]
     public async Task<ActionResult<StockModelParameterSet>> SaveModelParameters(
         [FromBody] SaveStockModelParametersRequest request,
@@ -71,6 +83,10 @@ public sealed class StocksController(
             parameters);
     }
 
+    /// <summary>Synchronizes the latest price observation for one stock.</summary>
+    /// <param name="securityCode">Six-digit A-share security code.</param>
+    /// <param name="exchangeCode">Exchange code: SSE, SZSE or BSE.</param>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpPost("{securityCode}/{exchangeCode}/price-observations/sync")]
     public async Task<ActionResult<StockPriceObservationResult>> SyncPriceObservation(
         string securityCode,
@@ -83,6 +99,10 @@ public sealed class StocksController(
         return Ok(result);
     }
 
+    /// <summary>Synchronizes dividend events for one stock.</summary>
+    /// <param name="securityCode">Six-digit A-share security code.</param>
+    /// <param name="exchangeCode">Exchange code: SSE, SZSE or BSE.</param>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpPost("{securityCode}/{exchangeCode}/dividend-events/sync")]
     public async Task<ActionResult<IReadOnlyList<StockDividendEventResult>>> SyncDividendEvents(
         string securityCode,
@@ -95,6 +115,10 @@ public sealed class StocksController(
         return Ok(result);
     }
 
+    /// <summary>Synchronizes financial snapshots for one stock.</summary>
+    /// <param name="securityCode">Six-digit A-share security code.</param>
+    /// <param name="exchangeCode">Exchange code: SSE, SZSE or BSE.</param>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpPost("{securityCode}/{exchangeCode}/financial-snapshots/sync")]
     public async Task<ActionResult<IReadOnlyList<StockFinancialSnapshotResult>>>
         SyncFinancialSnapshots(
@@ -108,6 +132,10 @@ public sealed class StocksController(
         return Ok(result);
     }
 
+    /// <summary>Returns the current recommendation analysis for one stock.</summary>
+    /// <param name="securityCode">Six-digit A-share security code.</param>
+    /// <param name="exchangeCode">Exchange code: SSE, SZSE or BSE.</param>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpGet("{securityCode}/{exchangeCode}/analysis")]
     public async Task<ActionResult<StockRecommendationResult>> GetAnalysis(
         string securityCode,

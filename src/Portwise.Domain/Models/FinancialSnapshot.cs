@@ -50,39 +50,39 @@ public sealed class FinancialSnapshot
     {
         if (securityId == Guid.Empty)
         {
-            throw new ArgumentException("股票标识不能为空。", nameof(securityId));
+            throw new ArgumentException("Security identifier is required.", nameof(securityId));
         }
 
         if (dataAsOfDate == DateOnly.MinValue)
         {
-            throw new ArgumentException("数据截至日期不能为空。", nameof(dataAsOfDate));
+            throw new ArgumentException("Data-as-of date is required.", nameof(dataAsOfDate));
         }
 
         if (capturedAt == default)
         {
-            throw new ArgumentException("抓取时间不能为空。", nameof(capturedAt));
+            throw new ArgumentException("Capture timestamp is required.", nameof(capturedAt));
         }
 
         if (publishedAt is { } published && published == default)
         {
-            throw new ArgumentException("财务数据公开时间不能为空。", nameof(publishedAt));
+            throw new ArgumentException("Financial publication timestamp is required.", nameof(publishedAt));
         }
 
         if (string.IsNullOrWhiteSpace(dataSource))
         {
-            throw new ArgumentException("数据来源不能为空。", nameof(dataSource));
+            throw new ArgumentException("Data source is required.", nameof(dataSource));
         }
 
         if (string.IsNullOrWhiteSpace(sourceRecordId))
         {
-            throw new ArgumentException("来源记录标识不能为空。", nameof(sourceRecordId));
+            throw new ArgumentException("Source record identifier is required.", nameof(sourceRecordId));
         }
 
         var normalizedQualityCode = dataQualityCode?.Trim().ToLowerInvariant() ?? string.Empty;
         if (!DataQualityCodes.IsSupported(normalizedQualityCode))
         {
             throw new ArgumentException(
-                "数据质量代码不受支持。",
+                "Data quality code is not supported.",
                 nameof(dataQualityCode));
         }
 

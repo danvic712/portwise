@@ -16,7 +16,7 @@ public static class DividendReliabilityEvaluator
         if (dataAsOfDate == DateOnly.MinValue)
         {
             throw new ArgumentException(
-                "可靠性数据截至日期不能为空。",
+                "Reliability data-as-of date is required.",
                 nameof(dataAsOfDate));
         }
 
@@ -108,7 +108,7 @@ public static class DividendReliabilityEvaluator
         if (dataAsOfDate == DateOnly.MinValue)
         {
             throw new ArgumentException(
-                "可靠性数据截至日期不能为空。",
+                "Reliability data-as-of date is required.",
                 nameof(dataAsOfDate));
         }
 

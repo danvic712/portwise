@@ -38,24 +38,24 @@ public sealed class PortfolioTrade
     {
         if (portfolioId == Guid.Empty)
         {
-            throw new ArgumentException("投资组合标识不能为空。", nameof(portfolioId));
+            throw new ArgumentException("Portfolio identifier is required.", nameof(portfolioId));
         }
 
         if (securityId == Guid.Empty)
         {
-            throw new ArgumentException("股票标识不能为空。", nameof(securityId));
+            throw new ArgumentException("Security identifier is required.", nameof(securityId));
         }
 
         if (tradeDate == DateOnly.MinValue)
         {
-            throw new ArgumentException("交易日期不能为空。", nameof(tradeDate));
+            throw new ArgumentException("Trade date is required.", nameof(tradeDate));
         }
 
         var normalizedDirection =
             tradeDirectionCode?.Trim().ToLowerInvariant() ?? string.Empty;
         if (!TradeDirectionCodes.IsSupported(normalizedDirection))
         {
-            throw new ArgumentException("交易方向必须是 buy 或 sell。", nameof(tradeDirectionCode));
+            throw new ArgumentException("Trade direction must be buy or sell.", nameof(tradeDirectionCode));
         }
 
         if (shareQuantity <= 0)
@@ -63,7 +63,7 @@ public sealed class PortfolioTrade
             throw new ArgumentOutOfRangeException(
                 nameof(shareQuantity),
                 shareQuantity,
-                "交易股数必须大于零。");
+                "Trade share quantity must be greater than zero.");
         }
 
         if (pricePerShare <= 0)
@@ -71,7 +71,7 @@ public sealed class PortfolioTrade
             throw new ArgumentOutOfRangeException(
                 nameof(pricePerShare),
                 pricePerShare,
-                "成交价格必须大于零。");
+                "Execution price must be greater than zero.");
         }
 
         if (transactionFeeAmount < 0)
@@ -79,7 +79,7 @@ public sealed class PortfolioTrade
             throw new ArgumentOutOfRangeException(
                 nameof(transactionFeeAmount),
                 transactionFeeAmount,
-                "交易费用不能为负数。");
+                "Transaction fee cannot be negative.");
         }
 
         return new PortfolioTrade
