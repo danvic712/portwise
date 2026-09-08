@@ -15,6 +15,7 @@ import { interpolate, useLocale } from "@/lib/i18n"
 import { displayStockName } from "@/lib/stock-display"
 import { formatMoney, formatNumber, stockKey, today } from "@/lib/utils"
 import type { SaveStockModelParametersRequest, StockWatchlistItem } from "@/lib/api-types"
+import type { QueryPatch } from "@/lib/navigation"
 import { getSettingsParameters, getSettingsStocks, updateSettingsParameters } from "@/features/settings/settings.api"
 import { SettingsPageSkeleton, SettingsParameterSkeleton } from "@/features/settings/SettingsSkeleton"
 import "./settings.css"
@@ -54,15 +55,13 @@ const numericKeys = new Set<NumericKey>(parameterGroups.flatMap(({ fields }) => 
 const ratioKeys = new Set<NumericKey>(ratioFields.map(({ key }) => key))
 const skeletonGroups = parameterGroups.map(({ key, fields }) => ({ key, fieldCount: fields.length }))
 
-export function SettingsPage({ onNavigate }: { onNavigate: (path: string) => void }) {
+export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { onNavigate: (path: string) => void; onReplaceQuery: (patch: QueryPatch) => void; initialStockKey: string }) {
   const { messages } = useLocale()
   const copy = messages.settings.ui
-  const query = new URLSearchParams(window.location.search)
-  const initialKey = query.get("stock") && query.get("exchange") ? `${query.get("stock")}:${query.get("exchange")}` : null
   const readErrorRef = useRef(copy.states.readError)
   const parameterErrorRef = useRef(copy.states.parametersReadError)
   const [stocks, setStocks] = useState<StockWatchlistItem[]>([])
-  const [selectedKey, setSelectedKey] = useState(initialKey ?? "")
+  const [selectedKey, setSelectedKey] = useState(initialStockKey)
   const [parameters, setParameters] = useState<SaveStockModelParametersRequest | null>(null)
   const [parametersStockKey, setParametersStockKey] = useState("")
   const [loading, setLoading] = useState(true)
@@ -144,10 +143,7 @@ export function SettingsPage({ onNavigate }: { onNavigate: (path: string) => voi
     setParametersStockKey("")
     setError(null)
     setMessage(null)
-    const nextUrl = new URL(window.location.href)
-    nextUrl.searchParams.set("stock", stock.securityCode)
-    nextUrl.searchParams.set("exchange", stock.exchangeCode)
-    window.history.replaceState({}, "", `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`)
+    onReplaceQuery({ stock: stock.securityCode, exchange: stock.exchangeCode })
   }
 
   function updateValue(key: keyof SaveStockModelParametersRequest, value: string) {

@@ -15,25 +15,26 @@ import { interpolate, useLocale } from "@/lib/i18n"
 import { displayStockName } from "@/lib/stock-display"
 import { formatMoney, formatNumber, stockKey, today } from "@/lib/utils"
 import type { PortfolioTradeResult, RecordPortfolioTradeRequest, StockWatchlistItem } from "@/lib/api-types"
+import type { QueryPatch } from "@/lib/navigation"
 import { getPortfolioStocks, recordPortfolioTrade } from "@/features/portfolio/portfolio.api"
 import "./portfolio.css"
 
-type TradeDirection = "buy" | "sell"
+export type TradeDirection = "buy" | "sell"
 type PortfolioPageProps = {
   onNavigate: (path: string) => void
+  onReplaceQuery: (patch: QueryPatch) => void
   selectedStockKey: string
+  initialDirection: TradeDirection
   onSelectedStockKeyChange: (value: string) => void
 }
 
-export function PortfolioPage({ onNavigate, selectedStockKey, onSelectedStockKeyChange }: PortfolioPageProps) {
+export function PortfolioPage({ onNavigate, onReplaceQuery, selectedStockKey, initialDirection, onSelectedStockKeyChange }: PortfolioPageProps) {
   const { messages } = useLocale()
   const copy = messages.portfolio.ui
   const readErrorRef = useRef(copy.states.readError)
-  const query = new URLSearchParams(window.location.search)
-  const initialKey = query.get("stock") ?? (query.get("code") && query.get("exchange") ? `${query.get("code")}:${query.get("exchange")}` : null)
   const [stocks, setStocks] = useState<StockWatchlistItem[]>([])
-  const [selectedKey, setSelectedKey] = useState(selectedStockKey || initialKey || "")
-  const [direction, setDirection] = useState<TradeDirection>(query.get("direction") === "sell" ? "sell" : "buy")
+  const [selectedKey, setSelectedKey] = useState(selectedStockKey || "")
+  const [direction, setDirection] = useState<TradeDirection>(initialDirection)
   const [tradeDate, setTradeDate] = useState(today())
   const [quantity, setQuantity] = useState("")
   const [price, setPrice] = useState("")
@@ -82,11 +83,8 @@ export function PortfolioPage({ onNavigate, selectedStockKey, onSelectedStockKey
     if (!nextKey) return
     setSelectedKey(nextKey)
     onSelectedStockKeyChange(nextKey)
-    window.sessionStorage.setItem("portwise-portfolio-stock", nextKey)
     setResult(null)
-    const nextUrl = new URL(window.location.href)
-    nextUrl.searchParams.set("stock", nextKey)
-    window.history.replaceState({}, "", `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`)
+    onReplaceQuery({ stock: nextKey })
   }
 
   async function submit() {

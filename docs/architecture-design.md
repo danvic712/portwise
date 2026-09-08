@@ -184,13 +184,14 @@ src/
 │       ├── api-contract.generated.ts  # openapi-typescript 生成；禁止手工修改
 │       ├── api-contract.ts             # 生成合约到前端运行时模型的唯一适配器
 │       ├── api-types.ts                # feature 使用的领域友好类型别名
+│       ├── navigation.ts                # 路由、Setup gate、历史记录和查询参数 Adapter
 │       ├── recommendation-display.ts  # 操作建议展示语义与价格阶梯
 │       └── stock-display.ts           # 股票身份与名称展示
 ```
 
 Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfolio` 和 `DividendStrategy` 四个目录。目录归并不等于合并 HTTP 契约：价格、股息和财务同步仍然保持独立的 Interface 与 AppService，因为它们具有不同的数据校验、幂等键和结果类型；资料、行情、股息和财务四类事实的共同摄取、Security 解析、FTShare 调用、幂等写入和逐类失败策略由 `IStockFactSyncAppService` / `StockFactSyncAppService` 这个深模块承载，三个 HTTP AppService 只是验证后转发。单股分析、组合分配和建议快照也保持独立的用例边界。`Contracts`、`Dtos`、`Exceptions` 和 `Validators` 继续作为 Application 根目录的规范容器，不在每个业务目录下重复创建，避免物理目录再次膨胀。前端按相同的业务边界拆分 feature，但只通过版本化 HTTP API 访问后端，不直接引用 Application 或 Infrastructure。
 
-前端公共页面框架由 `SiteHeader`、`SiteFooter`、`PageFrame`、`PageTitle`、`SectionHeading` 和 `site-navigation` 组成，禁止使用 `app-shell` 作为公共组件名称；所有页面通过 `PageFrame` 复用框架，页面专属状态与布局留在对应 feature。操作建议的代码归类、买卖方向、展示状态、价格区间和未知代码降级统一由 `src/lib/recommendation-display.ts` 提供；页面和组件只消费归一化后的展示结果，不自行解析 `recommendation_code` 或 `price_zone_code`。`index.css` 只承载 token、reset 和跨页面共享原子样式；今日决策页的布局、等待态、就绪态、骨架屏、装饰和响应式样式统一位于 `features/recommendations/recommendations.css`。交互控件优先使用 `src/components/ui` 中的 shadcn/ui 原语，feature 样式只负责业务变体与布局。
+前端公共页面框架由 `SiteHeader`、`SiteFooter`、`PageFrame`、`PageTitle`、`SectionHeading` 和 `site-navigation` 组成，禁止使用 `app-shell` 作为公共组件名称；所有页面通过 `PageFrame` 复用框架，页面专属状态与布局留在对应 feature。`src/lib/navigation.ts` 是页面 shell 的导航 module：它集中路由识别、Setup gate 所需的路径判断、浏览器 history/popstate Adapter、查询参数更新和组合股票选择的 session 持久化；`App.tsx` 只负责把 Setup 状态映射为页面，feature 通过 `onNavigate`/`onReplaceQuery` seam 操作导航，不直接写 `window.history` 或 `sessionStorage`。查询参数优先于旧 session 选择，避免从今日决策跳转到组合页面时恢复错误股票。操作建议的代码归类、买卖方向、展示状态、价格区间和未知代码降级统一由 `src/lib/recommendation-display.ts` 提供；页面和组件只消费归一化后的展示结果，不自行解析 `recommendation_code` 或 `price_zone_code`。`index.css` 只承载 token、reset 和跨页面共享原子样式；今日决策页的布局、等待态、就绪态、骨架屏、装饰和响应式样式统一位于 `features/recommendations/recommendations.css`。交互控件优先使用 `src/components/ui` 中的 shadcn/ui 原语，feature 样式只负责业务变体与布局。
 
 前端使用 Node `24.16.0` 与 pnpm `12.3.4` 构建静态资源，输出到 Host 的 `wwwroot/`；该目录是构建产物并保持本地生成，不提交源代码仓库。根目录 `Dockerfile` 使用 Node Alpine、.NET SDK Alpine 和 ASP.NET Core Alpine 三阶段构建：前两阶段只负责编译，最终镜像只保留 .NET publish 输出，因此不会携带 Node、pnpm、源码或测试依赖。单镜像构建流程必须先完成前端构建，再执行 ASP.NET Core publish；开发预览使用 Vite proxy 将 `/api` 转发到本地 Host。
 
@@ -628,3 +629,4 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | 01 前端推荐展示 module | 已修复：`recommendation-display.ts` 统一 recommendation/price-zone 的展示语义，feature 只消费归一化结果 | `58b1465` |
 | 02 后端 Recommendation module | 已修复：Domain `RecommendationModule` 集中单股分析与组合分配规则，Application AppService 变为薄 Adapter | `196a4ff` |
 | 03 HTTP contract 单一事实源 | 已修复：Host build-time 生成版本化 OpenAPI，前端从 `openapi-typescript` 生成 transport contract，`api-contract.ts` 是唯一 wire-to-UI Adapter | `c1e0757` |
+| 04 导航与 Setup gate module | 已修复：`navigation.ts` 集中路由、history、查询参数和 Setup gate seam，修复 query 与旧 session 选择冲突 | `ba441eb` |
