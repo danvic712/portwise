@@ -142,7 +142,7 @@ dist
 *.db-wal
 
 # Frontend build output is generated into the ASP.NET Core host at build time
-src/DividendHarvest/wwwroot/
+src/Portwise/wwwroot/
 
 # yarn v3
 .pnp.*

@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Portwise.Application/Portwise.Application.csproj" />
+    <Project Path="src/Portwise.Domain/Portwise.Domain.csproj" />
+    <Project Path="src/Portwise.Infrastructure/Portwise.Infrastructure.csproj" />
+    <Project Path="src/Portwise/Portwise.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Portwise.Application.Tests/Portwise.Application.Tests.csproj" />
+    <Project Path="tests/Portwise.Domain.Tests/Portwise.Domain.Tests.csproj" />
+    <Project Path="tests/Portwise.Infrastructure.Tests/Portwise.Infrastructure.Tests.csproj" />
+    <Project Path="tests/Portwise.Host.Tests/Portwise.Host.Tests.csproj" />
+  </Folder>
+</Solution>

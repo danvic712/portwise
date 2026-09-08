@@ -36,14 +36,14 @@ jobs:
         with:
           node-version: '24.16.x'
           cache: pnpm
-          cache-dependency-path: src/DividendHarvest.Web/pnpm-lock.yaml
+          cache-dependency-path: src/Portwise.Web/pnpm-lock.yaml
 
       - name: Install frontend dependencies
-        working-directory: src/DividendHarvest.Web
+        working-directory: src/Portwise.Web
         run: pnpm install --frozen-lockfile
 
       - name: Build frontend
-        working-directory: src/DividendHarvest.Web
+        working-directory: src/Portwise.Web
         run: pnpm build
 
       - name: Set up .NET SDK
@@ -55,15 +55,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.NUGET_PACKAGES }}
-          key: nuget-${{ runner.os }}-${{ hashFiles('DividendHarvest.slnx', '**/*.csproj') }}
+          key: nuget-${{ runner.os }}-${{ hashFiles('Portwise.slnx', '**/*.csproj') }}
           restore-keys: |
             nuget-${{ runner.os }}-
 
       - name: Restore .NET dependencies
-        run: dotnet restore DividendHarvest.slnx
+        run: dotnet restore Portwise.slnx
 
       - name: Build solution
-        run: dotnet build DividendHarvest.slnx --configuration Release --no-restore
+        run: dotnet build Portwise.slnx --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test DividendHarvest.slnx --configuration Release --no-build --no-restore
+        run: dotnet test Portwise.slnx --configuration Release --no-build --no-restore

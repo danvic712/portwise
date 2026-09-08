@@ -9,7 +9,7 @@ Portwise 是一个面向个人 A 股长期投资者的策略研究与组合记�
 ## 2. 分层与依赖方向
 
 ```text
-DividendHarvest Host
+Portwise Host
 ├── Application.Contracts / Dtos / Exceptions / Validators / Mapping
 ├── Application.Setup
 ├── Application.Stocks
@@ -31,7 +31,7 @@ Host 只负责 HTTP 路由、依赖注入组合和运行时启动；业务规则
 
 ## 3. 运行时配置
 
-Host 项目的配置文件位于 `src/DividendHarvest/`：
+Host 项目的配置文件位于 `src/Portwise/`：
 
 - `appsettings.json`：本地开发默认配置，使用工作目录下的 SQLite 文件。
 - `appsettings.Production.json`：生产环境配置，使用 `/app/data/portwise.db`，适配 Docker volume 持久化。
@@ -42,7 +42,7 @@ ASP.NET Core 默认环境名为 `Production`（大小写不敏感）时，会自
 
 根目录 `locales/` 是跨层共享的文本资源源文件，当前包含 `zh-CN` 和 `en-US` 两个语言目录；每个语言目录按业务领域拆分为 `common.json`、`setup.json`、`stocks.json`、`portfolio.json` 和 `dividend-strategy.json`。异常定义使用稳定的 `error_code` 作为 JSON 键，并支持由 Application 异常提供的命名参数插值。业务领域 JSON 可以同时包含保留的 `ui` 节点，供前端页面读取产品文案；Application 异常目录加载器只读取顶层错误定义并显式忽略 `ui` 节点，避免前端文案改变异常目录语义。错误目录与参数插值仍由独立的 `IApplicationErrorLocalizer` 负责，HTTP 请求的语言协商交给 ASP.NET Core 的 `RequestLocalizationMiddleware`。
 
-Application 项目通过 `EmbeddedResource` 将根目录 `locales/**/*.json` 编译嵌入 `DividendHarvest.Application.dll`。运行时只从程序集资源读取文本，不读取可被容器或请求任意替换的本地文件。Host 注册 `RequestLocalizationOptions`，由 ASP.NET Core 根据 `Accept-Language` 的标准质量权重选择受支持语言；不支持、质量为 0 或缺失时回退到 `zh-CN`，并在 ProblemDetails 扩展中返回 `CultureInfo.CurrentUICulture` 的 canonical name。后台同步、CLI 和测试等非 HTTP 入口仍可通过 `IApplicationErrorLocalizer` 显式选择语言或使用默认语言。
+Application 项目通过 `EmbeddedResource` 将根目录 `locales/**/*.json` 编译嵌入 `Portwise.Application.dll`。运行时只从程序集资源读取文本，不读取可被容器或请求任意替换的本地文件。Host 注册 `RequestLocalizationOptions`，由 ASP.NET Core 根据 `Accept-Language` 的标准质量权重选择受支持语言；不支持、质量为 0 或缺失时回退到 `zh-CN`，并在 ProblemDetails 扩展中返回 `CultureInfo.CurrentUICulture` 的 canonical name。后台同步、CLI 和测试等非 HTTP 入口仍可通过 `IApplicationErrorLocalizer` 显式选择语言或使用默认语言。
 
 根目录 JSON 是跨层共享的文本源；前端不直接读取 Application DLL，前端构建可按需复制/导入同一组资源保持显示文本一致。当前生产前端通过 API 消费后端返回的 `error_code`、`locale` 和安全的 `detail`，不包含 FTShare key 或后端凭据。
 
@@ -60,7 +60,7 @@ locales/
 
 ```text
 src/
-├── DividendHarvest.Domain/
+├── Portwise.Domain/
 │   ├── Contracts/                      # Repository、Uow 等持久化抽象
 │   │   ├── IRepository.cs
 │   │   └── IUow.cs
@@ -81,7 +81,7 @@ src/
 │   ├── Portfolio/                      # 持仓领域规则
 │   ├── Securities/                     # A 股标识领域规则
 │   └── DividendModel/                  # 股息率与价格区域计算
-├── DividendHarvest.Application/
+├── Portwise.Application/
 │   ├── Contracts/                      # Application 对外 Interface
 │   │   ├── ISetupAppService.cs
 │   │   ├── IStockDataProvider.cs
@@ -125,7 +125,7 @@ src/
 │       ├── PortfolioAllocationAppService.cs
 │       ├── PortfolioRecommendationAppService.cs
 │       └── RecommendationSnapshotAppService.cs
-├── DividendHarvest.Infrastructure/
+├── Portwise.Infrastructure/
 │   ├── Contracts/                      # Infrastructure Adapter Interface
 │   │   ├── IDatabaseLifecycle.cs
 │   │   └── IFtShareMcpToolInvoker.cs
@@ -136,11 +136,11 @@ src/
 │   ├── InfrastructureServiceCollectionExtensions.cs
 │   ├── Migrations/                     # EF Core 可追踪数据库迁移
 │   ├── DatabaseLifecycle.cs            # 数据库迁移和连接检查
-│   ├── DividendHarvestDbContext.cs     # EF Core DbContext
+│   ├── PortwiseDbContext.cs     # EF Core DbContext
 │   ├── Exceptions/                     # Infrastructure Adapter 异常
 │   │   └── FtShareProviderException.cs
 │   └── FtShare/                        # FTShare MCP Adapter 实现
-├── DividendHarvest/                    # ASP.NET Core Controllers Host
+├── Portwise/                    # ASP.NET Core Controllers Host
     ├── appsettings.json                # 本地默认配置
     ├── appsettings.Production.json     # 生产环境配置
     ├── Controllers/                    # 业务 HTTP Controller
@@ -159,15 +159,15 @@ src/
     │   └── IHttpErrorRenderer.cs
     ├── Diagnostics/                    # 隐私感知的 Activity 诊断上下文
     │   ├── ActivityDiagnosticContext.cs
-    │   └── DividendHarvestActivitySource.cs
+    │   └── PortwiseActivitySource.cs
     ├── ExceptionHandling/              # 异常编排与 ProblemDetails 输出
     │   ├── ApplicationExceptionHandler.cs
     │   └── ProblemDetailsErrorRenderer.cs
     ├── HostServiceCollectionExtensions.cs
     ├── WebApplicationExtensions.cs
     ├── HealthChecks/                   # 原生 ASP.NET Core Health Checks
-    └── wwwroot/                        # 前端构建产物（由 DividendHarvest.Web 构建写入）
-└── DividendHarvest.Web/                # Vite + React + shadcn/ui 前端源码
+    └── wwwroot/                        # 前端构建产物（由 Portwise.Web 构建写入）
+└── Portwise.Web/                # Vite + React + shadcn/ui 前端源码
 │   ├── src/features/                   # 每个 feature 自有页面、组件、API、CSS
 │   ├── src/components/                 # 跨页面的公共组合组件
 │   │   ├── site-header.tsx             # 公共顶部导航与主题/语言操作
@@ -187,7 +187,7 @@ Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfo
 
 `Stocks` 同时承载交易日同步编排，因为该编排只围绕关注股票的外部事实更新；交易日同步通过 `IStockFactSyncAppService.SyncAsync` 一次传递单只股票的规范化引用，并消费包含资料、行情、股息、财务结果和逐类失败的 `StockFactSyncResult`。如果未来出现多个互不相关的调度任务，再单独引入 `Operations` 模块。`StockModelParameterAppService` 归入 `DividendStrategy`，因为模型参数是分析和组合建议的输入，而不是持仓或现金流水本身。
 
-各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddDividendHarvestApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddDividendHarvestInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddDividendHarvestHost`。Host 另提供 `HostServiceCollectionExtensions.AddDividendHarvest(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库 migration 统一放在 `WebApplicationExtensions`；手动、每日定时和 Setup 后台同步都通过 `StockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器统一串行化执行、run ID、诊断上下文和取消语义，避免不同入口同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
+各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddPortwiseApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddPortwiseInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddPortwiseHost`。Host 另提供 `HostServiceCollectionExtensions.AddPortwise(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库 migration 统一放在 `WebApplicationExtensions`；手动、每日定时和 Setup 后台同步都通过 `StockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器统一串行化执行、run ID、诊断上下文和取消语义，避免不同入口同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
 
 公共基础能力也遵循相同的组合边界：Swagger/Serilog 注册在 `HostServiceCollectionExtensions`，Swagger UI、Serilog HTTP 请求日志中间件和其他 `WebApplication` 行为在 `WebApplicationExtensions`；Application 的 Mapperly 映射定义集中在 `Mapping/ApplicationMapper.cs`，由构建期生成实际映射代码。
 
@@ -299,7 +299,7 @@ SetupAppService
                               EFUow / EFRepository<TEntity>
                                        │
                                        ▼
-                             DividendHarvestDbContext
+                             PortwiseDbContext
                                        │
                                        ▼
                                 SQLite / /app/data
@@ -309,10 +309,10 @@ SetupAppService
 - `EFRepository<TEntity>` 是真正的 EF adapter：在内部组合 `DbContext.Set<TEntity>()`、过滤、排序、追踪策略和 EF Core 异步执行，然后只返回 Repository 合约要求的结果。
 - `EFUow.CommitAsync` 统一调用 `SaveChangesAsync`；数据库更新失败在 Infrastructure 转换为 Domain 的 `UnitOfWorkCommitException`，并只标记可识别的 SQLite 唯一约束失败；Application 不引用 `DbUpdateException`。
 - 一个用例的多个实体写入在一次提交中完成；Repository 不提前提交，也不把可延迟执行的查询对象交给调用方。
-- `DividendHarvestDbContext` 位于 Infrastructure 根目录；`EFRepository<TEntity>` 和 `EFUow` 位于 `Infrastructure/Repositories/`，均为 Infrastructure 内部实现，避免 Host/Application 绕过 `IUow` 直接访问 DbContext。
+- `PortwiseDbContext` 位于 Infrastructure 根目录；`EFRepository<TEntity>` 和 `EFUow` 位于 `Infrastructure/Repositories/`，均为 Infrastructure 内部实现，避免 Host/Application 绕过 `IUow` 直接访问 DbContext。
 - `DatabaseLifecycle` 位于 Infrastructure 根目录，负责数据库连接检查和执行 EF Core migration；它与 `EFUow` 分离，避免业务事务抽象承担宿主生命周期职责。
 - Host 的 `/healthz`、`/readyz` 使用 ASP.NET Core 原生 Health Checks；数据库健康检查通过 Infrastructure 的 `IDatabaseLifecycle.CanConnectAsync` 实现。健康检查是运行状态入口，不属于业务 API 版本范围。
-- 数据库健康检查刻意手写为 `DatabaseHealthCheck : IHealthCheck` 而不是使用官方 `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore` 包的 `AddDbContextCheck<TContext>()`：`DividendHarvestDbContext` 是 Infrastructure 内部类型（`internal sealed`），Host 只能通过 `IDatabaseLifecycle` 这个 Infrastructure Contract 访问数据库连通性；引入 `AddDbContextCheck<TContext>()` 需要把 `DbContext` 类型暴露给 Host，会破坏“Host/Application 不直接访问 DbContext”的封装边界。这是明确的架构取舍，不是遗漏标准实现。
+- 数据库健康检查刻意手写为 `DatabaseHealthCheck : IHealthCheck` 而不是使用官方 `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore` 包的 `AddDbContextCheck<TContext>()`：`PortwiseDbContext` 是 Infrastructure 内部类型（`internal sealed`），Host 只能通过 `IDatabaseLifecycle` 这个 Infrastructure Contract 访问数据库连通性；引入 `AddDbContextCheck<TContext>()` 需要把 `DbContext` 类型暴露给 Host，会破坏“Host/Application 不直接访问 DbContext”的封装边界。这是明确的架构取舍，不是遗漏标准实现。
 - Host 启动时只能通过 Infrastructure 的 `IDatabaseLifecycle.MigrateAsync` 应用待执行 migration，不直接解析 DbContext，也不让 `IUow` 承担数据库生命周期职责。
 - `Migrations/` 保存由当前模型生成的初始 schema 及后续可审查、可回放的结构变更；未来修改表结构时必须生成新的 EF Core migration，不能只修改 Fluent Configuration。
 - 数据库通过 Docker volume 持久化到 `/app/data`；镜像本身不保存用户数据。
@@ -332,11 +332,11 @@ SetupAppService
 - `Configurations/RecommendationSnapshotConfiguration.cs`
 - `Configurations/PortfolioTradeConfiguration.cs`
 
-`DividendHarvestDbContext.OnModelCreating` 使用：
+`PortwiseDbContext.OnModelCreating` 使用：
 
 ```csharp
 modelBuilder.ApplyConfigurationsFromAssembly(
-    typeof(DividendHarvestDbContext).Assembly);
+    typeof(PortwiseDbContext).Assembly);
 ```
 
 因此实体类不使用 Data Annotation，也不需要知道数据库表结构。新增实体时必须同时新增对应的 `IEntityTypeConfiguration<TEntity>` 文件；一个配置文件只负责一个实体。
@@ -501,8 +501,8 @@ Host 使用 Serilog 接管 ASP.NET Core 和应用的 `ILogger<T>` 日志，配�
 `Program.cs` 采用 Serilog 官方推荐的两阶段初始化模式，避免"Host 尚未构建完成前发生的致命错误没有任何日志"的问题：
 
 - 第一阶段：在 `WebApplication.CreateBuilder` 之前，用 `new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger()` 赋值给静态的 `Log.Logger`。这个 Bootstrap Logger 只写控制台，不依赖 `appsettings.json` 或 DI 容器，能捕获配置加载、DI 注册等 Host 构建阶段本身的异常。
-- 第二阶段：`HostServiceCollectionExtensions.AddDividendHarvestHost` 中的 `services.AddSerilog((serviceProvider, loggerConfiguration) => loggerConfiguration.ReadFrom.Configuration(configuration).ReadFrom.Services(serviceProvider)...)` 在 Host 构建完成、DI 容器可用后，读取完整的 `appsettings.*.json` 配置和已注册服务，替换掉 `Log.Logger` 为完整配置的 Logger（默认 `preserveStaticLogger: false`）。
-- `Program.cs` 的 `WebApplication.CreateBuilder` 到 `app.RunDividendHarvestAsync()` 整体包裹在 `try/catch/finally` 中：`catch` 分支排除 EF Core 设计时工具触发的 `HostAbortedException`（正常控制流，不应记为致命错误），其余异常统一 `Log.Fatal` 记录后返回非零退出码；`finally` 分支调用 `await Log.CloseAndFlushAsync()`，保证进程退出前把所有已缓冲的日志事件写出，不因为控制台缓冲或异步 sink 未刷新而丢失最后一批日志。
+- 第二阶段：`HostServiceCollectionExtensions.AddPortwiseHost` 中的 `services.AddSerilog((serviceProvider, loggerConfiguration) => loggerConfiguration.ReadFrom.Configuration(configuration).ReadFrom.Services(serviceProvider)...)` 在 Host 构建完成、DI 容器可用后，读取完整的 `appsettings.*.json` 配置和已注册服务，替换掉 `Log.Logger` 为完整配置的 Logger（默认 `preserveStaticLogger: false`）。
+- `Program.cs` 的 `WebApplication.CreateBuilder` 到 `app.RunPortwiseAsync()` 整体包裹在 `try/catch/finally` 中：`catch` 分支排除 EF Core 设计时工具触发的 `HostAbortedException`（正常控制流，不应记为致命错误），其余异常统一 `Log.Fatal` 记录后返回非零退出码；`finally` 分支调用 `await Log.CloseAndFlushAsync()`，保证进程退出前把所有已缓冲的日志事件写出，不因为控制台缓冲或异步 sink 未刷新而丢失最后一批日志。
 - 新增或修改 Host 启动流程时，不得绕过这个 try/catch/finally 结构直接调用 `app.RunAsync()`，否则会重新引入“启动失败但看不到任何日志”的问题。
 
 ### 10.3 Mapperly
@@ -527,10 +527,10 @@ Application 使用 Riok.Mapperly 生成编译期映射代码，统一的映射�
 
 ### 10.6 本地启动与前端构建集成
 
-- `src/DividendHarvest/Properties/launchSettings.json` 是 Host 本地启动的唯一 profile 来源，提供 `http` profile（`applicationUrl=http://localhost:5276`，`ASPNETCORE_ENVIRONMENT=Development`），供 `dotnet run --launch-profile http` 和 IDE 运行配置下拉框使用；该 profile 同时设置 `DOTNET_USE_POLLING_FILE_WATCHER=1`，兼容 macOS 上当前 .NET 10.0.0 的 `FileSystemWatcher` 启动递归问题，避免 Host 卡在 `WebApplication.CreateBuilder` 阶段；这是 .NET Web 项目模板的标准文件，缺失会导致手动 `dotnet run` 在没有显式设置环境变量时以 `Production` 环境启动，从而绕过开发期配置和异常页面。
+- `src/Portwise/Properties/launchSettings.json` 是 Host 本地启动的唯一 profile 来源，提供 `http` profile（`applicationUrl=http://localhost:5276`，`ASPNETCORE_ENVIRONMENT=Development`），供 `dotnet run --launch-profile http` 和 IDE 运行配置下拉框使用；该 profile 同时设置 `DOTNET_USE_POLLING_FILE_WATCHER=1`，兼容 macOS 上当前 .NET 10.0.0 的 `FileSystemWatcher` 启动递归问题，避免 Host 卡在 `WebApplication.CreateBuilder` 阶段；这是 .NET Web 项目模板的标准文件，缺失会导致手动 `dotnet run` 在没有显式设置环境变量时以 `Production` 环境启动，从而绕过开发期配置和异常页面。
 - `appsettings.Development.json` 是 `Development` 环境的配置覆盖（当前只覆盖 Serilog 最低日志级别为 `Debug`），与 `appsettings.json`、`appsettings.Production.json` 一起构成完整的三段式环境配置；新增只在本地开发环境需要的配置项时优先放入这个文件，不要污染 `appsettings.json` 的默认值。
-- 本地开发使用 .NET 官方标准的 `Microsoft.AspNetCore.SpaProxy` 集成前端：Host 项目仅在 `Debug` 配置下引用 `Microsoft.AspNetCore.SpaProxy` 包，并声明 `SpaRoot`（`../DividendHarvest.Web/`）、`SpaProxyServerUrl`（`http://127.0.0.1:4173`）、`SpaProxyLaunchCommand`（`pnpm run dev`）；同时通过 `portwise.esproj`（`Microsoft.VisualStudio.JavaScript.Sdk`）以 `ReferenceOutputAssembly=false` 挂入 Host，使 Rider 识别标准 `.NET Launch Settings Profile` 与 SPA 启动项目。`Properties/launchSettings.json` 的 `http` profile 设置了 `ASPNETCORE_HOSTINGSTARTUPASSEMBLIES=Microsoft.AspNetCore.SpaProxy`，Host 地址为 `http://localhost:5276`。执行 `dotnet run --launch-profile http` 或 IDE 的 `http` 配置时，SpaProxy 通过 `IHostingStartup` 自动注入的 `IStartupFilter` 检测 Vite dev server 是否就绪，未就绪则自动执行 `SpaProxyLaunchCommand` 拉起，并把非 API 请求反向代理到 dev server；开发者只需要一条命令即可完成前后端联调。还原、构建、运行（CI、Dockerfile、`BuildFrontend` Target、SpaProxy dev server）全部统一使用 pnpm，不引入 npm。`WebApplicationExtensions` 的中间件管道不需要为此做任何区分（Development/Production 都是同一套 `UseDefaultFiles`/`UseStaticFiles`/`MapFallbackToFile`），SpaProxy 的转发逻辑完全由 `IStartupFilter` 在管道最前面完成。Release/Publish 不引用 SpaProxy 包，发布产物仍是纯静态文件。
-- 前端（`src/DividendHarvest.Web`）与 Host 项目在构建上保持独立：CI（`build-and-test.yml`）和 Dockerfile 分别用 `pnpm install`/`pnpm build` 显式构建前端后再构建/发布 Host，这是为了避免在只安装 .NET SDK、没有 Node.js/pnpm 的构建环境（例如 Docker 后端构建阶段镜像）上因为隐式触发前端构建而失败。`DividendHarvest.csproj` 额外提供一个默认关闭的 `BuildFrontend` MSBuild Target（`BeforeTargets="Build;Publish"`），只有显式传入 `-p:BuildFrontend=true` 执行 `dotnet build`/`dotnet publish` 时才会自动执行 `pnpm install`/`pnpm build` 并把产物写入 Host 的 `wwwroot`，用于本地一次性生成前后端产物；CI 和 Docker 流程不依赖也不触发这个 Target。</replace>
+- 本地开发使用 .NET 官方标准的 `Microsoft.AspNetCore.SpaProxy` 集成前端：Host 项目仅在 `Debug` 配置下引用 `Microsoft.AspNetCore.SpaProxy` 包，并声明 `SpaRoot`（`../Portwise.Web/`）、`SpaProxyServerUrl`（`http://127.0.0.1:4173`）、`SpaProxyLaunchCommand`（`pnpm run dev`）；同时通过 `portwise.esproj`（`Microsoft.VisualStudio.JavaScript.Sdk`）以 `ReferenceOutputAssembly=false` 挂入 Host，使 Rider 识别标准 `.NET Launch Settings Profile` 与 SPA 启动项目。`Properties/launchSettings.json` 的 `http` profile 设置了 `ASPNETCORE_HOSTINGSTARTUPASSEMBLIES=Microsoft.AspNetCore.SpaProxy`，Host 地址为 `http://localhost:5276`。执行 `dotnet run --launch-profile http` 或 IDE 的 `http` 配置时，SpaProxy 通过 `IHostingStartup` 自动注入的 `IStartupFilter` 检测 Vite dev server 是否就绪，未就绪则自动执行 `SpaProxyLaunchCommand` 拉起，并把非 API 请求反向代理到 dev server；开发者只需要一条命令即可完成前后端联调。还原、构建、运行（CI、Dockerfile、`BuildFrontend` Target、SpaProxy dev server）全部统一使用 pnpm，不引入 npm。`WebApplicationExtensions` 的中间件管道不需要为此做任何区分（Development/Production 都是同一套 `UseDefaultFiles`/`UseStaticFiles`/`MapFallbackToFile`），SpaProxy 的转发逻辑完全由 `IStartupFilter` 在管道最前面完成。Release/Publish 不引用 SpaProxy 包，发布产物仍是纯静态文件。
+- 前端（`src/Portwise.Web`）与 Host 项目在构建上保持独立：CI（`build-and-test.yml`）和 Dockerfile 分别用 `pnpm install`/`pnpm build` 显式构建前端后再构建/发布 Host，这是为了避免在只安装 .NET SDK、没有 Node.js/pnpm 的构建环境（例如 Docker 后端构建阶段镜像）上因为隐式触发前端构建而失败。`Portwise.csproj` 额外提供一个默认关闭的 `BuildFrontend` MSBuild Target（`BeforeTargets="Build;Publish"`），只有显式传入 `-p:BuildFrontend=true` 执行 `dotnet build`/`dotnet publish` 时才会自动执行 `pnpm install`/`pnpm build` 并把产物写入 Host 的 `wwwroot`，用于本地一次性生成前后端产物；CI 和 Docker 流程不依赖也不触发这个 Target。</replace>
 
 ## 11. Exception 设计
 
@@ -549,7 +549,7 @@ Host 的 `ApplicationExceptionHandler` 只负责识别 Application 异常、调�
 
 ### 11.1 基于 Activity 的隐私感知诊断上下文
 
-`IDiagnosticContext` 位于 `Application/Contracts/`，Host 使用基于 `System.Diagnostics.Activity`（W3C Trace Context 官方标准）的 `ActivityDiagnosticContext` 实现，并在 `HostServiceCollectionExtensions` 中注册。`DividendHarvestActivitySource`（`Diagnostics/DividendHarvestActivitySource.cs`）是 Host 唯一的 `ActivitySource`，静态构造函数注册一个基础 `ActivityListener`（`ActivitySamplingResult.AllDataAndRecorded`），使 Activity 在没有接入完整 OpenTelemetry SDK/导出器时也能被创建和记录；这样系统既能立即获得标准化的分布式追踪基础设施，也不需要为当前的单进程 Host 引入额外的 Exporter 依赖，未来接入 OpenTelemetry Collector/导出器时只需要替换或追加 `ActivityListener`/`TracerProvider`，不需要改动业务代码里 `IDiagnosticContext` 的调用方式。
+`IDiagnosticContext` 位于 `Application/Contracts/`，Host 使用基于 `System.Diagnostics.Activity`（W3C Trace Context 官方标准）的 `ActivityDiagnosticContext` 实现，并在 `HostServiceCollectionExtensions` 中注册。`PortwiseActivitySource`（`Diagnostics/PortwiseActivitySource.cs`）是 Host 唯一的 `ActivitySource`，静态构造函数注册一个基础 `ActivityListener`（`ActivitySamplingResult.AllDataAndRecorded`），使 Activity 在没有接入完整 OpenTelemetry SDK/导出器时也能被创建和记录；这样系统既能立即获得标准化的分布式追踪基础设施，也不需要为当前的单进程 Host 引入额外的 Exporter 依赖，未来接入 OpenTelemetry Collector/导出器时只需要替换或追加 `ActivityListener`/`TracerProvider`，不需要改动业务代码里 `IDiagnosticContext` 的调用方式。
 
 `ActivityDiagnosticContext.BeginScope` 为每个 `DiagnosticScope` 启动一个 `Activity`（`ActivitySource.StartActivity`），仍然只允许写入固定的安全字段，并同时作为 Activity Tag 和 Serilog `LogContext` 属性写入：
 

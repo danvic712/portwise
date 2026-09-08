@@ -1,0 +1,18 @@
+using System.Text.Json.Serialization;
+
+namespace Portwise.Application.Localization;
+
+public sealed class ApplicationErrorDefinition
+{
+    [JsonPropertyName("status_code")]
+    public int StatusCode { get; init; }
+
+    [JsonPropertyName("title")]
+    public string Title { get; init; } = string.Empty;
+
+    [JsonPropertyName("detail")]
+    public string Detail { get; init; } = string.Empty;
+
+    [JsonPropertyName("validation_message")]
+    public string? ValidationMessage { get; init; }
+}

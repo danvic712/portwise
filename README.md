@@ -153,7 +153,7 @@ az webapp config appsettings set \
 项目自带 `Properties/launchSettings.json`，可以直接在 Rider/Visual Studio 的运行配置下拉框中选择 `http` profile 启动（默认监听 `http://localhost:5276`，`ASPNETCORE_ENVIRONMENT=Development`）。该 profile 同时启用 .NET 的 polling file watcher，兼容 macOS 上当前 .NET 10.0.0 的 `FileSystemWatcher` 启动递归问题；使用这个 profile 时不会卡在 Host 创建阶段。命令行等价写法：
 
 ```bash
-dotnet run --project src/DividendHarvest/DividendHarvest.csproj --launch-profile http
+dotnet run --project src/Portwise/Portwise.csproj --launch-profile http
 ```
 
 后端启动时会自动应用待执行的 EF Core migration，并在空 SQLite 数据库中创建完整结构。默认数据库文件为项目运行目录下的 `portwise.db`；生产配置默认使用 `/app/data/portwise.db`。本地开发配置来自 `appsettings.json` + `appsettings.Development.json`（更详细的日志级别），生产环境使用 `appsettings.Production.json`。
@@ -163,17 +163,17 @@ dotnet run --project src/DividendHarvest/DividendHarvest.csproj --launch-profile
 ```bash
 dotnet tool restore
 dotnet ef migrations add <MigrationName> \
-  --project src/DividendHarvest.Infrastructure/DividendHarvest.Infrastructure.csproj \
-  --startup-project src/DividendHarvest.Infrastructure/DividendHarvest.Infrastructure.csproj \
+  --project src/Portwise.Infrastructure/Portwise.Infrastructure.csproj \
+  --startup-project src/Portwise.Infrastructure/Portwise.Infrastructure.csproj \
   --output-dir Migrations
 ```
 
 需要一次性生成前后端产物（不经过 Docker）时，可以在 `dotnet build`/`dotnet publish` 时显式开启前端构建：
 
 ```bash
-dotnet build src/DividendHarvest/DividendHarvest.csproj -p:BuildFrontend=true
+dotnet build src/Portwise/Portwise.csproj -p:BuildFrontend=true
 # 或
-dotnet publish src/DividendHarvest/DividendHarvest.csproj -c Release -p:BuildFrontend=true
+dotnet publish src/Portwise/Portwise.csproj -c Release -p:BuildFrontend=true
 ```
 
 该开关默认关闭，避免在没有 Node.js/pnpm 的机器（例如 Docker 后端构建阶段、只安装了 .NET SDK 的 CI 步骤）上因缺少前端工具链而构建失败；CI 和 Docker 镜像目前各自独立执行前端构建（见下文）。
@@ -185,23 +185,23 @@ dotnet publish src/DividendHarvest/DividendHarvest.csproj -c Release -p:BuildFro
 只需要一条命令即可同时启动后端和前端 dev server：
 
 ```bash
-dotnet run --project src/DividendHarvest/DividendHarvest.csproj --launch-profile http
+dotnet run --project src/Portwise/Portwise.csproj --launch-profile http
 ```
 
-首次启动时后端会检测到 `http://127.0.0.1:4173` 未就绪，自动在 `src/DividendHarvest.Web` 下执行 `pnpm run dev` 拉起 Vite dev server（需要提前执行一次 `corepack enable && pnpm install --frozen-lockfile` 安装依赖），随后把非 API 请求反向代理到 Vite；浏览器只需访问后端地址 `http://localhost:5276` 即可看到前端页面并联调 `/api`。
+首次启动时后端会检测到 `http://127.0.0.1:4173` 未就绪，自动在 `src/Portwise.Web` 下执行 `pnpm run dev` 拉起 Vite dev server（需要提前执行一次 `corepack enable && pnpm install --frozen-lockfile` 安装依赖），随后把非 API 请求反向代理到 Vite；浏览器只需访问后端地址 `http://localhost:5276` 即可看到前端页面并联调 `/api`。
 
 如果只想单独运行前端 dev server（不联调后端），仍可以手动执行：
 
 ```bash
-cd src/DividendHarvest.Web
+cd src/Portwise.Web
 corepack enable
 pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-此时开发服务器地址为 http://127.0.0.1:4173，并将 `/api`、`/healthz` 和 `/readyz` 代理到 `http://127.0.0.1:5276`（`vite.config.ts` 中的 `server.proxy` 配置）。前端生产构建会输出到 `src/DividendHarvest/wwwroot`，Docker 构建会自动执行这一步；`Debug` 配置下的 SpaProxy 只用于开发期反代，不影响生产发布产物。
+此时开发服务器地址为 http://127.0.0.1:4173，并将 `/api`、`/healthz` 和 `/readyz` 代理到 `http://127.0.0.1:5276`（`vite.config.ts` 中的 `server.proxy` 配置）。前端生产构建会输出到 `src/Portwise/wwwroot`，Docker 构建会自动执行这一步；`Debug` 配置下的 SpaProxy 只用于开发期反代，不影响生产发布产物。
 
-如果 Rider 启动时提示 `Couldn't start the SPA development server with command 'pnpm run dev'`，请在 Rider 的运行配置中将 Node.js 环境指定为 `24.16.x`，并确保该配置的 PATH 包含对应 Node 目录；不要依赖从 Dock 启动 Rider 时自动读取 shell 配置。项目已将 `packageManager` 固定为 `pnpm@12.3.4`，且启动 profile 禁止 Corepack 在无交互界面中等待下载确认。首次使用前请在 `src/DividendHarvest.Web` 执行 `corepack install --global pnpm@12.3.4` 和 `pnpm install --frozen-lockfile`。
+如果 Rider 启动时提示 `Couldn't start the SPA development server with command 'pnpm run dev'`，请在 Rider 的运行配置中将 Node.js 环境指定为 `24.16.x`，并确保该配置的 PATH 包含对应 Node 目录；不要依赖从 Dock 启动 Rider 时自动读取 shell 配置。项目已将 `packageManager` 固定为 `pnpm@12.3.4`，且启动 profile 禁止 Corepack 在无交互界面中等待下载确认。首次使用前请在 `src/Portwise.Web` 执行 `corepack install --global pnpm@12.3.4` 和 `pnpm install --frozen-lockfile`。
 
 ## 配置
 
@@ -296,36 +296,36 @@ API 使用 URL Segment 版本号，当前版本为 `v1`，完整接口和请求�
 ## 项目结构
 
 ```text
-DividendHarvest/
+Portwise/
 ├── src/
-│   ├── DividendHarvest/                 # ASP.NET Core Host、Controller、配置、健康检查
-│   ├── DividendHarvest.Application/     # AppService、Contracts、DTO、验证、异常与本地化
-│   ├── DividendHarvest.Domain/          # Entity、领域规则、量化模型和领域代码
-│   ├── DividendHarvest.Infrastructure/  # EF Core、Uow/Repository、SQLite、FTShare Adapter
-│   └── DividendHarvest.Web/             # React、shadcn/ui 风格组件、页面 feature 和 API 调用
+│   ├── Portwise/                 # ASP.NET Core Host、Controller、配置、健康检查
+│   ├── Portwise.Application/     # AppService、Contracts、DTO、验证、异常与本地化
+│   ├── Portwise.Domain/          # Entity、领域规则、量化模型和领域代码
+│   ├── Portwise.Infrastructure/  # EF Core、Uow/Repository、SQLite、FTShare Adapter
+│   └── Portwise.Web/             # React、shadcn/ui 风格组件、页面 feature 和 API 调用
 ├── tests/
-│   ├── DividendHarvest.Domain.Tests/         # xUnit 领域单元测试
-│   └── DividendHarvest.Application.Tests/    # xUnit + Moq 应用层单元测试
+│   ├── Portwise.Domain.Tests/         # xUnit 领域单元测试
+│   └── Portwise.Application.Tests/    # xUnit + Moq 应用层单元测试
 ├── locales/                              # zh-CN / en-US 多语言资源
 ├── docs/                                 # 架构、模型和研究文档
 ├── Dockerfile                            # 前后端单镜像构建
-└── DividendHarvest.slnx
+└── Portwise.slnx
 ```
 
-前端 feature 按页面组织自己的页面、API、样式和骨架屏；公共 Header、Footer、页面框架和 shadcn/ui 基础组件位于 `src/DividendHarvest.Web/src/components`。后端按 Domain、Application、Infrastructure、Host 分层，接口统一放在各层的 `Contracts` 文件夹。
+前端 feature 按页面组织自己的页面、API、样式和骨架屏；公共 Header、Footer、页面框架和 shadcn/ui 基础组件位于 `src/Portwise.Web/src/components`。后端按 Domain、Application、Infrastructure、Host 分层，接口统一放在各层的 `Contracts` 文件夹。
 
 ## 测试与质量检查
 
 运行后端测试：
 
 ```bash
-dotnet test DividendHarvest.slnx
+dotnet test Portwise.slnx
 ```
 
 运行前端检查：
 
 ```bash
-cd src/DividendHarvest.Web
+cd src/Portwise.Web
 pnpm run typecheck
 pnpm run lint
 pnpm run build

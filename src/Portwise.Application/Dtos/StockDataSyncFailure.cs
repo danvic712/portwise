@@ -1,0 +1,8 @@
+namespace Portwise.Application.Dtos;
+
+public sealed record StockDataSyncFailure(
+    string SecurityCode,
+    string ExchangeCode,
+    string DataKind,
+    string ErrorCode,
+    IReadOnlyDictionary<string, object?> Parameters);
