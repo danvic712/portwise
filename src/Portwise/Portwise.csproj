@@ -8,7 +8,7 @@
     <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/../Portwise.Web/openapi</OpenApiDocumentsDirectory>
     <OpenApiGenerateDocumentsOptions>--file-name portwise_v1</OpenApiGenerateDocumentsOptions>
     <SpaRoot>../Portwise.Web/</SpaRoot>
-    <SpaProxyServerUrl>http://127.0.0.1:4173</SpaProxyServerUrl>
+    <SpaProxyServerUrl>http://localhost:4173</SpaProxyServerUrl>
     <SpaProxyLaunchCommand>pnpm run dev</SpaProxyLaunchCommand>
   </PropertyGroup>
 

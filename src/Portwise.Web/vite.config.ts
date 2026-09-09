@@ -21,9 +21,9 @@ export default defineConfig({
       allow: [path.resolve(import.meta.dirname), path.resolve(import.meta.dirname, "../../locales")],
     },
     proxy: {
-      "/api": "http://127.0.0.1:5276",
-      "/healthz": "http://127.0.0.1:5276",
-      "/readyz": "http://127.0.0.1:5276",
+      "/api": "http://localhost:5276",
+      "/healthz": "http://localhost:5276",
+      "/readyz": "http://localhost:5276",
     },
   },
 })
