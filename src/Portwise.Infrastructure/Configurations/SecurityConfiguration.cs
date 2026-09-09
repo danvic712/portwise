@@ -9,7 +9,7 @@ public sealed class SecurityConfiguration : IEntityTypeConfiguration<Security>
     public void Configure(EntityTypeBuilder<Security> builder)
     {
         builder.ToTable("securities");
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.Id).HasName("pk_securities");
         builder.Property(x => x.Id).HasColumnName("security_id");
         builder.Property(x => x.SecurityCode)
             .HasColumnName("security_code")
@@ -34,6 +34,8 @@ public sealed class SecurityConfiguration : IEntityTypeConfiguration<Security>
         builder.Property(x => x.SectorCode)
             .HasColumnName("sector_code")
             .HasMaxLength(100);
-        builder.HasIndex(x => new { x.ExchangeCode, x.SecurityCode }).IsUnique();
+        builder.HasIndex(x => new { x.ExchangeCode, x.SecurityCode })
+            .HasDatabaseName("uq_securities_exchange_security_code")
+            .IsUnique();
     }
 }

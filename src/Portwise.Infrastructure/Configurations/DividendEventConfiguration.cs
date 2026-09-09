@@ -10,7 +10,7 @@ public sealed class DividendEventConfiguration
     public void Configure(EntityTypeBuilder<DividendEvent> builder)
     {
         builder.ToTable("dividend_events");
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.Id).HasName("pk_dividend_events");
         builder.Property(x => x.Id).HasColumnName("dividend_event_id");
         builder.Property(x => x.SecurityId).HasColumnName("security_id");
         builder.Property(x => x.DividendPerShare)
@@ -26,22 +26,22 @@ public sealed class DividendEventConfiguration
             .IsRequired();
         builder.Property(x => x.AnnouncementDate)
             .HasColumnName("announcement_date")
-            .HasColumnType("TEXT");
+            .HasColumnType("date");
         builder.Property(x => x.ExDividendDate)
             .HasColumnName("ex_dividend_date")
-            .HasColumnType("TEXT");
+            .HasColumnType("date");
         builder.Property(x => x.PaymentDate)
             .HasColumnName("payment_date")
-            .HasColumnType("TEXT");
+            .HasColumnType("date");
         builder.Property(x => x.IsSpecialDividend)
             .HasColumnName("is_special_dividend")
             .IsRequired();
         builder.Property(x => x.PublishedAt)
             .HasColumnName("published_at")
-            .HasColumnType("TEXT");
+            .HasColumnType("timestamp with time zone");
         builder.Property(x => x.CapturedAt)
             .HasColumnName("captured_at")
-            .HasColumnType("TEXT");
+            .HasColumnType("timestamp with time zone");
         builder.Property(x => x.DataSource)
             .HasColumnName("data_source")
             .HasMaxLength(64)
@@ -59,11 +59,14 @@ public sealed class DividendEventConfiguration
         {
             x.SecurityId,
             x.SourceRecordId
-        }).IsUnique();
+        })
+            .HasDatabaseName("uq_dividend_events_security_source_record")
+            .IsUnique();
 
         builder.HasOne<Security>()
             .WithMany()
             .HasForeignKey(x => x.SecurityId)
+            .HasConstraintName("fk_dividend_events_securities_security_id")
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -235,7 +235,7 @@ Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfo
 - `Application/{Setup,Stocks,Portfolio,Recommendations}/Contracts`：各 module 的用例和外部资料 Interface；只有错误、本地化和诊断等跨 module Interface 位于 `Application/Contracts`。
 - `Infrastructure/Contracts`：Infrastructure 内部 Adapter 的可替换抽象，包括 `IFtShareMcpToolInvoker`。
 
-Application 不认识 EF Core、SQLite、HTTP 或 MCP SDK。Host 只依赖 Application 的 AppService Interface 和 Infrastructure 的组合注册扩展，不直接使用数据访问实现。
+Application 不认识 EF Core、PostgreSQL、HTTP 或 MCP SDK。Host 只依赖 Application 的 AppService Interface 和 Infrastructure 的组合注册扩展，不直接使用数据访问实现。
 
 ### 5.2 DTO
 
@@ -329,19 +329,19 @@ SetupAppService
                              PortwiseDbContext
                                        │
                                        ▼
-                                SQLite / /app/data
+                         PostgreSQL 17 / public
 ```
 
 - `EFUow` 使用按实体类型缓存的 lazy Repository，与 `salary-insights` 的 `ConcurrentDictionary<Type, Lazy<object>>` 模式一致。
 - `EFRepository<TEntity>` 是真正的 EF adapter：在内部组合 `DbContext.Set<TEntity>()`、过滤、排序、追踪策略和 EF Core 异步执行，然后只返回 Repository 合约要求的结果。
-- `EFUow.CommitAsync` 统一调用 `SaveChangesAsync`；数据库更新失败在 Infrastructure 转换为 Domain 的 `UnitOfWorkCommitException`，并只标记可识别的 SQLite 唯一约束失败；Application 不引用 `DbUpdateException`。
+- `EFUow.CommitAsync` 统一调用 `SaveChangesAsync`；数据库更新失败在 Infrastructure 转换为 Domain 的 `UnitOfWorkCommitException`，并只标记 PostgreSQL SQLSTATE `23505` 唯一约束失败；Application 不引用 `DbUpdateException`。
 - 一个用例的多个实体写入在一次提交中完成；Repository 不提前提交，也不把可延迟执行的查询对象交给调用方。
 - `PortwiseDbContext` 位于 Infrastructure 根目录；`EFRepository<TEntity>` 和 `EFUow` 位于 `Infrastructure/Repositories/`，均为 Infrastructure 内部实现，避免 Host/Application 绕过 `IUow` 直接访问 DbContext。
 - `DatabaseLifecycle` 位于 Infrastructure 根目录，负责数据库连接检查和执行 EF Core migration；它与 `EFUow` 分离，避免业务事务抽象承担宿主生命周期职责。
 - Host 的 `/healthz`、`/readyz` 使用 ASP.NET Core 原生 Health Checks；数据库健康检查通过 Infrastructure 的 `IDatabaseLifecycle.CanConnectAsync` 实现。健康检查是运行状态入口，不属于业务 API 版本范围。
 - 数据库健康检查刻意手写为 `DatabaseHealthCheck : IHealthCheck` 而不是使用官方 `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore` 包的 `AddDbContextCheck<TContext>()`：`PortwiseDbContext` 是 Infrastructure 内部类型（`internal sealed`），Host 只能通过 `IDatabaseLifecycle` 这个 Infrastructure Contract 访问数据库连通性；引入 `AddDbContextCheck<TContext>()` 需要把 `DbContext` 类型暴露给 Host，会破坏“Host/Application 不直接访问 DbContext”的封装边界。这是明确的架构取舍，不是遗漏标准实现。
 - Host 启动时只能通过 Infrastructure 的 `IDatabaseLifecycle.MigrateAsync` 应用待执行 migration，不直接解析 DbContext，也不让 `IUow` 承担数据库生命周期职责。
-- `Migrations/` 保存由当前模型生成的初始 schema 及后续可审查、可回放的结构变更；未来修改表结构时必须生成新的 EF Core migration，不能只修改 Fluent Configuration。
+- `Migrations/` 保存由当前模型生成的 PostgreSQL 初始 schema 及后续可审查、可回放的结构变更；migration history 固定使用 `public.ef_migrations (migration_id, product_version)`，未来修改表结构时必须生成新的 EF Core migration，不能只修改 Fluent Configuration。
 - 数据库通过 Docker volume 持久化到 `/app/data`；镜像本身不保存用户数据。
 
 ## 7. Domain Models 与 Fluent 配置
@@ -605,7 +605,7 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 - Domain 测试领域不变量。
 - Application 测试通过 `IRepository<TEntity>`、`IUow` 和数据提供 Adapter 的 Interface mock 验证用例行为。
 - Application 测试不创建真实 DbContext，也不依赖 SQLite 或真实 FTShare 网络连接。
-- Infrastructure 测试通过真实 SQLite 验证 migration 和 FTShare Options 校验。
+- Infrastructure 测试只验证 FTShare Options 等非数据库行为；数据库 migration 通过生成 SQL、pending-model-changes 检查和 Compose smoke 验证。
 - Host 测试验证同步执行器的并发边界、Controller 入口、Options 校验和调度时间。
 - Infrastructure 的 EF Fluent 配置和 Adapter 通过编译、依赖检查及后续专门测试验证；不把 EF Core 细节泄漏到 Application 单元测试。
 

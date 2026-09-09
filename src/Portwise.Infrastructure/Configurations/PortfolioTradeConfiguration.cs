@@ -10,13 +10,13 @@ public sealed class PortfolioTradeConfiguration
     public void Configure(EntityTypeBuilder<PortfolioTrade> builder)
     {
         builder.ToTable("portfolio_trades");
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.Id).HasName("pk_portfolio_trades");
         builder.Property(x => x.Id).HasColumnName("portfolio_trade_id");
         builder.Property(x => x.PortfolioId).HasColumnName("portfolio_id");
         builder.Property(x => x.SecurityId).HasColumnName("security_id");
         builder.Property(x => x.TradeDate)
             .HasColumnName("trade_date")
-            .HasColumnType("TEXT");
+            .HasColumnType("date");
         builder.Property(x => x.TradeDirectionCode)
             .HasColumnName("trade_direction_code")
             .HasMaxLength(16)
@@ -38,20 +38,27 @@ public sealed class PortfolioTradeConfiguration
         {
             x.PortfolioId,
             x.TradeDate
-        });
+        })
+            .HasDatabaseName("ix_portfolio_trades_portfolio_trade_date");
         builder.HasIndex(x => new
         {
             x.PortfolioId,
             x.SourceRecordId
-        }).IsUnique();
+        })
+            .HasDatabaseName("uq_portfolio_trades_portfolio_source_record")
+            .IsUnique();
+        builder.HasIndex(x => x.SecurityId)
+            .HasDatabaseName("ix_portfolio_trades_security_id");
 
         builder.HasOne<Portfolio>()
             .WithMany()
             .HasForeignKey(x => x.PortfolioId)
+            .HasConstraintName("fk_portfolio_trades_portfolios_portfolio_id")
             .OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<Security>()
             .WithMany()
             .HasForeignKey(x => x.SecurityId)
+            .HasConstraintName("fk_portfolio_trades_securities_security_id")
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

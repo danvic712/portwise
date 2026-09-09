@@ -10,13 +10,13 @@ public sealed class CashLedgerEntryConfiguration
     public void Configure(EntityTypeBuilder<CashLedgerEntry> builder)
     {
         builder.ToTable("cash_ledger_entries");
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.Id).HasName("pk_cash_ledger_entries");
         builder.Property(x => x.Id).HasColumnName("cash_ledger_entry_id");
         builder.Property(x => x.PortfolioId).HasColumnName("portfolio_id");
         builder.Property(x => x.SecurityId).HasColumnName("security_id");
         builder.Property(x => x.EntryDate)
             .HasColumnName("entry_date")
-            .HasColumnType("TEXT");
+            .HasColumnType("date");
         builder.Property(x => x.EntryTypeCode)
             .HasColumnName("entry_type_code")
             .HasMaxLength(32)
@@ -37,15 +37,22 @@ public sealed class CashLedgerEntryConfiguration
         {
             x.PortfolioId,
             x.SourceRecordId
-        }).HasFilter("source_record_id IS NOT NULL").IsUnique();
+        })
+            .HasDatabaseName("uq_cash_ledger_entries_portfolio_source_record")
+            .HasFilter("source_record_id IS NOT NULL")
+            .IsUnique();
+        builder.HasIndex(x => x.SecurityId)
+            .HasDatabaseName("ix_cash_ledger_entries_security_id");
 
         builder.HasOne<Portfolio>()
             .WithMany()
             .HasForeignKey(x => x.PortfolioId)
+            .HasConstraintName("fk_cash_ledger_entries_portfolios_portfolio_id")
             .OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<Security>()
             .WithMany()
             .HasForeignKey(x => x.SecurityId)
+            .HasConstraintName("fk_cash_ledger_entries_securities_security_id")
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

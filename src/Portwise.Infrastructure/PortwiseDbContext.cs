@@ -28,6 +28,7 @@ internal sealed class PortwiseDbContext(DbContextOptions<PortwiseDbContext> opti
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasDefaultSchema("public");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(PortwiseDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
     }

@@ -10,14 +10,14 @@ public sealed class RecommendationSnapshotConfiguration
     public void Configure(EntityTypeBuilder<RecommendationSnapshot> builder)
     {
         builder.ToTable("recommendation_snapshots");
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.Id).HasName("pk_recommendation_snapshots");
         builder.Property(x => x.Id).HasColumnName("recommendation_snapshot_id");
         builder.Property(x => x.ModelRunId).HasColumnName("model_run_id");
         builder.Property(x => x.PortfolioId).HasColumnName("portfolio_id");
         builder.Property(x => x.SecurityId).HasColumnName("security_id");
         builder.Property(x => x.DataAsOfDate)
             .HasColumnName("data_as_of_date")
-            .HasColumnType("TEXT");
+            .HasColumnType("date");
         builder.Property(x => x.ClosePrice)
             .HasColumnName("close_price")
             .HasPrecision(20, 8);
@@ -63,7 +63,7 @@ public sealed class RecommendationSnapshotConfiguration
             .IsRequired();
         builder.Property(x => x.ComputedAt)
             .HasColumnName("computed_at")
-            .HasColumnType("TEXT")
+            .HasColumnType("timestamp with time zone")
             .IsRequired();
         builder.Property(x => x.ModelParameterSetId)
             .HasColumnName("model_parameter_set_id");
@@ -73,19 +73,30 @@ public sealed class RecommendationSnapshotConfiguration
             x.ModelRunId,
             x.PortfolioId,
             x.SecurityId
-        }).IsUnique();
+        })
+            .HasDatabaseName("uq_recommendation_snapshots_model_run_portfolio_security")
+            .IsUnique();
+        builder.HasIndex(x => x.ModelParameterSetId)
+            .HasDatabaseName("ix_recommendation_snapshots_model_parameter_set_id");
+        builder.HasIndex(x => x.PortfolioId)
+            .HasDatabaseName("ix_recommendation_snapshots_portfolio_id");
+        builder.HasIndex(x => x.SecurityId)
+            .HasDatabaseName("ix_recommendation_snapshots_security_id");
 
         builder.HasOne<Portfolio>()
             .WithMany()
             .HasForeignKey(x => x.PortfolioId)
+            .HasConstraintName("fk_recommendation_snapshots_portfolios_portfolio_id")
             .OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<Security>()
             .WithMany()
             .HasForeignKey(x => x.SecurityId)
+            .HasConstraintName("fk_recommendation_snapshots_securities_security_id")
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<ModelParameterSet>()
             .WithMany()
             .HasForeignKey(x => x.ModelParameterSetId)
+            .HasConstraintName("fk_recommendation_snapshots_model_parameter_set_id")
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

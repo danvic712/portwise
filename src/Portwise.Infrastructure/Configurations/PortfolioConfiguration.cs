@@ -9,7 +9,7 @@ public sealed class PortfolioConfiguration : IEntityTypeConfiguration<Portfolio>
     public void Configure(EntityTypeBuilder<Portfolio> builder)
     {
         builder.ToTable("portfolios");
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.Id).HasName("pk_portfolios");
         builder.Property(x => x.Id).HasColumnName("portfolio_id");
         builder.Property(x => x.Name)
             .HasColumnName("portfolio_name")
@@ -25,6 +25,7 @@ public sealed class PortfolioConfiguration : IEntityTypeConfiguration<Portfolio>
             .HasDefaultValue("default")
             .IsRequired();
         builder.HasIndex("PortfolioScope")
+            .HasDatabaseName("uq_portfolios_portfolio_scope")
             .IsUnique();
     }
 }

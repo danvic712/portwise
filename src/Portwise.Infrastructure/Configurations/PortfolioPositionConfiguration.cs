@@ -10,7 +10,8 @@ public sealed class PortfolioPositionConfiguration
     public void Configure(EntityTypeBuilder<PortfolioPosition> builder)
     {
         builder.ToTable("portfolio_positions");
-        builder.HasKey(x => new { x.PortfolioId, x.SecurityId });
+        builder.HasKey(x => new { x.PortfolioId, x.SecurityId })
+            .HasName("pk_portfolio_positions");
         builder.Property(x => x.PortfolioId).HasColumnName("portfolio_id");
         builder.Property(x => x.SecurityId).HasColumnName("security_id");
         builder.Property(x => x.HeldShares).HasColumnName("held_shares");
@@ -19,13 +20,17 @@ public sealed class PortfolioPositionConfiguration
         builder.Property(x => x.AverageCostPerShare)
             .HasColumnName("average_cost_per_share")
             .HasPrecision(20, 8);
+        builder.HasIndex(x => x.SecurityId)
+            .HasDatabaseName("ix_portfolio_positions_security_id");
         builder.HasOne<Portfolio>()
             .WithMany()
             .HasForeignKey(x => x.PortfolioId)
+            .HasConstraintName("fk_portfolio_positions_portfolios_portfolio_id")
             .OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<Security>()
             .WithMany()
             .HasForeignKey(x => x.SecurityId)
+            .HasConstraintName("fk_portfolio_positions_securities_security_id")
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

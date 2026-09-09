@@ -10,7 +10,7 @@ public sealed class ModelParameterSetConfiguration
     public void Configure(EntityTypeBuilder<ModelParameterSet> builder)
     {
         builder.ToTable("model_parameter_sets");
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.Id).HasName("pk_model_parameter_sets");
         builder.Property(x => x.Id).HasColumnName("model_parameter_set_id");
         builder.Property(x => x.PortfolioId).HasColumnName("portfolio_id");
         builder.Property(x => x.SecurityId).HasColumnName("security_id");
@@ -66,22 +66,28 @@ public sealed class ModelParameterSetConfiguration
         builder.Property(x => x.TradingLotSize).HasColumnName("trading_lot_size");
         builder.Property(x => x.EffectiveFromDate)
             .HasColumnName("effective_from_date")
-            .HasColumnType("TEXT");
+            .HasColumnType("date");
 
         builder.HasIndex(x => new
         {
             x.PortfolioId,
             x.SecurityId,
             x.EffectiveFromDate
-        }).IsUnique();
+        })
+            .HasDatabaseName("uq_model_parameter_sets_portfolio_security_effective_from")
+            .IsUnique();
+        builder.HasIndex(x => x.SecurityId)
+            .HasDatabaseName("ix_model_parameter_sets_security_id");
 
         builder.HasOne<Portfolio>()
             .WithMany()
             .HasForeignKey(x => x.PortfolioId)
+            .HasConstraintName("fk_model_parameter_sets_portfolios_portfolio_id")
             .OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<Security>()
             .WithMany()
             .HasForeignKey(x => x.SecurityId)
+            .HasConstraintName("fk_model_parameter_sets_securities_security_id")
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

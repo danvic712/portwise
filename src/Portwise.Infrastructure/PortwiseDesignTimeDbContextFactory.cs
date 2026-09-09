@@ -8,10 +8,11 @@ internal sealed class PortwiseDesignTimeDbContextFactory
 {
     public PortwiseDbContext CreateDbContext(string[] args)
     {
-        var options = new DbContextOptionsBuilder<PortwiseDbContext>()
-            .UseSqlite("Data Source=portwise.design.db")
-            .Options;
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Default")
+            ?? PortwisePostgreSqlOptions.DefaultConnectionString;
+        var optionsBuilder = new DbContextOptionsBuilder<PortwiseDbContext>();
+        optionsBuilder.UsePortwisePostgreSql(connectionString);
 
-        return new PortwiseDbContext(options);
+        return new PortwiseDbContext(optionsBuilder.Options);
     }
 }

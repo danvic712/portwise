@@ -10,18 +10,18 @@ public sealed class FinancialSnapshotConfiguration
     public void Configure(EntityTypeBuilder<FinancialSnapshot> builder)
     {
         builder.ToTable("financial_snapshots");
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.Id).HasName("pk_financial_snapshots");
         builder.Property(x => x.Id).HasColumnName("financial_snapshot_id");
         builder.Property(x => x.SecurityId).HasColumnName("security_id");
         builder.Property(x => x.DataAsOfDate)
             .HasColumnName("data_as_of_date")
-            .HasColumnType("TEXT");
+            .HasColumnType("date");
         builder.Property(x => x.PublishedAt)
             .HasColumnName("published_at")
-            .HasColumnType("TEXT");
+            .HasColumnType("timestamp with time zone");
         builder.Property(x => x.CapturedAt)
             .HasColumnName("captured_at")
-            .HasColumnType("TEXT");
+            .HasColumnType("timestamp with time zone");
         builder.Property(x => x.EarningsPerShare)
             .HasColumnName("earnings_per_share")
             .HasPrecision(20, 8);
@@ -54,11 +54,14 @@ public sealed class FinancialSnapshotConfiguration
         {
             x.SecurityId,
             x.DataAsOfDate
-        }).IsUnique();
+        })
+            .HasDatabaseName("uq_financial_snapshots_security_data_as_of_date")
+            .IsUnique();
 
         builder.HasOne<Security>()
             .WithMany()
             .HasForeignKey(x => x.SecurityId)
+            .HasConstraintName("fk_financial_snapshots_securities_security_id")
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

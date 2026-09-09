@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
 using Portwise.Domain.Contracts;
 using Portwise.Domain.Exceptions;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Portwise.Infrastructure.Repositories;
 
@@ -41,9 +41,9 @@ internal sealed class EFUow(PortwiseDbContext dbContext) : IUow
     }
 
     private static bool IsUniqueConstraintViolation(DbUpdateException exception)
-        => exception.GetBaseException() is SqliteException
+        => exception.GetBaseException() is PostgresException
         {
-            SqliteExtendedErrorCode: 2067
+            SqlState: PostgresErrorCodes.UniqueViolation
         };
 
 }

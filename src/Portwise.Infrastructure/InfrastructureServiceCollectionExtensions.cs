@@ -16,10 +16,11 @@ public static class InfrastructureServiceCollectionExtensions
         IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("Default")
-            ?? "Data Source=portwise.db";
+            ?? throw new InvalidOperationException(
+                "ConnectionStrings:Default is required for PostgreSQL.");
 
         services.AddDbContext<PortwiseDbContext>(options =>
-            options.UseSqlite(connectionString));
+            options.UsePortwisePostgreSql(connectionString));
         services.AddScoped<IUow, Repositories.EFUow>();
         services.AddScoped<IDatabaseLifecycle, DatabaseLifecycle>();
 
