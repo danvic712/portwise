@@ -188,7 +188,7 @@ dotnet publish src/Portwise/Portwise.csproj -c Release -p:BuildFrontend=true
 dotnet run --project src/Portwise/Portwise.csproj --launch-profile http
 ```
 
-首次启动时后端会检测到 `http://127.0.0.1:4173` 未就绪，自动在 `src/Portwise.Web` 下执行 `pnpm run dev` 拉起 Vite dev server（需要提前执行一次 `corepack enable && pnpm install --frozen-lockfile` 安装依赖），随后把非 API 请求反向代理到 Vite；浏览器只需访问后端地址 `http://localhost:5276` 即可看到前端页面并联调 `/api`。
+首次启动时后端会检测到 `http://localhost:4173` 未就绪，自动在 `src/Portwise.Web` 下执行 `pnpm run dev` 拉起 Vite dev server（需要提前执行一次 `corepack enable && pnpm install --frozen-lockfile` 安装依赖），随后把非 API 请求反向代理到 Vite；浏览器只需访问后端地址 `http://localhost:5276` 即可看到前端页面并联调 `/api`。
 
 如果只想单独运行前端 dev server（不联调后端），仍可以手动执行：
 
@@ -199,7 +199,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-此时开发服务器使用 `server.host=true` 监听本机所有网络接口，通常可通过 `http://127.0.0.1:4173` 或其他本机 IP 访问，并将 `/api`、`/healthz` 和 `/readyz` 代理到 `http://127.0.0.1:5276`（`vite.config.ts` 中的 `server.proxy` 配置）。这与 .NET SpaProxy 的探测地址兼容，同时允许局域网设备访问开发服务器。前端生产构建会输出到 `src/Portwise/wwwroot`，Docker 构建会自动执行这一步；`Debug` 配置下的 SpaProxy 只用于开发期反代，不影响生产发布产物。
+此时开发服务器使用 `server.host=true` 监听本机所有网络接口，通常可通过 `http://localhost:4173` 或其他本机 IP 访问，并将 `/api`、`/healthz` 和 `/readyz` 代理到 `http://localhost:5276`（`vite.config.ts` 中的 `server.proxy` 配置）。这与 .NET SpaProxy 的探测地址兼容，同时允许局域网设备访问开发服务器。前端生产构建会输出到 `src/Portwise/wwwroot`，Docker 构建会自动执行这一步；`Debug` 配置下的 SpaProxy 只用于开发期反代，不影响生产发布产物。
 
 如果 Rider 启动时提示 `Couldn't start the SPA development server with command 'pnpm run dev'`，请在 Rider 的运行配置中将 Node.js 环境指定为 `24.16.x`，并确保该配置的 PATH 包含对应 Node 目录；不要依赖从 Dock 启动 Rider 时自动读取 shell 配置。项目已将 `packageManager` 固定为 `pnpm@12.3.4`，且启动 profile 禁止 Corepack 在无交互界面中等待下载确认。首次使用前请在 `src/Portwise.Web` 执行 `corepack install --global pnpm@12.3.4` 和 `pnpm install --frozen-lockfile`。
 
