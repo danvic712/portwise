@@ -26,7 +26,7 @@ Portwise 是一个面向个人 A 股长期投资者的私人工具。它把股�
 - 支持多只股票独立配置模型参数，同时在组合层汇总预算、持仓和建议；
 - 提供今日决策、股票资料、资金预算、交易记录和设置页面；
 - 提供中英文切换、日间/夜间/跟随系统主题、加载骨架屏、404 页面和全局错误页面；
-- 提供 Swagger、Serilog、API Versioning、原生健康检查和 SQLite 持久化。
+- 提供 Swagger、Serilog、API Versioning、原生健康检查和 PostgreSQL 17+ 持久化。
 
 ## 运行架构
 
@@ -42,7 +42,7 @@ ASP.NET Core Host
   ├── Application AppService + FluentValidation
   ├── Domain 规则与股息交易模型
   └── Infrastructure
-       ├── EF Core + SQLite（/app/data）
+       ├── EF Core + PostgreSQL 17（public schema）
        └── FTShare MCP Adapter
 ```
 
@@ -80,16 +80,16 @@ dotnet run --project src/Portwise/Portwise.csproj --launch-profile http
 
 IDE 运行 Host 时请使用本地 `ConnectionStrings__Default`（`Host=localhost`）；Compose 内部 Host 使用服务名 `postgres`，两者不会混用。
 
-### 启动实例
+### 启动实例（外部 PostgreSQL）
 
-SQLite 数据库位于容器内的 `/app/data`，建议挂载 volume 或宿主机目录：
+应用镜像不内置数据库；生产或独立运行时请注入 PostgreSQL 17+ 的连接字符串：
 
 ```bash
 docker run --name portwise \
   --rm \
   -p 8080:8080 \
-  -v portwise-data:/app/data \
   -e ASPNETCORE_ENVIRONMENT=Production \
+  -e 'ConnectionStrings__Default=Host=<postgres-host>;Port=5432;Database=portwise;Username=<postgres-user>;Password=<postgres-password>' \
   -e FtShare__McpEndpoint="https://<ftshare-mcp-endpoint>/mcp" \
   danvic712/portwise
 ```
@@ -101,7 +101,7 @@ docker run --name portwise \
 - 存活检查：http://127.0.0.1:8080/healthz
 - 就绪检查：http://127.0.0.1:8080/readyz
 
-项目适合部署在私有网络中。`/app/data` 是唯一需要持久化的应用数据目录；容器被删除后，如果没有挂载 volume，SQLite 数据也会随之删除。
+项目适合部署在私有网络中。数据库数据由外部 PostgreSQL 服务负责持久化和备份；应用镜像只保留可选的 `/app/logs` 文件日志目录，不保存关系数据。
 
 ## GitHub Actions
 
@@ -133,16 +133,15 @@ danvic712/portwise:v0.1.0
 ghcr.io/danvic712/portwise:v0.1.0
 ```
 
-### Azure App Service 持久化配置
+### Azure App Service 配置
 
-Linux 自定义容器默认不会持久化文件系统。将 App Service 的持久化存储开关打开后，应用可以把 SQLite 数据库放在 `/home` 下；本项目通过 `ConnectionStrings__Default` 覆盖默认的 `/app/data` 路径：
+Azure App Service 只运行 Portwise Host，关系数据使用 Azure Database for PostgreSQL Flexible Server 或其他可达的 PostgreSQL 17+ 服务；不要把数据库文件写入容器 `/home`。通过应用设置注入连接字符串：
 
 | App Service 应用设置 | 值 |
 | --- | --- |
-| `WEBSITES_ENABLE_APP_SERVICE_STORAGE` | `true` |
 | `WEBSITES_PORT` | `8080` |
 | `ASPNETCORE_ENVIRONMENT` | `Production` |
-| `ConnectionStrings__Default` | `Data Source=/home/portwise.db` |
+| `ConnectionStrings__Default` | `Host=<postgres-host>;Port=5432;Database=portwise;Username=<postgres-user>;Password=<postgres-password>` |
 
 也可以使用 Azure CLI 配置：
 
@@ -151,13 +150,12 @@ az webapp config appsettings set \
   --resource-group <resource-group> \
   --name <app-name> \
   --settings \
-    WEBSITES_ENABLE_APP_SERVICE_STORAGE=true \
     WEBSITES_PORT=8080 \
     ASPNETCORE_ENVIRONMENT=Production \
-    'ConnectionStrings__Default=Data Source=/home/portwise.db'
+    'ConnectionStrings__Default=Host=<postgres-host>;Port=5432;Database=portwise;Username=<postgres-user>;Password=<postgres-password>'
 ```
 
-`WEBSITES_PORT=8080` 对应镜像的 `EXPOSE 8080`。Azure 官方建议将需要持久化的文件写入 `/home`；但 App Service Linux 的 `/home` 属于共享存储，SQLite 可能受到文件锁限制，建议保持单实例使用并做好备份。需要多实例或更高并发时，应改用 Azure Database 等托管数据库。[Azure 自定义容器文档](https://learn.microsoft.com/zh-cn/azure/app-service/configure-custom-container)
+`WEBSITES_PORT=8080` 对应镜像的 `EXPOSE 8080`。PostgreSQL 的网络访问、TLS、备份、连接池和防火墙策略由托管数据库和 Azure 网络配置负责；应用不依赖 App Service 文件持久化。[Azure 自定义容器文档](https://learn.microsoft.com/zh-cn/azure/app-service/configure-custom-container)
 
 ## 本地开发
 
@@ -176,7 +174,7 @@ az webapp config appsettings set \
 dotnet run --project src/Portwise/Portwise.csproj --launch-profile http
 ```
 
-后端启动时会自动应用待执行的 EF Core migration，并在空 SQLite 数据库中创建完整结构。默认数据库文件为项目运行目录下的 `portwise.db`；生产配置默认使用 `/app/data/portwise.db`。本地开发配置来自 `appsettings.json` + `appsettings.Development.json`（更详细的日志级别），生产环境使用 `appsettings.Production.json`。
+后端启动时会自动应用待执行的 EF Core migration，并在空 PostgreSQL 17+ 数据库的 `public` schema 中创建完整结构；migration history 使用 `public.ef_migrations`。本地 Compose 使用 `postgres` 服务名，IDE/命令行使用 `localhost`，生产部署通过 `ConnectionStrings__Default` 注入外部 PostgreSQL 连接。配置文件只保存非敏感默认值。
 
 修改 EF Core 模型后，先还原仓库固定版本的工具，再从 Infrastructure 项目生成 migration：
 
@@ -232,7 +230,7 @@ ASP.NET Core 按默认规则加载 `appsettings.json` 和当前环境对应的 `
 | 环境变量 | 用途 | 默认值 |
 | --- | --- | --- |
 | `ASPNETCORE_ENVIRONMENT` | ASP.NET Core 环境 | `Production`（容器中建议显式设置） |
-| `ConnectionStrings__Default` | SQLite 连接字符串 | `Data Source=portwise.db` |
+| `ConnectionStrings__Default` | PostgreSQL 连接字符串 | `Host=localhost;Port=5432;Database=portwise;Username=portwise;Password=portwise` |
 | `FtShare__McpEndpoint` | FTShare MCP Streamable HTTP 地址 | `https://market.ft.tech/gateway/mcp` |
 | `FtShare__RequestTimeoutSeconds` | 单次 MCP 请求超时 | `30` |
 | `FtShare__MaxRetryCount` | MCP 请求最大重试次数 | `2` |
@@ -322,7 +320,7 @@ Portwise/
 │   ├── Portwise/                 # ASP.NET Core Host、Controller、配置、健康检查
 │   ├── Portwise.Application/     # AppService、Contracts、DTO、验证、异常与本地化
 │   ├── Portwise.Domain/          # Entity、领域规则、量化模型和领域代码
-│   ├── Portwise.Infrastructure/  # EF Core、Uow/Repository、SQLite、FTShare Adapter
+│   ├── Portwise.Infrastructure/  # EF Core、Uow/Repository、PostgreSQL、FTShare Adapter
 │   └── Portwise.Web/             # React、shadcn/ui 风格组件、页面 feature 和 API 调用
 ├── tests/
 │   ├── Portwise.Domain.Tests/         # xUnit 领域单元测试
@@ -352,7 +350,7 @@ pnpm run lint
 pnpm run build
 ```
 
-后端测试覆盖 Domain、Application、Host 和 Infrastructure，统一使用 xUnit；Application 测试使用 Moq 模拟 Uow、Repository、Provider 和调度器，Infrastructure 测试使用真实 SQLite 验证 migration 与 EF 约束，Host 测试覆盖同步执行、Options 校验和调度时间。UI 页面验收还应在浏览器中检查目标分辨率、加载态、空态、错误态、夜间主题和中英文切换，构建成功不等于视觉验收完成。
+后端测试覆盖 Domain、Application、Host 和 Infrastructure，统一使用 xUnit；Application 测试使用 Moq 模拟 Uow、Repository、Provider 和调度器，Infrastructure 不创建数据库测试容器，迁移通过编译、pending-model-changes、生成 SQL 和 PostgreSQL Compose smoke 验证，Host 测试覆盖同步执行、Options 校验和调度时间。UI 页面验收还应在浏览器中检查目标分辨率、加载态、空态、错误态、夜间主题和中英文切换，构建成功不等于视觉验收完成。
 
 ## 许可
 

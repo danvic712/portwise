@@ -9,7 +9,7 @@ Portwise 需要一个个人可部署的运行单元。前端是静态资源，�
 
 ## Decision
 
-前端和后端在构建期分别编译，最终合并到一个 ASP.NET Core Host 镜像。Host 同时提供 `/api`、静态前端和 SPA fallback；用户数据写入容器外的 `/app/data` volume。镜像不保存凭据或用户数据，部署只需要运行一个 HTTP 入口。
+前端和后端在构建期分别编译，最终合并到一个 ASP.NET Core Host 镜像。Host 同时提供 `/api`、静态前端和 SPA fallback；关系数据写入独立的 PostgreSQL 服务，镜像不保存凭据或用户数据，部署只需要运行一个 HTTP 入口。
 
 ## Consequences
 

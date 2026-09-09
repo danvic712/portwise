@@ -27,8 +27,8 @@ ENV ASPNETCORE_HTTP_PORTS=8080
 ENV DOTNET_EnableDiagnostics=0
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 RUN apk add --no-cache icu-libs krb5-libs tzdata
-RUN mkdir -p /app/data /app/logs
+RUN mkdir -p /app/logs
 COPY --from=backend-build /app/publish ./
-VOLUME ["/app/data", "/app/logs"]
+VOLUME ["/app/logs"]
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Portwise.dll"]

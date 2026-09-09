@@ -136,11 +136,6 @@ dist
 *.user
 *.suo
 
-# Local SQLite data
-*.db
-*.db-shm
-*.db-wal
-
 # JetBrains IDE metadata
 .idea/
 

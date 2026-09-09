@@ -93,17 +93,17 @@ else:
 
 ### 1.3 数据库命名与类型约定
 
-SQLite 和 PostgreSQL 共用一套数据库命名规则：
+PostgreSQL 是 V1 唯一关系数据库，数据库命名规则如下：
 
 1. 表名和字段名全部使用小写 `snake_case`，不使用驼峰、空格、中文或需要双引号包裹的大小写名称。
 2. 字段名使用完整语义，不使用 `value`、`type`、`status`、`date`、`source` 等脱离上下文的通用名称；改用 `dividend_status_code`、`dividend_type_code`、`data_source`、`payment_date` 等具体名称。
 3. `_date` 表示只有日期的日历值；`_at` 表示带时区的时间点；`_amount` 表示货币金额；`_ratio` 表示 0 到 1 的比例；`_shares` 或 `_quantity` 表示数量；`_code` 表示业务代码。
 4. 股票代码使用 `TEXT`，不能使用整数，避免丢失 `000001` 等前导零。
-5. PostgreSQL 的金额、价格和比例使用 `numeric(20,8)`；SQLite 使用 `NUMERIC` 亲和类型。应用层统一使用 Decimal 计算，并对写入精度、范围和读写往返做校验；V1 不依赖数据库直接完成金融计算。比例统一保存为小数，例如 5% 保存为 `0.05`。
-6. PostgreSQL 的时间点使用 `timestamp with time zone` 并按 UTC 保存；SQLite 使用 UTC 的 ISO 8601 `TEXT`。两者都使用 `_at` 字段名，不使用含义不明确的 `timestamp` 字段名。
-7. 布尔字段使用 `is_` 或 `has_` 开头，例如 `is_special_dividend`、`is_price_to_book_gate_enabled`。SQLite 中用 `0/1` 存储并加 `CHECK`，PostgreSQL 映射为 `boolean`。
+5. 金额、价格和比例使用 `numeric(20,8)`；应用层统一使用 Decimal 计算，并对写入精度、范围和读写往返做校验；V1 不依赖数据库直接完成金融计算。比例统一保存为小数，例如 5% 保存为 `0.05`。
+6. 时间点使用 `timestamp with time zone` 并按 UTC 保存；统一使用 `_at` 字段名，不使用含义不明确的 `timestamp` 字段名。
+7. 布尔字段使用 `is_` 或 `has_` 开头，例如 `is_special_dividend`、`is_price_to_book_gate_enabled`，并映射为 PostgreSQL `boolean`。
 
-PostgreSQL 未加引号的名称会折叠为小写，而 SQLite 的关键字集合也会随版本扩展；因此统一使用小写 `snake_case` 并主动避开英文关键字，可以减少迁移和 SQL 生成差异。[PostgreSQL 标识符规则](https://www.postgresql.org/docs/current/sql-syntax-lexical.html) · [SQLite 关键字](https://www.sqlite.org/lang_keywords.html) · [SQLite 类型系统](https://www.sqlite.org/datatype3.html)
+PostgreSQL 未加引号的名称会折叠为小写，因此统一使用小写 `snake_case` 并主动避开英文关键字，可以减少 SQL 生成差异。[PostgreSQL 标识符规则](https://www.postgresql.org/docs/current/sql-syntax-lexical.html)
 
 ### 1.4 量化领域的规范字段
 

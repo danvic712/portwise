@@ -35,8 +35,8 @@ Host 只负责 HTTP 路由、依赖注入组合和运行时启动；业务规则
 
 Host 项目的配置文件位于 `src/Portwise/`：
 
-- `appsettings.json`：本地开发默认配置，使用工作目录下的 SQLite 文件。
-- `appsettings.Production.json`：生产环境配置，使用 `/app/data/portwise.db`，适配 Docker volume 持久化。
+- `appsettings.json`：本地开发默认配置，提供 PostgreSQL 连接字符串示例。
+- `appsettings.Production.json`：生产环境非敏感默认配置；实际 PostgreSQL 连接通过 `ConnectionStrings__Default` 环境变量注入。
 
 ASP.NET Core 默认环境名为 `Production`（大小写不敏感）时，会自动加载 `appsettings.Production.json`。环境变量仍作为后置覆盖层，可用于部署时覆盖连接字符串、FTShare MCP 地址和工具参数。两个文件只保存非敏感默认值，FTShare key 不进入源代码、镜像或 Git。
 
@@ -342,7 +342,7 @@ SetupAppService
 - 数据库健康检查刻意手写为 `DatabaseHealthCheck : IHealthCheck` 而不是使用官方 `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore` 包的 `AddDbContextCheck<TContext>()`：`PortwiseDbContext` 是 Infrastructure 内部类型（`internal sealed`），Host 只能通过 `IDatabaseLifecycle` 这个 Infrastructure Contract 访问数据库连通性；引入 `AddDbContextCheck<TContext>()` 需要把 `DbContext` 类型暴露给 Host，会破坏“Host/Application 不直接访问 DbContext”的封装边界。这是明确的架构取舍，不是遗漏标准实现。
 - Host 启动时只能通过 Infrastructure 的 `IDatabaseLifecycle.MigrateAsync` 应用待执行 migration，不直接解析 DbContext，也不让 `IUow` 承担数据库生命周期职责。
 - `Migrations/` 保存由当前模型生成的 PostgreSQL 初始 schema 及后续可审查、可回放的结构变更；migration history 固定使用 `public.ef_migrations (migration_id, product_version)`，未来修改表结构时必须生成新的 EF Core migration，不能只修改 Fluent Configuration。
-- 数据库通过 Docker volume 持久化到 `/app/data`；镜像本身不保存用户数据。
+- PostgreSQL 17+ 是独立运行时依赖；Compose 通过 named volume 持久化数据库，生产环境使用外部或托管 PostgreSQL。Host 镜像只保留可选文件日志目录，不保存关系数据。
 
 ## 7. Domain Models 与 Fluent 配置
 
@@ -604,7 +604,7 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 
 - Domain 测试领域不变量。
 - Application 测试通过 `IRepository<TEntity>`、`IUow` 和数据提供 Adapter 的 Interface mock 验证用例行为。
-- Application 测试不创建真实 DbContext，也不依赖 SQLite 或真实 FTShare 网络连接。
+- Application 测试不创建真实 DbContext，也不依赖真实 PostgreSQL 或 FTShare 网络连接。
 - Infrastructure 测试只验证 FTShare Options 等非数据库行为；数据库 migration 通过生成 SQL、pending-model-changes 检查和 Compose smoke 验证。
 - Host 测试验证同步执行器的并发边界、Controller 入口、Options 校验和调度时间。
 - Infrastructure 的 EF Fluent 配置和 Adapter 通过编译、依赖检查及后续专门测试验证；不把 EF Core 细节泄漏到 Application 单元测试。
