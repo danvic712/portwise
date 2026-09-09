@@ -139,6 +139,16 @@ dist
 # JetBrains IDE metadata
 .idea/
 
+# Local architecture notes (do not publish)
+**/adr/
+**/*[Aa][Dd][Rr]*.md
+**/[Cc][Oo][Nn][Tt][Ee][Xx][Tt].md
+
+# Local agent instructions and notes (do not publish)
+**/[Aa][Gg][Ee][Nn][Tt][Ss].md
+**/[Aa][Gg][Ee][Nn][Tt][Ss]/
+**/.[Aa][Gg][Ee][Nn][Tt][Ss]/
+
 # Frontend build output is generated into the ASP.NET Core host at build time
 src/Portwise/wwwroot/
 
