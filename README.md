@@ -60,6 +60,26 @@ docker build -t danvic712/portwise .
 
 镜像采用多阶段构建：先构建 React 前端，再发布 ASP.NET Core 后端。根目录的 `locales/` 会同时纳入前端构建和后端嵌入式资源；其中前端 UI 文案和后端应用错误定义共用同一套中英文语言文件。
 
+### Docker Compose 本地运行
+
+Compose 会启动 PostgreSQL 17 和 Portwise Host，Host 只在数据库健康检查通过后启动，并在首次启动时自动应用 fresh migration：
+
+```bash
+cp .env.example .env
+docker compose up --build -d
+```
+
+启动后访问 `http://127.0.0.1:8080/`；`/healthz` 是存活检查，`/readyz` 是包含数据库的就绪检查。PostgreSQL 数据保存在 named volume `portwise-postgres` 中，执行 `docker compose down` 不会删除它；需要重新建立空 schema 时再执行 `docker compose down -v`。
+
+如果只想由 Compose 启动数据库、再从 Rider/Visual Studio 或命令行启动 Host，可以执行：
+
+```bash
+docker compose up -d postgres
+dotnet run --project src/Portwise/Portwise.csproj --launch-profile http
+```
+
+IDE 运行 Host 时请使用本地 `ConnectionStrings__Default`（`Host=localhost`）；Compose 内部 Host 使用服务名 `postgres`，两者不会混用。
+
 ### 启动实例
 
 SQLite 数据库位于容器内的 `/app/data`，建议挂载 volume 或宿主机目录：
