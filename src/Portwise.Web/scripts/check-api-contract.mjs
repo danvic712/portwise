@@ -12,18 +12,41 @@ const packageRunner = process.platform === "win32" ? "pnpm.cmd" : "pnpm"
 try {
   const openapiDocument = JSON.parse(readFileSync(sourcePath, "utf8"))
   const httpMethods = new Set(["get", "post", "put", "patch", "delete", "head", "options", "trace"])
-  const missingOperationSummaries = Object.values(openapiDocument.paths ?? {})
+  const operations = Object.values(openapiDocument.paths ?? {})
     .flatMap((pathItem) => Object.entries(pathItem)
       .filter(([method]) => httpMethods.has(method))
-      .map(([, operation]) => operation))
-    .filter((operation) => operation && typeof operation === "object")
-    .filter((operation) => !String(operation.summary ?? "").trim())
+      .map(([method, operation]) => ({ method, operation })))
+    .filter(({ operation }) => operation && typeof operation === "object")
+  const missingOperationSummaries = operations
+    .filter(({ operation }) => !String(operation.summary ?? "").trim())
+  const missingParameterDescriptions = operations.flatMap(({ method, operation }) =>
+    (operation.parameters ?? [])
+      .filter((parameter) => parameter && typeof parameter === "object" && !parameter.$ref)
+      .filter((parameter) => !String(parameter.description ?? "").trim())
+      .map((parameter) => `${method.toUpperCase()} ${parameter.name ?? "<unnamed>"}`),
+  )
+  const missingRequestBodyDescriptions = operations
+    .filter(({ operation }) => operation.requestBody && !operation.requestBody.$ref)
+    .filter(({ operation }) => !String(operation.requestBody.description ?? "").trim())
+  const missingResponseDescriptions = operations.flatMap(({ method, operation }) =>
+    Object.entries(operation.responses ?? {})
+      .filter(([, response]) => response && typeof response === "object" && !response.$ref)
+      .filter(([, response]) => !String(response.description ?? "").trim())
+      .map(([status]) => `${method.toUpperCase()} ${status}`),
+  )
   const missingSchemaDescriptions = Object.values(openapiDocument.components?.schemas ?? {})
+    .filter((schema) => schema && typeof schema === "object" && !schema.$ref)
     .filter((schema) => !String(schema.description ?? "").trim())
 
-  if (missingOperationSummaries.length > 0 || missingSchemaDescriptions.length > 0) {
+  if (
+    missingOperationSummaries.length > 0
+    || missingParameterDescriptions.length > 0
+    || missingRequestBodyDescriptions.length > 0
+    || missingResponseDescriptions.length > 0
+    || missingSchemaDescriptions.length > 0
+  ) {
     console.error(
-      `OpenAPI documentation is incomplete: ${missingOperationSummaries.length} operation summaries and ${missingSchemaDescriptions.length} schema descriptions are missing.`,
+      `OpenAPI documentation is incomplete: ${missingOperationSummaries.length} operation summaries, ${missingParameterDescriptions.length} parameter descriptions, ${missingRequestBodyDescriptions.length} request body descriptions, ${missingResponseDescriptions.length} response descriptions and ${missingSchemaDescriptions.length} schema descriptions are missing.`,
     )
     process.exitCode = 1
   }

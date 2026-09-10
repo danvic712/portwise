@@ -59,6 +59,7 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
+            /** @description Cash ledger entry details. */
             requestBody: {
                 content: {
                     "application/json": components["schemas"]["RecordCashLedgerEntryRequest"];
@@ -103,6 +104,7 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
+            /** @description Trade direction, quantity, price and date. */
             requestBody: {
                 content: {
                     "application/json": components["schemas"]["RecordPortfolioTradeRequest"];
@@ -261,6 +263,7 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
+            /** @description Portfolio name, stocks and optional initial holdings. */
             requestBody: {
                 content: {
                     "application/json": components["schemas"]["SetupRequest"];
@@ -424,6 +427,7 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
+            /** @description Model parameter values and effective date. */
             requestBody: {
                 content: {
                     "application/json": components["schemas"]["SaveStockModelParametersRequest"];
@@ -720,7 +724,7 @@ export interface components {
             /** @description Persisted stock recommendation snapshots. */
             stocks: components["schemas"]["StockRecommendationResult"][];
         };
-        /** @description Optional initial holding values. */
+        /** @description Optional initial holding values supplied during setup. */
         InitialHoldingInput: {
             /**
              * Format: int32
@@ -1035,7 +1039,7 @@ export interface components {
             /** @description Resolved display name, when available. */
             securityName: null | string;
         };
-        /** @description Underlying stock analysis. */
+        /** @description Current market, dividend, position and recommendation analysis for one stock. */
         StockAnalysisResult: {
             /** @description Security code. */
             securityCode: string;
@@ -1280,7 +1284,7 @@ export interface components {
             /** @description Normalized data quality code. */
             dataQualityCode: string;
         };
-        /** @description Latest holding snapshot, when available. */
+        /** @description Snapshot of the shares held for one configured stock. */
         StockHoldingSnapshot: {
             /**
              * Format: int32
@@ -1437,6 +1441,7 @@ export interface components {
         };
         /** @description Recommendation and suggested trade quantities for one stock. */
         StockRecommendationResult: {
+            /** @description Underlying stock analysis. */
             analysis: components["schemas"]["StockAnalysisResult"];
             /**
              * Format: int32

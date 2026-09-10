@@ -1,11 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- XML docs are consumed by the OpenAPI/Swagger integration; undocumented public members do not block the build. -->
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- ASP.NET Core OpenAPI source generation consumes XML docs at compile time; undocumented public members do not block the build. -->
+    <!-- API Versioning owns versioned OpenAPI registration while the direct native registration activates project-reference XML source generation. -->
+    <NoWarn>$(NoWarn);CS1591;AV0029</NoWarn>
     <OpenApiGenerateDocuments>true</OpenApiGenerateDocuments>
     <OpenApiGenerateDocumentsOnBuild>true</OpenApiGenerateDocumentsOnBuild>
     <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/../Portwise.Web/openapi</OpenApiDocumentsDirectory>
+    <!-- The checked-in publication is v1; additional document names must be generated with explicit stable file names. -->
     <OpenApiGenerateDocumentsOptions>--file-name portwise_v1</OpenApiGenerateDocumentsOptions>
     <SpaRoot>../Portwise.Web/</SpaRoot>
     <SpaProxyServerUrl>http://localhost:4173</SpaProxyServerUrl>

@@ -1,8 +1,6 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.DependencyInjection;
-using Portwise.OpenApi;
 
 namespace Portwise;
 
@@ -12,6 +10,13 @@ public static class OpenApiServiceCollectionExtensions
         this IServiceCollection services)
     {
         services.AddControllers();
+
+        // Keep this direct literal call so ASP.NET Core's OpenAPI source generator
+        // can add the compile-time XML comment transformers for all project references.
+        // Register it before API Versioning so the version-aware provider remains the
+        // final unkeyed document provider for runtime and build-time generation.
+        services.AddOpenApi();
+
         services
             .AddApiVersioning(options =>
             {
@@ -35,8 +40,6 @@ public static class OpenApiServiceCollectionExtensions
                         document.Info.Description = "Personal portfolio strategy reference API.";
                         return Task.CompletedTask;
                     });
-                options.Document.AddOperationTransformer<XmlDocumentationOperationTransformer>();
-                options.Document.AddSchemaTransformer<XmlDocumentationSchemaTransformer>();
             });
 
         return services;

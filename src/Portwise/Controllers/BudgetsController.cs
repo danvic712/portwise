@@ -24,8 +24,8 @@ public sealed class BudgetsController(IBudgetAppService budgetAppService)
     }
 
     /// <summary>Records a cash ledger entry and returns the created entry.</summary>
-    /// <param name="request">Cash ledger entry details.</param>
     /// <param name="cancellationToken">Token used to cancel the request.</param>
+    /// <param name="request">Cash ledger entry details.</param>
     [HttpPost("entries")]
     public async Task<ActionResult<CashLedgerEntryResult>> RecordEntry(
         [FromBody] RecordCashLedgerEntryRequest request,

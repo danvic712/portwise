@@ -14,8 +14,8 @@ public sealed class PortfolioController(IPortfolioTradeAppService portfolioTrade
     : ControllerBase
 {
     /// <summary>Records a simulated portfolio trade.</summary>
-    /// <param name="request">Trade direction, quantity, price and date.</param>
     /// <param name="cancellationToken">Token used to cancel the request.</param>
+    /// <param name="request">Trade direction, quantity, price and date.</param>
     [HttpPost("trades")]
     public async Task<ActionResult<PortfolioTradeResult>> RecordTrade(
         [FromBody] RecordPortfolioTradeRequest request,

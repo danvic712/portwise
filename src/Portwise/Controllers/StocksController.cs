@@ -63,8 +63,8 @@ public sealed class StocksController(
     }
 
     /// <summary>Creates a new model-parameter version for one stock.</summary>
-    /// <param name="request">Model parameter values and effective date.</param>
     /// <param name="cancellationToken">Token used to cancel the request.</param>
+    /// <param name="request">Model parameter values and effective date.</param>
     [HttpPost("model-parameters")]
     public async Task<ActionResult<StockModelParameterSet>> SaveModelParameters(
         [FromBody] SaveStockModelParametersRequest request,

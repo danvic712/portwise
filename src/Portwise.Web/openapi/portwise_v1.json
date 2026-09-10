@@ -43,6 +43,7 @@
         ],
         "summary": "Records a cash ledger entry and returns the created entry.",
         "requestBody": {
+          "description": "Cash ledger entry details.",
           "content": {
             "application/json": {
               "schema": {
@@ -93,6 +94,7 @@
         ],
         "summary": "Records a simulated portfolio trade.",
         "requestBody": {
+          "description": "Trade direction, quantity, price and date.",
           "content": {
             "application/json": {
               "schema": {
@@ -233,6 +235,7 @@
         ],
         "summary": "Creates the initial portfolio and configured stock watchlist.",
         "requestBody": {
+          "description": "Portfolio name, stocks and optional initial holdings.",
           "content": {
             "application/json": {
               "schema": {
@@ -402,6 +405,7 @@
         ],
         "summary": "Creates a new model-parameter version for one stock.",
         "requestBody": {
+          "description": "Model parameter values and effective date.",
           "content": {
             "application/json": {
               "schema": {
@@ -891,7 +895,7 @@
             "format": "double"
           }
         },
-        "description": "Optional initial holding values."
+        "description": "Optional initial holding values supplied during setup."
       },
       "PortfolioRecommendationResult": {
         "required": [
@@ -1492,6 +1496,7 @@
                 "type": "null"
               },
               {
+                "description": "Optional initial holding values.",
                 "$ref": "#/components/schemas/InitialHoldingInput"
               }
             ]
@@ -1732,7 +1737,7 @@
             "format": "uuid"
           }
         },
-        "description": "Underlying stock analysis."
+        "description": "Current market, dividend, position and recommendation analysis for one stock."
       },
       "StockDataSyncFailure": {
         "required": [
@@ -2086,7 +2091,7 @@
             "format": "double"
           }
         },
-        "description": "Latest holding snapshot, when available."
+        "description": "Snapshot of the shares held for one configured stock."
       },
       "StockModelParameterSet": {
         "required": [
@@ -2355,6 +2360,7 @@
         "type": "object",
         "properties": {
           "analysis": {
+            "description": "Underlying stock analysis.",
             "$ref": "#/components/schemas/StockAnalysisResult"
           },
           "suggestedBuyShares": {
@@ -2433,6 +2439,7 @@
                 "type": "null"
               },
               {
+                "description": "Latest holding snapshot, when available.",
                 "$ref": "#/components/schemas/StockHoldingSnapshot"
               }
             ]
