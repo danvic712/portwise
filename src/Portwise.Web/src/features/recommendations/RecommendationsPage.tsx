@@ -13,7 +13,10 @@ import { currentPriceZoneLabel, hasAnalysisData, recommendationPresentation } fr
 import { analysisDisplayName, displayStockName } from "@/lib/stock-display"
 import { formatDateTime, formatMoney, formatNumber, stockKey } from "@/lib/utils"
 import type { BudgetSummary, PortfolioRecommendationResult, StockRecommendationResult, StockWatchlistItem } from "@/lib/api-types"
-import { createRecommendationSnapshot, getBudgetSummary, getRecommendations, getWatchlist } from "@/features/recommendations/recommendations.api"
+import { getBudgetSummary } from "@/features/budget/budget.api"
+import { getWatchedStocks } from "@/features/stocks/stocks.api"
+import { isRequestAborted, useLatestRequest } from "@/lib/use-latest-request"
+import { createRecommendationSnapshot, getRecommendations } from "@/features/recommendations/recommendations.api"
 import { RecommendationDecision } from "@/features/recommendations/RecommendationDecision"
 import { RecommendationsSkeleton } from "@/features/recommendations/RecommendationsSkeleton"
 import "./recommendations.css"
@@ -28,25 +31,30 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
   const copy = messages.dividendStrategy.ui.overview
   const readUnavailableRef = useRef(copy.messages.readUnavailable)
   const [stocks, setStocks] = useState<StockWatchlistItem[]>([])
-  const [recommendation, setRecommendation] = useState<PortfolioRecommendationResult | null>(null)
+  const [portfolioRecommendation, setPortfolioRecommendation] = useState<PortfolioRecommendationResult | null>(null)
   const [budget, setBudget] = useState<BudgetSummary | null>(null)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [savingSnapshot, setSavingSnapshot] = useState(false)
   const [snapshotMessage, setSnapshotMessage] = useState<string | null>(null)
+  const { begin: beginLoad } = useLatestRequest()
+  const { begin: beginSnapshot } = useLatestRequest()
 
   useEffect(() => {
     readUnavailableRef.current = copy.messages.readUnavailable
   }, [copy.messages.readUnavailable])
 
   const load = useCallback(async () => {
+    const request = beginLoad()
     setLoading(true)
     setError(null)
-    const [watchlistResult, recommendationResult, budgetResult] = await Promise.allSettled([getWatchlist(), getRecommendations(), getBudgetSummary()])
+    const [watchlistResult, recommendationResult, budgetResult] = await Promise.allSettled([getWatchedStocks(request.signal), getRecommendations(request.signal), getBudgetSummary(request.signal)])
+
+    if (!request.isCurrent()) return
 
     if (watchlistResult.status === "rejected") {
-      setError(getApiErrorMessage(watchlistResult.reason, readUnavailableRef.current, messages.common.ui.errors))
+      if (!isRequestAborted(watchlistResult.reason, request.signal)) setError(getApiErrorMessage(watchlistResult.reason, readUnavailableRef.current, messages.common.ui.errors))
       setLoading(false)
       return
     }
@@ -56,9 +64,9 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
     setSelectedKey((current) => current && watchlist.some((stock) => stockKey(stock) === current) ? current : watchlist[0] ? stockKey(watchlist[0]) : null)
 
     if (recommendationResult.status === "fulfilled") {
-      setRecommendation(recommendationResult.value)
+      setPortfolioRecommendation(recommendationResult.value)
     } else {
-      setRecommendation(null)
+      setPortfolioRecommendation(null)
     }
 
     if (budgetResult.status === "fulfilled") {
@@ -68,31 +76,32 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
     }
 
     setLoading(false)
-  }, [messages.common.ui.errors])
+  }, [beginLoad, messages.common.ui.errors])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void load() }, 0)
     return () => window.clearTimeout(timeoutId)
   }, [load])
 
-  const selectedRecommendation = useMemo<StockRecommendationResult | null>(() => recommendation?.stocks.find((item) => stockKey(item.analysis) === selectedKey) ?? null, [recommendation, selectedKey])
-  const hasAnyReadyRecommendation = Boolean(recommendation?.stocks.some((item) => hasAnalysisData(item.analysis)))
-  const hasCompleteRecommendation = Boolean(recommendation?.stocks.length && recommendation.stocks.every((item) => hasAnalysisData(item.analysis)))
-  const readyRecommendation = hasAnyReadyRecommendation ? recommendation : null
+  const selectedRecommendation = useMemo<StockRecommendationResult | null>(() => portfolioRecommendation?.stocks.find((item) => stockKey(item.analysis) === selectedKey) ?? null, [portfolioRecommendation, selectedKey])
+  const hasAnyReadyRecommendation = Boolean(portfolioRecommendation?.stocks.some((item) => hasAnalysisData(item.analysis)))
+  const hasCompleteRecommendation = Boolean(portfolioRecommendation?.stocks.length && portfolioRecommendation.stocks.every((item) => hasAnalysisData(item.analysis)))
+  const readyRecommendation = hasAnyReadyRecommendation ? portfolioRecommendation : null
   const selectedRecommendationReady = hasAnalysisData(selectedRecommendation?.analysis)
   const selectedStock = stocks.find((stock) => stockKey(stock) === selectedKey)
-  const lastUpdated = recommendation?.computedAt ?? budget?.computedAt
+  const lastUpdated = portfolioRecommendation?.computedAt ?? budget?.computedAt
 
   async function saveSnapshot() {
+    const request = beginSnapshot()
     setSavingSnapshot(true)
     setSnapshotMessage(null)
     try {
-      await createRecommendationSnapshot()
-      setSnapshotMessage(copy.messages.saveSuccess)
+      await createRecommendationSnapshot(request.signal)
+      if (request.isCurrent()) setSnapshotMessage(copy.messages.saveSuccess)
     } catch (snapshotError) {
-      setSnapshotMessage(getApiErrorMessage(snapshotError, copy.messages.saveFailed, messages.common.ui.errors))
+      if (request.isCurrent() && !isRequestAborted(snapshotError, request.signal)) setSnapshotMessage(getApiErrorMessage(snapshotError, copy.messages.saveFailed, messages.common.ui.errors))
     } finally {
-      setSavingSnapshot(false)
+      if (request.isCurrent()) setSavingSnapshot(false)
     }
   }
 
@@ -115,7 +124,7 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
             <Button variant="secondary" size="sm" className="d-notebook-tool" onClick={() => void saveSnapshot()} disabled={savingSnapshot}><Save data-icon="inline-start" />{savingSnapshot ? copy.actions.savingSnapshot : copy.actions.saveSnapshot}</Button>
           </> : undefined}
         />
-        <StockSelector stocks={stocks} recommendations={recommendation?.stocks ?? []} selectedKey={selectedKey} onSelect={(stock) => setSelectedKey(stockKey(stock))} labels={{ kicker: copy.stockSelector.kicker, title: copy.stockSelector.title, description: interpolate(copy.stockSelector.description, { count: stocks.length }), selectionHint: copy.stockSelector.selectionHint, pending: copy.stockSelector.pending, listLabel: copy.stockSelector.listLabel, sectorUnset: copy.stockSelector.sectorUnset, signals: copy.stockSelector.signals, recommendationLabels: { label: copy.stockSelector.signals, headline: copy.decision.headlines, signalTitle: copy.decision.signalTitles }, pendingName: messages.stocks.ui.identity.pendingName }} />
+        <StockSelector stocks={stocks} recommendations={portfolioRecommendation?.stocks ?? []} selectedKey={selectedKey} onSelect={(stock) => setSelectedKey(stockKey(stock))} labels={{ kicker: copy.stockSelector.kicker, title: copy.stockSelector.title, description: interpolate(copy.stockSelector.description, { count: stocks.length }), selectionHint: copy.stockSelector.selectionHint, pending: copy.stockSelector.pending, listLabel: copy.stockSelector.listLabel, sectorUnset: copy.stockSelector.sectorUnset, recommendationLabels: { label: copy.stockSelector.signals, headline: copy.decision.headlines, signalTitle: copy.decision.signalTitles }, pendingName: messages.stocks.ui.identity.pendingName }} />
         {readyRecommendation ? <>
           <ReadyPortfolioPulse recommendation={readyRecommendation} budget={budget} labels={copy} pendingName={messages.stocks.ui.identity.pendingName} />
           {snapshotMessage && <p className="form-message d-inline-message">{snapshotMessage}</p>}

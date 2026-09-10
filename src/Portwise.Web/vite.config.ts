@@ -13,6 +13,16 @@ export default defineConfig({
   build: {
     outDir: "../Portwise/wwwroot",
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) return "react-vendor"
+          if (id.includes("node_modules/@base-ui/") || id.includes("node_modules/class-variance-authority/")) return "ui-vendor"
+          if (id.includes("node_modules/lucide-react/")) return "icon-vendor"
+          return undefined
+        },
+      },
+    },
   },
   server: {
     host: true,

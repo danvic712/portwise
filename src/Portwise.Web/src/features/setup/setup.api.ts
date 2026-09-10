@@ -1,10 +1,10 @@
 import { apiGet, apiPost } from "@/lib/api-client"
-import type { SetupRequest, SetupResult, SetupStatus } from "@/lib/api-types"
+import type { SetupRequest } from "@/lib/api-types"
 
-export async function getSetupStatus() {
-  return apiGet<SetupStatus>("/api/v1/setup/status")
+export async function getSetupStatus(signal?: AbortSignal) {
+  return apiGet("/api/v1/setup/status", {}, { signal })
 }
 
-export async function initializeSetup(request: SetupRequest) {
-  return apiPost<SetupResult, "/api/v1/setup", SetupRequest>("/api/v1/setup", request)
+export async function initializeSetup(request: SetupRequest, signal?: AbortSignal) {
+  return apiPost("/api/v1/setup", request, {}, { signal })
 }

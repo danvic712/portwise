@@ -1,6 +1,6 @@
 import axios from "axios"
 
-import { apiPath, normalizeWireNumerics, type ApiGetPath, type ApiPathParameters, type ApiPostPath } from "@/lib/api-contract"
+import { apiPath, normalizeWireNumerics, type ApiGetPath, type ApiPathParameters, type ApiPostPath, type ApiResponse } from "@/lib/api-contract"
 
 export const apiClient = axios.create({
   baseURL: "/api/v1",
@@ -22,21 +22,21 @@ apiClient.interceptors.response.use((response) => {
   return response
 })
 
-export async function apiGet<T, P extends ApiGetPath = ApiGetPath>(
+export async function apiGet<P extends ApiGetPath>(
   path: P,
-  pathParameters: ApiPathParameters = {},
-  config?: Parameters<typeof apiClient.get<T>>[1],
+  pathParameters: ApiPathParameters<P> = {} as ApiPathParameters<P>,
+  config?: Parameters<typeof apiClient.get<ApiResponse<P, "get">>>[1],
 ) {
-  const response = await apiClient.get<T>(apiPath(path, pathParameters), config)
+  const response = await apiClient.get<ApiResponse<P, "get">>(apiPath(path, pathParameters), config)
   return response.data
 }
 
-export async function apiPost<T, P extends ApiPostPath = ApiPostPath, Body = unknown>(
+export async function apiPost<P extends ApiPostPath, Body = unknown>(
   path: P,
   body?: Body,
-  pathParameters: ApiPathParameters = {},
-  config?: Parameters<typeof apiClient.post<T>>[2],
+  pathParameters: ApiPathParameters<P> = {} as ApiPathParameters<P>,
+  config?: Parameters<typeof apiClient.post<ApiResponse<P, "post">>>[2],
 ) {
-  const response = await apiClient.post<T>(apiPath(path, pathParameters), body, config)
+  const response = await apiClient.post<ApiResponse<P, "post">>(apiPath(path, pathParameters), body, config)
   return response.data
 }

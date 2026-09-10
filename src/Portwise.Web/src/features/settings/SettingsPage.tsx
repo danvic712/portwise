@@ -16,7 +16,8 @@ import { displayStockName } from "@/lib/stock-display"
 import { formatMoney, formatNumber, stockKey, today } from "@/lib/utils"
 import type { SaveStockModelParametersRequest, StockWatchlistItem } from "@/lib/api-types"
 import type { QueryPatch } from "@/lib/navigation"
-import { getSettingsParameters, getSettingsStocks, updateSettingsParameters } from "@/features/settings/settings.api"
+import { isRequestAborted, useLatestRequest } from "@/lib/use-latest-request"
+import { getStockModelParameters, getWatchedStocks, saveStockModelParameters } from "@/features/stocks/stocks.api"
 import { SettingsPageSkeleton, SettingsParameterSkeleton } from "@/features/settings/SettingsSkeleton"
 import "./settings.css"
 
@@ -61,7 +62,6 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
   const readErrorRef = useRef(copy.states.readError)
   const parameterErrorRef = useRef(copy.states.parametersReadError)
   const [stocks, setStocks] = useState<StockWatchlistItem[]>([])
-  const [selectedKey, setSelectedKey] = useState(initialStockKey)
   const [parameters, setParameters] = useState<SaveStockModelParametersRequest | null>(null)
   const [parametersStockKey, setParametersStockKey] = useState("")
   const [loading, setLoading] = useState(true)
@@ -69,6 +69,10 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const { begin: beginStocks } = useLatestRequest()
+  const { begin: beginParameters } = useLatestRequest()
+  const { begin: beginSave, cancel: cancelSave } = useLatestRequest()
+  const selectedKeyRef = useRef("")
 
   useEffect(() => {
     readErrorRef.current = copy.states.readError
@@ -76,25 +80,36 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
   }, [copy.states.parametersReadError, copy.states.readError])
 
   const loadStocks = useCallback(async () => {
+    const request = beginStocks()
     setLoading(true)
     setError(null)
     try {
-      const list = await getSettingsStocks()
+      const list = await getWatchedStocks(request.signal)
+      if (!request.isCurrent()) return
       setStocks(list)
-      setSelectedKey((current) => current && list.some((stock) => stockKey(stock) === current) ? current : list[0] ? stockKey(list[0]) : "")
     } catch (loadError) {
-      setError(getApiErrorMessage(loadError, readErrorRef.current, messages.common.ui.errors))
+      if (request.isCurrent() && !isRequestAborted(loadError, request.signal)) setError(getApiErrorMessage(loadError, readErrorRef.current, messages.common.ui.errors))
     } finally {
-      setLoading(false)
+      if (request.isCurrent()) setLoading(false)
     }
-  }, [messages.common.ui.errors])
+  }, [beginStocks, messages.common.ui.errors])
 
-  const loadParameters = useCallback(async (signal?: AbortSignal) => {
+  const loadParameters = useCallback(async () => {
+    const request = beginParameters()
+    cancelSave()
+    setSaving(false)
+    const selectedKey = stocks.some((item) => stockKey(item) === initialStockKey)
+      ? initialStockKey
+      : stocks[0]
+        ? stockKey(stocks[0])
+        : ""
     const stock = stocks.find((item) => stockKey(item) === selectedKey)
     if (!stock) {
-      setParameters(null)
-      setParametersStockKey("")
-      setParametersLoading(false)
+      if (request.isCurrent()) {
+        setParameters(null)
+        setParametersStockKey("")
+        setParametersLoading(false)
+      }
       return
     }
 
@@ -104,17 +119,17 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
     setError(null)
     setMessage(null)
     try {
-      const result = await getSettingsParameters(stock.securityCode, stock.exchangeCode, signal)
-      if (!signal?.aborted) {
-        setParameters(result)
+      const result = await getStockModelParameters(stock.securityCode, stock.exchangeCode, request.signal)
+      if (request.isCurrent()) {
+        setParameters(result ? { ...result, effectiveFromDate: result.effectiveFromDate || today() } : null)
         setParametersStockKey(selectedKey)
       }
     } catch (loadError) {
-      if (!signal?.aborted) setError(getApiErrorMessage(loadError, parameterErrorRef.current, messages.common.ui.errors))
+      if (request.isCurrent() && !isRequestAborted(loadError, request.signal)) setError(getApiErrorMessage(loadError, parameterErrorRef.current, messages.common.ui.errors))
     } finally {
-      if (!signal?.aborted) setParametersLoading(false)
+      if (request.isCurrent()) setParametersLoading(false)
     }
-  }, [messages.common.ui.errors, selectedKey, stocks])
+  }, [beginParameters, cancelSave, initialStockKey, messages.common.ui.errors, stocks])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void loadStocks() }, 0)
@@ -122,14 +137,19 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
   }, [loadStocks])
 
   useEffect(() => {
-    const controller = new AbortController()
-    const timeoutId = window.setTimeout(() => { void loadParameters(controller.signal) }, 0)
-    return () => {
-      window.clearTimeout(timeoutId)
-      controller.abort()
-    }
+    const timeoutId = window.setTimeout(() => { void loadParameters() }, 0)
+    return () => window.clearTimeout(timeoutId)
   }, [loadParameters])
 
+  const selectedKey = stocks.some((item) => stockKey(item) === initialStockKey)
+    ? initialStockKey
+    : stocks[0]
+      ? stockKey(stocks[0])
+      : ""
+
+  useEffect(() => {
+    selectedKeyRef.current = selectedKey
+  }, [selectedKey])
   const selectedStock = stocks.find((stock) => stockKey(stock) === selectedKey)
   const activeParameters = parametersStockKey === selectedKey ? parameters : null
   const invalidParameters = activeParameters ? hasInvalidParameters(activeParameters) : false
@@ -137,12 +157,13 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
   function changeStock(stock: StockWatchlistItem) {
     const nextKey = stockKey(stock)
     if (nextKey === selectedKey) return
-    setSelectedKey(nextKey)
     setParametersLoading(true)
     setParameters(null)
     setParametersStockKey("")
     setError(null)
     setMessage(null)
+    cancelSave()
+    setSaving(false)
     onReplaceQuery({ stock: stock.securityCode, exchange: stock.exchangeCode })
   }
 
@@ -161,17 +182,21 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
       return
     }
 
+    const savedStockKey = selectedKey
+    const request = beginSave()
     setSaving(true)
     setError(null)
     setMessage(null)
     try {
-      const saved = await updateSettingsParameters(activeParameters)
-      setParameters(saved)
-      setMessage(copy.states.successMessage)
+      const saved = await saveStockModelParameters(activeParameters, request.signal)
+      if (request.isCurrent() && selectedKeyRef.current === savedStockKey) {
+        setParameters({ ...saved, effectiveFromDate: saved.effectiveFromDate || today() })
+        setMessage(copy.states.successMessage)
+      }
     } catch (saveError) {
-      setError(getApiErrorMessage(saveError, copy.states.recordError, messages.common.ui.errors))
+      if (request.isCurrent() && !isRequestAborted(saveError, request.signal)) setError(getApiErrorMessage(saveError, copy.states.recordError, messages.common.ui.errors))
     } finally {
-      setSaving(false)
+      if (request.isCurrent()) setSaving(false)
     }
   }
 
@@ -216,12 +241,12 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
             <SectionHeading label={copy.stocks.eyebrow} title={copy.stocks.title} description={copy.stocks.description} />
             <Badge variant="accent">{interpolate(copy.stocks.stockCount, { count: stocks.length })}</Badge>
           </CardHeader>
-          <CardContent className="settings-stock-list" role="tablist" aria-label={copy.stocks.title}>
+          <CardContent className="settings-stock-list" role="group" aria-label={copy.stocks.title}>
             {stocks.map((stock) => {
               const key = stockKey(stock)
               const holding = stock.holding
               const isSelected = selectedKey === key
-              return <Button key={key} variant="ghost" className={`settings-stock-item ${isSelected ? "settings-stock-item-active" : ""}`} type="button" onClick={() => changeStock(stock)} role="tab" aria-selected={isSelected} aria-controls="settings-parameter-editor">
+              return <Button key={key} variant="ghost" className={`settings-stock-item ${isSelected ? "settings-stock-item-active" : ""}`} type="button" onClick={() => changeStock(stock)} aria-pressed={isSelected}>
                 <span className="settings-stock-avatar" aria-hidden="true">{displayStockName(stock, messages.stocks.ui.identity.pendingName).slice(0, 2)}</span>
                 <span className="settings-stock-copy"><strong>{displayStockName(stock, messages.stocks.ui.identity.pendingName)}</strong><small>{stock.securityCode} · {stock.exchangeCode}</small></span>
                 <span className="settings-stock-meta"><span>{copy.stocks.position}</span><strong>{holding ? `${formatNumber(holding.heldShares, 0)} ${copy.stocks.shareUnit}` : copy.stocks.positionEmpty}</strong>{holding && <small>{copy.stocks.cost} {formatMoney(holding.averageCostPerShare)}</small>}</span>
@@ -241,13 +266,13 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
               <FieldSet className="settings-identity-grid">
                 <Field>
                   <FieldLabel htmlFor="model-version">{copy.form.modelVersion}</FieldLabel>
-                  <Input id="model-version" value={activeParameters.modelVersion} onChange={(event) => updateValue("modelVersion", event.target.value)} />
-                  <FieldDescription>{copy.form.modelVersionHint}</FieldDescription>
+                  <Input id="model-version" value={activeParameters.modelVersion} aria-describedby="model-version-description" onChange={(event) => updateValue("modelVersion", event.target.value)} />
+                  <FieldDescription id="model-version-description">{copy.form.modelVersionHint}</FieldDescription>
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="effective-date">{copy.form.effectiveDate}</FieldLabel>
-                  <div className="settings-date-field"><CalendarDays size={16} aria-hidden="true" /><Input id="effective-date" type="date" value={activeParameters.effectiveFromDate || today()} onChange={(event) => updateValue("effectiveFromDate", event.target.value)} /></div>
-                  <FieldDescription>{copy.form.effectiveDateHint}</FieldDescription>
+                  <div className="settings-date-field"><CalendarDays size={16} aria-hidden="true" /><Input id="effective-date" type="date" value={activeParameters.effectiveFromDate} aria-describedby="effective-date-description" onChange={(event) => updateValue("effectiveFromDate", event.target.value)} /></div>
+                  <FieldDescription id="effective-date-description">{copy.form.effectiveDateHint}</FieldDescription>
                 </Field>
               </FieldSet>
 
@@ -256,8 +281,8 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
                 <FieldSet className="settings-field-grid">
                   {group.fields.map((field) => <Field key={field.key}>
                     <FieldLabel htmlFor={field.key}>{copy.fields[field.key].label}</FieldLabel>
-                    <div className="settings-input-wrap"><Input id={field.key} type="number" min="0" max={group.percent ? "1" : undefined} step={field.step ?? "0.01"} value={String(activeParameters[field.key])} onChange={(event) => updateValue(field.key, event.target.value)} aria-invalid={group.percent && (activeParameters[field.key] < 0 || activeParameters[field.key] > 1) ? true : undefined} /><span>{group.percent ? copy.form.ratioRange : ""}</span></div>
-                    <FieldDescription>{copy.fields[field.key].help}</FieldDescription>
+                    <div className="settings-input-wrap"><Input id={field.key} type="number" min="0" max={group.percent ? "1" : undefined} step={field.step ?? "0.01"} value={String(activeParameters[field.key])} aria-describedby={`${field.key}-description`} onChange={(event) => updateValue(field.key, event.target.value)} aria-invalid={group.percent && (activeParameters[field.key] < 0 || activeParameters[field.key] > 1) ? true : undefined} /><span>{group.percent ? copy.form.ratioRange : ""}</span></div>
+                    <FieldDescription id={`${field.key}-description`}>{copy.fields[field.key].help}</FieldDescription>
                   </Field>)}
                 </FieldSet>
               </section>)}

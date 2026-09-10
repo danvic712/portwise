@@ -15,8 +15,9 @@ import { interpolate, useLocale } from "@/lib/i18n"
 import { displayStockName } from "@/lib/stock-display"
 import { formatDateTime, formatMoney, stockKey, today } from "@/lib/utils"
 import type { BudgetSummary, RecordCashLedgerEntryRequest, StockWatchlistItem } from "@/lib/api-types"
-import { getBudget, recordBudgetEntry } from "@/features/budget/budget.api"
-import { getStocks } from "@/features/stocks/stocks.api"
+import { getBudgetSummary, recordBudgetEntry } from "@/features/budget/budget.api"
+import { getWatchedStocks } from "@/features/stocks/stocks.api"
+import { isRequestAborted, useLatestRequest } from "@/lib/use-latest-request"
 import "./budget.css"
 
 type EntryType = "budget_deposit" | "dividend_received" | "buy" | "sell" | "fee" | "cash_adjustment"
@@ -45,24 +46,28 @@ export function BudgetPage({ onNavigate }: { onNavigate: (path: string) => void 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const { begin: beginLoad } = useLatestRequest()
+  const { begin: beginSubmit } = useLatestRequest()
 
   useEffect(() => {
     readErrorRef.current = copy.states.readError
   }, [copy.states.readError])
 
   const load = useCallback(async () => {
+    const request = beginLoad()
     setLoading(true)
     setError(null)
     try {
-      const [budget, watchlist] = await Promise.all([getBudget(), getStocks()])
+      const [budget, watchlist] = await Promise.all([getBudgetSummary(request.signal), getWatchedStocks(request.signal)])
+      if (!request.isCurrent()) return
       setSummary(budget)
       setStocks(watchlist)
     } catch (loadError) {
-      setError(getApiErrorMessage(loadError, readErrorRef.current, messages.common.ui.errors))
+      if (request.isCurrent() && !isRequestAborted(loadError, request.signal)) setError(getApiErrorMessage(loadError, readErrorRef.current, messages.common.ui.errors))
     } finally {
-      setLoading(false)
+      if (request.isCurrent()) setLoading(false)
     }
-  }, [messages.common.ui.errors])
+  }, [beginLoad, messages.common.ui.errors])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void load() }, 0)
@@ -74,7 +79,7 @@ export function BudgetPage({ onNavigate }: { onNavigate: (path: string) => void 
   const selectedStockItem = stocks.find((stock) => stockKey(stock) === selectedStock)
 
   function changeEntryType(value: string | null) {
-    if (!value) return
+    if (!value || !entryTypeDefinitions.some((item) => item.code === value)) return
     setEntryType(value as EntryType)
     const nextType = entryTypeDefinitions.find((item) => item.code === value)
     if (!nextType?.needsStock) setSelectedStock("")
@@ -104,17 +109,19 @@ export function BudgetPage({ onNavigate }: { onNavigate: (path: string) => void 
       sourceRecordId: sourceRecordId.trim() || null,
     }
 
+    const requestHandle = beginSubmit()
     setSubmitting(true)
     try {
-      await recordBudgetEntry(request)
+      await recordBudgetEntry(request, requestHandle.signal)
+      if (!requestHandle.isCurrent()) return
       setAmount("")
       setSourceRecordId("")
       setMessage(copy.states.successMessage)
       await load()
     } catch (submitError) {
-      setError(getApiErrorMessage(submitError, copy.states.recordError, messages.common.ui.errors))
+      if (requestHandle.isCurrent() && !isRequestAborted(submitError, requestHandle.signal)) setError(getApiErrorMessage(submitError, copy.states.recordError, messages.common.ui.errors))
     } finally {
-      setSubmitting(false)
+      if (requestHandle.isCurrent()) setSubmitting(false)
     }
   }
 
@@ -176,7 +183,8 @@ export function BudgetPage({ onNavigate }: { onNavigate: (path: string) => void 
 
                 <Field>
                   <FieldLabel htmlFor="entry-amount">{copy.form.amount}</FieldLabel>
-                  <Input id="entry-amount" type="number" min="0.01" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder={copy.form.amountPlaceholder} inputMode="decimal" />
+                  <Input id="entry-amount" type="number" min="0.01" step="0.01" value={amount} aria-describedby="entry-amount-description" onChange={(event) => setAmount(event.target.value)} placeholder={copy.form.amountPlaceholder} inputMode="decimal" />
+                  <FieldDescription id="entry-amount-description">{copy.form.amountPlaceholder}</FieldDescription>
                 </Field>
 
                 <Field>
@@ -188,17 +196,17 @@ export function BudgetPage({ onNavigate }: { onNavigate: (path: string) => void 
                   <Field className="budget-grid-wide">
                     <FieldLabel htmlFor="entry-stock">{copy.form.stock}</FieldLabel>
                     <Select value={selectedStock || "__none__"} onValueChange={(value) => setSelectedStock(value === "__none__" || !value ? "" : value)}>
-                      <SelectTrigger id="entry-stock" className="budget-select-trigger"><SelectValue placeholder={copy.form.stockPlaceholder}>{selectedStockItem ? `${displayStockName(selectedStockItem, messages.stocks.ui.identity.pendingName)} · ${selectedStockItem.securityCode}` : copy.form.stockPlaceholder}</SelectValue></SelectTrigger>
+                      <SelectTrigger id="entry-stock" aria-describedby="entry-stock-description" className="budget-select-trigger"><SelectValue placeholder={copy.form.stockPlaceholder}>{selectedStockItem ? `${displayStockName(selectedStockItem, messages.stocks.ui.identity.pendingName)} · ${selectedStockItem.securityCode}` : copy.form.stockPlaceholder}</SelectValue></SelectTrigger>
                       <SelectContent><SelectGroup><SelectItem value="__none__">{copy.form.stockPlaceholder}</SelectItem>{stocks.map((stock) => <SelectItem key={stockKey(stock)} value={stockKey(stock)}>{stock.securityCode} · {stock.exchangeCode} · {displayStockName(stock, messages.stocks.ui.identity.pendingName)}</SelectItem>)}</SelectGroup></SelectContent>
                     </Select>
-                    <FieldDescription>{stocks.length ? copy.form.stockHint : copy.states.emptyStock}</FieldDescription>
+                    <FieldDescription id="entry-stock-description">{stocks.length ? copy.form.stockHint : copy.states.emptyStock}</FieldDescription>
                   </Field>
                 )}
 
                 <Field className="budget-grid-wide">
                   <FieldLabel htmlFor="source-record">{copy.form.source}</FieldLabel>
-                  <Input id="source-record" value={sourceRecordId} onChange={(event) => setSourceRecordId(event.target.value)} placeholder={copy.form.sourcePlaceholder} />
-                  <FieldDescription>{copy.form.sourceHint}</FieldDescription>
+                  <Input id="source-record" value={sourceRecordId} aria-describedby="source-record-description" onChange={(event) => setSourceRecordId(event.target.value)} placeholder={copy.form.sourcePlaceholder} />
+                  <FieldDescription id="source-record-description">{copy.form.sourceHint}</FieldDescription>
                 </Field>
               </FieldSet>
 

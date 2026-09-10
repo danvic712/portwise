@@ -14,7 +14,6 @@ type StockSelectorLabels = {
   pending: string
   listLabel: string
   sectorUnset: string
-  signals: Record<string, string>
   recommendationLabels: RecommendationDisplayLabels
   pendingName: string
 }
@@ -23,7 +22,7 @@ export function StockSelector({ stocks, selectedKey, onSelect, recommendations =
   return (
     <section className="d-watchlist">
       <div className="d-watchlist-heading"><div><div className="d-kicker"><span>00</span><span>{labels.kicker}</span><i /></div><h2>{labels.title}</h2></div><span className="d-watchlist-note"><strong>{labels.description}</strong>{labels.selectionHint && <small>{labels.selectionHint}</small>}</span></div>
-      <div className="stock-rail d-stock-rail" role="list" aria-label={labels.listLabel}>
+      <div className="stock-rail d-stock-rail" role="group" aria-label={labels.listLabel}>
       {stocks.map((stock) => {
         const selected = stockKey(stock) === selectedKey
         const recommendation = recommendations.find((item) => stockKey(item.analysis) === stockKey(stock))

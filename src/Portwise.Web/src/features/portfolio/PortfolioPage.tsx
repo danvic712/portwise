@@ -16,7 +16,9 @@ import { displayStockName } from "@/lib/stock-display"
 import { formatMoney, formatNumber, stockKey, today } from "@/lib/utils"
 import type { PortfolioTradeResult, RecordPortfolioTradeRequest, StockWatchlistItem } from "@/lib/api-types"
 import type { QueryPatch } from "@/lib/navigation"
-import { getPortfolioStocks, recordPortfolioTrade } from "@/features/portfolio/portfolio.api"
+import { isRequestAborted, useLatestRequest } from "@/lib/use-latest-request"
+import { getWatchedStocks } from "@/features/stocks/stocks.api"
+import { recordPortfolioTrade } from "@/features/portfolio/portfolio.api"
 import "./portfolio.css"
 
 export type TradeDirection = "buy" | "sell"
@@ -33,8 +35,7 @@ export function PortfolioPage({ onNavigate, onReplaceQuery, selectedStockKey, in
   const copy = messages.portfolio.ui
   const readErrorRef = useRef(copy.states.readError)
   const [stocks, setStocks] = useState<StockWatchlistItem[]>([])
-  const [selectedKey, setSelectedKey] = useState(selectedStockKey || "")
-  const [direction, setDirection] = useState<TradeDirection>(initialDirection)
+  const [fallbackSelectedKey, setFallbackSelectedKey] = useState("")
   const [tradeDate, setTradeDate] = useState(today())
   const [quantity, setQuantity] = useState("")
   const [price, setPrice] = useState("")
@@ -44,28 +45,33 @@ export function PortfolioPage({ onNavigate, onReplaceQuery, selectedStockKey, in
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { begin: beginLoad } = useLatestRequest()
+  const { begin: beginSubmit } = useLatestRequest()
 
   useEffect(() => {
     readErrorRef.current = copy.states.readError
   }, [copy.states.readError])
 
-  useEffect(() => {
-    if (selectedKey) onSelectedStockKeyChange(selectedKey)
-  }, [onSelectedStockKeyChange, selectedKey])
+  const selectedKey = stocks.some((stock) => stockKey(stock) === selectedStockKey)
+    ? selectedStockKey
+    : fallbackSelectedKey
+  const direction = initialDirection
 
   const load = useCallback(async () => {
+    const request = beginLoad()
     setLoading(true)
     setError(null)
     try {
-      const watchlist = await getPortfolioStocks()
+      const watchlist = await getWatchedStocks(request.signal)
+      if (!request.isCurrent()) return
       setStocks(watchlist)
-      setSelectedKey((current) => current && watchlist.some((stock) => stockKey(stock) === current) ? current : watchlist[0] ? stockKey(watchlist[0]) : "")
+      setFallbackSelectedKey((current) => current && watchlist.some((stock) => stockKey(stock) === current) ? current : watchlist[0] ? stockKey(watchlist[0]) : "")
     } catch (loadError) {
-      setError(getApiErrorMessage(loadError, readErrorRef.current, messages.common.ui.errors))
+      if (request.isCurrent() && !isRequestAborted(loadError, request.signal)) setError(getApiErrorMessage(loadError, readErrorRef.current, messages.common.ui.errors))
     } finally {
-      setLoading(false)
+      if (request.isCurrent()) setLoading(false)
     }
-  }, [messages.common.ui.errors])
+  }, [beginLoad, messages.common.ui.errors])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void load() }, 0)
@@ -75,16 +81,15 @@ export function PortfolioPage({ onNavigate, onReplaceQuery, selectedStockKey, in
   const selectedStock = stocks.find((stock) => stockKey(stock) === selectedKey)
 
   function changeDirection(nextDirection: TradeDirection) {
-    setDirection(nextDirection)
     setResult(null)
+    onReplaceQuery({ direction: nextDirection })
   }
 
   function changeStock(nextKey: string | null) {
     if (!nextKey) return
-    setSelectedKey(nextKey)
+    setFallbackSelectedKey(nextKey)
     onSelectedStockKeyChange(nextKey)
     setResult(null)
-    onReplaceQuery({ stock: nextKey })
   }
 
   async function submit() {
@@ -110,7 +115,7 @@ export function PortfolioPage({ onNavigate, onReplaceQuery, selectedStockKey, in
       return
     }
 
-    const request: RecordPortfolioTradeRequest = {
+    const tradeRequest: RecordPortfolioTradeRequest = {
       securityCode: selectedStock.securityCode,
       exchangeCode: selectedStock.exchangeCode,
       tradeDate,
@@ -121,17 +126,20 @@ export function PortfolioPage({ onNavigate, onReplaceQuery, selectedStockKey, in
       sourceRecordId: sourceRecordId.trim() || null,
     }
 
+    const request = beginSubmit()
     setSubmitting(true)
     try {
-      setResult(await recordPortfolioTrade(request))
+      const saved = await recordPortfolioTrade(tradeRequest, request.signal)
+      if (!request.isCurrent()) return
+      setResult(saved)
       setQuantity("")
       setPrice("")
       setFee("0")
       setSourceRecordId("")
     } catch (submitError) {
-      setError(getApiErrorMessage(submitError, copy.states.recordError, messages.common.ui.errors))
+      if (request.isCurrent() && !isRequestAborted(submitError, request.signal)) setError(getApiErrorMessage(submitError, copy.states.recordError, messages.common.ui.errors))
     } finally {
-      setSubmitting(false)
+      if (request.isCurrent()) setSubmitting(false)
     }
   }
 
@@ -220,10 +228,10 @@ export function PortfolioPage({ onNavigate, onReplaceQuery, selectedStockKey, in
                 <Field className="portfolio-grid-wide">
                   <FieldLabel htmlFor="trade-stock">{copy.form.stock}</FieldLabel>
                   <Select value={selectedKey} onValueChange={changeStock}>
-                    <SelectTrigger id="trade-stock" className="portfolio-select-trigger"><SelectValue placeholder={copy.form.stockPlaceholder}>{selectedStock ? `${displayStockName(selectedStock, messages.stocks.ui.identity.pendingName)} · ${selectedStock.securityCode}` : copy.form.stockPlaceholder}</SelectValue></SelectTrigger>
+                    <SelectTrigger id="trade-stock" aria-describedby="trade-stock-description" className="portfolio-select-trigger"><SelectValue placeholder={copy.form.stockPlaceholder}>{selectedStock ? `${displayStockName(selectedStock, messages.stocks.ui.identity.pendingName)} · ${selectedStock.securityCode}` : copy.form.stockPlaceholder}</SelectValue></SelectTrigger>
                     <SelectContent><SelectGroup>{stocks.map((stock) => <SelectItem key={stockKey(stock)} value={stockKey(stock)}>{stock.securityCode} · {stock.exchangeCode} · {displayStockName(stock, messages.stocks.ui.identity.pendingName)}</SelectItem>)}</SelectGroup></SelectContent>
                   </Select>
-                  <FieldDescription>{copy.form.stockHint}</FieldDescription>
+                  <FieldDescription id="trade-stock-description">{copy.form.stockHint}</FieldDescription>
                 </Field>
 
                 <Field>
@@ -244,8 +252,8 @@ export function PortfolioPage({ onNavigate, onReplaceQuery, selectedStockKey, in
                 </Field>
                 <Field className="portfolio-grid-wide">
                   <FieldLabel htmlFor="trade-source">{copy.form.source}</FieldLabel>
-                  <Input id="trade-source" value={sourceRecordId} onChange={(event) => setSourceRecordId(event.target.value)} placeholder={copy.form.sourcePlaceholder} />
-                  <FieldDescription>{copy.form.sourceHint}</FieldDescription>
+                  <Input id="trade-source" value={sourceRecordId} aria-describedby="trade-source-description" onChange={(event) => setSourceRecordId(event.target.value)} placeholder={copy.form.sourcePlaceholder} />
+                  <FieldDescription id="trade-source-description">{copy.form.sourceHint}</FieldDescription>
                 </Field>
               </FieldSet>
 

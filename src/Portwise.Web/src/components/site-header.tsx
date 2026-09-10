@@ -1,8 +1,9 @@
 import { Languages, Monitor, Moon, Settings2, Sun, SunMoon } from "lucide-react"
 import { useState } from "react"
 
-import { useTheme, type Theme } from "@/components/theme-provider"
+import { useTheme, type Theme } from "@/components/theme-context"
 import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button-variants"
 import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useLocale } from "@/lib/i18n"
@@ -30,30 +31,35 @@ export function SiteHeader({ currentPath, onNavigate }: SiteHeaderProps) {
     setPreferencesOpen(false)
   }
 
+  const handleNavigation = (event: React.MouseEvent<HTMLAnchorElement>, path: string) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    event.preventDefault()
+    onNavigate(path)
+  }
+
   return (
     <>
       <header className="topbar d-header">
-        <Button variant="ghost" className="brand-lockup" type="button" onClick={() => onNavigate("/overview")} aria-label={messages.common.ui.backToOverview}>
+        <a href="/overview" className={cn(buttonVariants({ variant: "ghost" }), "brand-lockup")} onClick={(event) => handleNavigation(event, "/overview")} aria-label={messages.common.ui.backToOverview}>
           <span className="brand-mark">D</span>
           <span className="brand-copy">
             <span className="brand-name">{messages.common.ui.brandName}</span>
             <span className="brand-caption">{messages.common.ui.brandCaption}</span>
           </span>
-        </Button>
+        </a>
 
         <nav className="main-nav" aria-label={messages.common.ui.mainNavigation}>
           {siteNavigation.map(({ path, key, icon: Icon }) => (
-            <Button
+            <a
               key={path}
-              variant="ghost"
-              className={cn("nav-item", currentPath === path && "nav-item-active")}
-              type="button"
-              onClick={() => onNavigate(path)}
+              href={path}
+              className={cn(buttonVariants({ variant: "ghost" }), "nav-item", currentPath === path && "nav-item-active")}
+              onClick={(event) => handleNavigation(event, path)}
               aria-current={currentPath === path ? "page" : undefined}
             >
               <Icon data-icon="inline-start" />
               {messages.common.ui.nav[key]}
-            </Button>
+            </a>
           ))}
         </nav>
 
@@ -116,18 +122,18 @@ export function SiteHeader({ currentPath, onNavigate }: SiteHeaderProps) {
               </PopoverContent>
             </Popover>
           </div>
-          <Button size="icon" variant="ghost" className="header-settings-button" aria-label={messages.common.ui.settings} onClick={() => onNavigate("/settings")}>
+          <a href="/settings" className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "header-settings-button")} aria-label={messages.common.ui.settings} onClick={(event) => handleNavigation(event, "/settings")}>
             <Settings2 data-icon="inline-start" />
-          </Button>
+          </a>
         </div>
       </header>
 
       <nav className="mobile-nav" aria-label={messages.common.ui.mobileNavigation}>
         {siteNavigation.map(({ path, key, icon: Icon }) => (
-          <Button key={path} variant="ghost" className={cn("mobile-nav-item", currentPath === path && "mobile-nav-item-active")} type="button" onClick={() => onNavigate(path)} aria-current={currentPath === path ? "page" : undefined}>
+          <a key={path} href={path} className={cn(buttonVariants({ variant: "ghost" }), "mobile-nav-item", currentPath === path && "mobile-nav-item-active")} onClick={(event) => handleNavigation(event, path)} aria-current={currentPath === path ? "page" : undefined}>
             <Icon />
             <span>{messages.common.ui.nav[key]}</span>
-          </Button>
+          </a>
         ))}
       </nav>
     </>

@@ -1,6 +1,5 @@
 import * as React from "react"
-
-export type Theme = "light" | "dark" | "system"
+import { ThemeProviderContext, type Theme } from "@/components/theme-context"
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -8,12 +7,6 @@ type ThemeProviderProps = {
   storageKey?: string
 }
 
-type ThemeProviderState = {
-  theme: Theme
-  setTheme: (theme: Theme) => void
-}
-
-const ThemeProviderContext = React.createContext<ThemeProviderState | undefined>(undefined)
 const mediaQuery = "(prefers-color-scheme: dark)"
 
 function isTheme(value: string | null): value is Theme {
@@ -60,13 +53,4 @@ export function ThemeProvider({ children, defaultTheme = "system", storageKey = 
       {children}
     </ThemeProviderContext.Provider>
   )
-}
-
-export function useTheme() {
-  const context = React.useContext(ThemeProviderContext)
-  if (!context) {
-    throw new Error("useTheme must be used within a ThemeProvider")
-  }
-
-  return context
 }

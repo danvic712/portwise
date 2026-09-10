@@ -35,7 +35,25 @@ type PathsWithMethod<Method extends HttpMethod> = {
 
 export type ApiGetPath = PathsWithMethod<"get">
 export type ApiPostPath = PathsWithMethod<"post">
-export type ApiPathParameters = Record<string, string | number>
+
+type ApiOperation<P extends ApiPath, Method extends HttpMethod> = paths[P][Method]
+type ApiSuccessBody<Operation> = Operation extends { responses: infer Responses }
+  ? Responses extends { 200: infer Success }
+    ? Success extends { content: infer Content }
+      ? Content extends Record<string, infer Body>
+        ? Body
+        : never
+      : never
+    : never
+  : never
+
+export type ApiResponse<P extends ApiPath, Method extends HttpMethod> = Normalize<ApiSuccessBody<ApiOperation<P, Method>>>
+type PathParameterNames<Path extends string> = Path extends `${string}{${infer Parameter}}${infer Rest}`
+  ? Parameter | PathParameterNames<Rest>
+  : never
+
+export type ApiPathParameters<P extends ApiPath = ApiPath> =
+  Partial<Record<PathParameterNames<P>, string | number>> & Record<string, string | number>
 
 /**
  * Expands a generated OpenAPI path and returns the relative path expected by
@@ -44,17 +62,21 @@ export type ApiPathParameters = Record<string, string | number>
  */
 export function apiPath<P extends ApiPath>(
   template: P,
-  parameters: ApiPathParameters = {},
+  parameters: ApiPathParameters<P> = {} as ApiPathParameters<P>,
 ) {
   const expanded = Object.entries(parameters).reduce(
     (path, [name, value]) => path.replace(`{${name}}`, encodeURIComponent(String(value))),
     template as string,
   )
 
+  if (/\{[^}]+\}/.test(expanded)) {
+    throw new Error(`Missing path parameter for API route: ${template}`)
+  }
+
   return expanded.replace(/^\/api\/v1/, "")
 }
 
-const numericPropertyPattern = /(?:amount|count|shares|quantity|price|ratio|yield|pershare|threshold|weight|fee|earningsperShare|returnOnEquity)$/i
+const numericPropertyPattern = /(?:amount|count|shares|quantity|price|ratio|yield|pershare|threshold|weight|fee|size|earningsperShare|returnOnEquity)$/i
 
 /**
  * Converts numeric strings emitted by JSON number serializers to numbers while

@@ -10,48 +10,48 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { getApiErrorMessage } from "@/lib/api-errors"
+import { isRequestAborted, useLatestRequest } from "@/lib/use-latest-request"
 import { initializeSetup } from "@/features/setup/setup.api"
 import type { SetupResult, SetupStockRequest } from "@/lib/api-types"
 import { interpolate, useLocale } from "@/lib/i18n"
 import "./setup.css"
 
-function newStock(): SetupStockRequest {
-  return { securityCode: "", exchangeCode: "SSE", initialHolding: null }
+type SetupStockDraft = SetupStockRequest & { id: string }
+
+function newStock(): SetupStockDraft {
+  return { id: crypto.randomUUID(), securityCode: "", exchangeCode: "SSE", initialHolding: null }
 }
 
 export function SetupPage({ onComplete }: { onComplete: (result: SetupResult) => void }) {
   const { messages } = useLocale()
   const copy = messages.setup.ui
   const [portfolioName, setPortfolioName] = useState("")
-  const [stocks, setStocks] = useState<SetupStockRequest[]>([newStock()])
-  const [withHolding, setWithHolding] = useState<boolean[]>([false])
+  const [stocks, setStocks] = useState<SetupStockDraft[]>([newStock()])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { begin: beginSubmit } = useLatestRequest()
 
-  function updateStock(index: number, update: Partial<SetupStockRequest>) {
-    setStocks((current) => current.map((stock, itemIndex) => itemIndex === index ? { ...stock, ...update } : stock))
+  function updateStock(id: string, update: Partial<SetupStockRequest>) {
+    setStocks((current) => current.map((stock) => stock.id === id ? { ...stock, ...update } : stock))
   }
 
-  function toggleHolding(index: number, checked: boolean) {
-    setWithHolding((current) => current.map((value, itemIndex) => itemIndex === index ? checked : value))
-    updateStock(index, { initialHolding: checked ? { heldShares: 0, coreShares: 0, targetShares: 0, averageCostPerShare: 0 } : null })
+  function toggleHolding(id: string, checked: boolean) {
+    updateStock(id, { initialHolding: checked ? { heldShares: 0, coreShares: 0, targetShares: 0, averageCostPerShare: 0 } : null })
   }
 
-  function updateHolding(index: number, key: "heldShares" | "coreShares" | "targetShares" | "averageCostPerShare", value: string) {
-    const stock = stocks[index]
+  function updateHolding(id: string, key: "heldShares" | "coreShares" | "targetShares" | "averageCostPerShare", value: string) {
+    const stock = stocks.find((item) => item.id === id)
     if (!stock?.initialHolding) return
-    updateStock(index, { initialHolding: { ...stock.initialHolding, [key]: Number(value) || 0 } })
+    updateStock(id, { initialHolding: { ...stock.initialHolding, [key]: Number(value) || 0 } })
   }
 
   function addStock() {
     setStocks((current) => [...current, newStock()])
-    setWithHolding((current) => [...current, false])
   }
 
-  function removeStock(index: number) {
+  function removeStock(id: string) {
     if (stocks.length === 1) return
-    setStocks((current) => current.filter((_, itemIndex) => itemIndex !== index))
-    setWithHolding((current) => current.filter((_, itemIndex) => itemIndex !== index))
+    setStocks((current) => current.filter((stock) => stock.id !== id))
   }
 
   async function submit() {
@@ -61,14 +61,20 @@ export function SetupPage({ onComplete }: { onComplete: (result: SetupResult) =>
       return
     }
 
+    const request = beginSubmit()
     setSubmitting(true)
     try {
-      const result = await initializeSetup({ portfolioName: portfolioName.trim(), stocks: stocks.map((stock) => ({ ...stock, securityCode: stock.securityCode.trim(), exchangeCode: stock.exchangeCode.trim().toUpperCase() })) })
+      const result = await initializeSetup({ portfolioName: portfolioName.trim(), stocks: stocks.map((draft) => {
+        const { id, ...stock } = draft
+        void id
+        return { ...stock, securityCode: stock.securityCode.trim(), exchangeCode: stock.exchangeCode.trim().toUpperCase() }
+      }) }, request.signal)
+      if (!request.isCurrent()) return
       onComplete(result)
     } catch (submitError) {
-      setError(getApiErrorMessage(submitError, copy.requestError, messages.common.ui.errors))
+      if (request.isCurrent() && !isRequestAborted(submitError, request.signal)) setError(getApiErrorMessage(submitError, copy.requestError, messages.common.ui.errors))
     } finally {
-      setSubmitting(false)
+      if (request.isCurrent()) setSubmitting(false)
     }
   }
 
@@ -128,32 +134,32 @@ export function SetupPage({ onComplete }: { onComplete: (result: SetupResult) =>
 
                   <FieldGroup className="setup-stock-list">
                     {stocks.map((stock, index) => (
-                      <FieldGroup className="setup-stock-row" key={index}>
+                      <FieldGroup className="setup-stock-row" key={stock.id}>
                         <div className="setup-stock-row-top"><span className="setup-stock-index">{String(index + 1).padStart(2, "0")}</span><strong>{copy.stockSectionTitle}</strong></div>
                         <FieldGroup className="setup-stock-fields">
                           <Field>
-                            <FieldLabel htmlFor={`stock-code-${index}`}>{copy.stockCodeLabel}</FieldLabel>
-                            <Input id={`stock-code-${index}`} value={stock.securityCode} maxLength={6} inputMode="numeric" onChange={(event) => updateStock(index, { securityCode: event.target.value.replace(/\D/g, "") })} placeholder={copy.stockCodePlaceholder} required />
+                            <FieldLabel htmlFor={`stock-code-${stock.id}`}>{copy.stockCodeLabel}</FieldLabel>
+                            <Input id={`stock-code-${stock.id}`} value={stock.securityCode} maxLength={6} inputMode="numeric" onChange={(event) => updateStock(stock.id, { securityCode: event.target.value.replace(/\D/g, "") })} placeholder={copy.stockCodePlaceholder} required />
                           </Field>
                           <Field>
-                            <FieldLabel htmlFor={`exchange-${index}`}>{copy.exchangeLabel}</FieldLabel>
-                            <Select value={stock.exchangeCode} onValueChange={(value) => { if (value) updateStock(index, { exchangeCode: value }) }}>
-                              <SelectTrigger id={`exchange-${index}`} className="setup-select-trigger"><SelectValue>{stock.exchangeCode === "SSE" ? copy.exchangeSse : stock.exchangeCode === "SZSE" ? copy.exchangeSzse : copy.exchangeBse}</SelectValue></SelectTrigger>
+                            <FieldLabel htmlFor={`exchange-${stock.id}`}>{copy.exchangeLabel}</FieldLabel>
+                            <Select value={stock.exchangeCode} onValueChange={(value) => { if (value) updateStock(stock.id, { exchangeCode: value }) }}>
+                              <SelectTrigger id={`exchange-${stock.id}`} className="setup-select-trigger"><SelectValue>{stock.exchangeCode === "SSE" ? copy.exchangeSse : stock.exchangeCode === "SZSE" ? copy.exchangeSzse : copy.exchangeBse}</SelectValue></SelectTrigger>
                               <SelectContent><SelectGroup><SelectItem value="SSE">{copy.exchangeSse}</SelectItem><SelectItem value="SZSE">{copy.exchangeSzse}</SelectItem><SelectItem value="BSE">{copy.exchangeBse}</SelectItem></SelectGroup></SelectContent>
                             </Select>
                           </Field>
-                          <Button className="remove-stock" size="icon" variant="ghost" type="button" aria-label={interpolate(copy.removeStock, { index: index + 1 })} disabled={stocks.length === 1} onClick={() => removeStock(index)}><Trash2 data-icon="inline-start" /></Button>
+                          <Button className="remove-stock" size="icon" variant="ghost" type="button" aria-label={interpolate(copy.removeStock, { index: index + 1 })} disabled={stocks.length === 1} onClick={() => removeStock(stock.id)}><Trash2 data-icon="inline-start" /></Button>
                         </FieldGroup>
                         <Field orientation="horizontal" className="holding-toggle">
-                          <Checkbox id={`holding-${index}`} checked={withHolding[index] ?? false} onCheckedChange={(checked) => toggleHolding(index, checked === true)} />
-                          <FieldLabel htmlFor={`holding-${index}`}>{copy.holdingToggle}</FieldLabel>
+                          <Checkbox id={`holding-${stock.id}`} checked={stock.initialHolding !== null} onCheckedChange={(checked) => toggleHolding(stock.id, checked === true)} />
+                          <FieldLabel htmlFor={`holding-${stock.id}`}>{copy.holdingToggle}</FieldLabel>
                         </Field>
                         {stock.initialHolding && <FieldGroup className="holding-fields">
-                          <FieldDescription>{copy.holdingSectionDescription}</FieldDescription>
-                          <Field><FieldLabel htmlFor={`held-shares-${index}`}>{copy.heldSharesLabel}</FieldLabel><Input id={`held-shares-${index}`} type="number" min="0" step="1" value={stock.initialHolding.heldShares} onChange={(event) => updateHolding(index, "heldShares", event.target.value)} /></Field>
-                          <Field><FieldLabel htmlFor={`core-shares-${index}`}>{copy.coreSharesLabel}</FieldLabel><Input id={`core-shares-${index}`} type="number" min="0" step="1" value={stock.initialHolding.coreShares} onChange={(event) => updateHolding(index, "coreShares", event.target.value)} /></Field>
-                          <Field><FieldLabel htmlFor={`target-shares-${index}`}>{copy.targetSharesLabel}</FieldLabel><Input id={`target-shares-${index}`} type="number" min="0" step="1" value={stock.initialHolding.targetShares} onChange={(event) => updateHolding(index, "targetShares", event.target.value)} /></Field>
-                          <Field><FieldLabel htmlFor={`average-cost-${index}`}>{copy.averageCostLabel}</FieldLabel><Input id={`average-cost-${index}`} type="number" min="0" step="0.01" value={stock.initialHolding.averageCostPerShare} onChange={(event) => updateHolding(index, "averageCostPerShare", event.target.value)} /></Field>
+                          <FieldDescription id={`holding-description-${stock.id}`}>{copy.holdingSectionDescription}</FieldDescription>
+                          <Field><FieldLabel htmlFor={`held-shares-${stock.id}`}>{copy.heldSharesLabel}</FieldLabel><Input id={`held-shares-${stock.id}`} type="number" min="0" step="1" value={stock.initialHolding.heldShares} aria-describedby={`holding-description-${stock.id}`} onChange={(event) => updateHolding(stock.id, "heldShares", event.target.value)} /></Field>
+                          <Field><FieldLabel htmlFor={`core-shares-${stock.id}`}>{copy.coreSharesLabel}</FieldLabel><Input id={`core-shares-${stock.id}`} type="number" min="0" step="1" value={stock.initialHolding.coreShares} aria-describedby={`holding-description-${stock.id}`} onChange={(event) => updateHolding(stock.id, "coreShares", event.target.value)} /></Field>
+                          <Field><FieldLabel htmlFor={`target-shares-${stock.id}`}>{copy.targetSharesLabel}</FieldLabel><Input id={`target-shares-${stock.id}`} type="number" min="0" step="1" value={stock.initialHolding.targetShares} aria-describedby={`holding-description-${stock.id}`} onChange={(event) => updateHolding(stock.id, "targetShares", event.target.value)} /></Field>
+                          <Field><FieldLabel htmlFor={`average-cost-${stock.id}`}>{copy.averageCostLabel}</FieldLabel><Input id={`average-cost-${stock.id}`} type="number" min="0" step="0.01" value={stock.initialHolding.averageCostPerShare} aria-describedby={`holding-description-${stock.id}`} onChange={(event) => updateHolding(stock.id, "averageCostPerShare", event.target.value)} /></Field>
                         </FieldGroup>}
                       </FieldGroup>
                     ))}

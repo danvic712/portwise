@@ -65,14 +65,15 @@ export function readSettingsStockKey(location: NavigationLocation) {
 
 export function createBrowserNavigation(browserWindow: Window = window): BrowserNavigation {
   const listeners = new Set<(location: NavigationLocation) => void>()
+  let currentLocation = readNavigationLocation(browserWindow.location.href)
 
   function read() {
-    return readNavigationLocation(browserWindow.location.href)
+    return currentLocation
   }
 
   function notify() {
-    const location = read()
-    listeners.forEach((listener) => listener(location))
+    currentLocation = readNavigationLocation(browserWindow.location.href)
+    listeners.forEach((listener) => listener(currentLocation))
   }
 
   function updateHistory(path: string, replace = false) {

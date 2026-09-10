@@ -1,12 +1,14 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
 
 import { ApplicationErrorPage } from "@/components/application-error-page"
 import { NotFoundPage } from "@/components/not-found-page"
+import { RouteErrorBoundary } from "@/components/route-error-boundary"
 import { ScrollToTop } from "@/components/scroll-to-top"
 import { StatusPageSkeleton } from "@/components/status-page-shell"
 import { ThemeProvider } from "@/components/theme-provider"
 import { getApiErrorMessage } from "@/lib/api-errors"
 import { useLocale } from "@/lib/i18n"
+import { isRequestAborted, useLatestRequest } from "@/lib/use-latest-request"
 import { getSetupStatus } from "@/features/setup/setup.api"
 import type { SetupResult, SetupStatus } from "@/lib/api-types"
 import {
@@ -15,7 +17,6 @@ import {
   readPortfolioStockKey,
   readSettingsStockKey,
   resolveSetupPath,
-  type NavigationLocation,
 } from "@/lib/navigation"
 
 const SetupPage = lazy(async () => ({ default: (await import("@/features/setup/SetupPage")).SetupPage }))
@@ -28,7 +29,7 @@ const SettingsPage = lazy(async () => ({ default: (await import("@/features/sett
 export function ApplicationShell() {
   const { locale, messages } = useLocale()
   const [navigation] = useState(() => createBrowserNavigation())
-  const [location, setLocation] = useState<NavigationLocation>(() => navigation.read())
+  const location = useSyncExternalStore(navigation.subscribe, navigation.read, navigation.read)
   const setupErrorRef = useRef(messages.common.application_error_unknown.detail)
   const [portfolioStockKey, setPortfolioStockKey] = useState(() =>
     readPortfolioStockKey(navigation.read(), navigation.readPersistedPortfolioStock()),
@@ -37,6 +38,7 @@ export function ApplicationShell() {
   const [setupNotice, setSetupNotice] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { begin: beginSetup } = useLatestRequest()
 
   const navigate = useCallback((nextPath: string, replace = false) => {
     navigation.navigate(nextPath, replace)
@@ -61,30 +63,30 @@ export function ApplicationShell() {
   }, [messages.common.application_error_unknown.detail])
 
   const checkSetup = useCallback(async () => {
+    const request = beginSetup()
     setLoading(true)
     setError(null)
     try {
-      const status = await getSetupStatus()
+      const status = await getSetupStatus(request.signal)
+      if (!request.isCurrent()) return
       setSetupStatus(status)
       const nextPath = navigation.read().pathname
       const redirectPath = resolveSetupPath(status.isComplete, nextPath)
       if (redirectPath) navigate(redirectPath, true)
     } catch (statusError) {
-      setError(getApiErrorMessage(statusError, setupErrorRef.current, messages.common.ui.errors))
-      navigate("/error", true)
+      if (request.isCurrent() && !isRequestAborted(statusError, request.signal)) {
+        setError(getApiErrorMessage(statusError, setupErrorRef.current, messages.common.ui.errors))
+        navigate("/error", true)
+      }
     } finally {
-      setLoading(false)
+      if (request.isCurrent()) setLoading(false)
     }
-  }, [messages.common.ui.errors, navigate, navigation])
+  }, [beginSetup, messages.common.ui.errors, navigate, navigation])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void checkSetup() }, 0)
-    const unsubscribe = navigation.subscribe(setLocation)
-    return () => {
-      window.clearTimeout(timeoutId)
-      unsubscribe()
-    }
-  }, [checkSetup, navigation])
+    return () => window.clearTimeout(timeoutId)
+  }, [checkSetup])
 
   useEffect(() => {
     if (setupStatus?.isComplete) {
@@ -128,7 +130,12 @@ export function ApplicationShell() {
         onNavigate={(nextPath) => { navigate(nextPath); if (nextPath === "/overview") void checkSetup() }}
       />
       : setupStatus?.isComplete || location.pathname === "/setup"
-        ? <Suspense fallback={<StatusPageSkeleton label={messages.common.ui.states.preparingSetup} onNavigate={navigate} />}>{renderPage()}</Suspense>
+        ? <RouteErrorBoundary
+          resetKey={`${location.pathname}${location.search.toString()}${location.hash}`}
+          fallback={<ApplicationErrorPage message={messages.common.application_error_unknown.detail} onRetry={() => window.location.reload()} onNavigate={navigate} />}
+        >
+          <Suspense fallback={<StatusPageSkeleton label={messages.common.ui.states.preparingSetup} onNavigate={navigate} />}>{renderPage()}</Suspense>
+        </RouteErrorBoundary>
         : <StatusPageSkeleton label={messages.common.ui.states.preparingSetup} onNavigate={navigate} />
 
   return (

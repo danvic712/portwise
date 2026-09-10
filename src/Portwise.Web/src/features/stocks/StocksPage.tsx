@@ -18,7 +18,8 @@ import { displayStockName, exchangeLabel } from "@/lib/stock-display"
 import { hasAnalysisData, localizeRecommendationExplanation } from "@/lib/recommendation-display"
 import { formatDate, formatDateTime, formatMoney, formatPercent, stockKey } from "@/lib/utils"
 import type { StockAnalysisResult, StockDataSyncRunResult, StockModelParameterSet, StockWatchlistItem } from "@/lib/api-types"
-import { getModelParameters, getStockAnalysis, getStocks, syncStocks } from "@/features/stocks/stocks.api"
+import { isRequestAborted, useLatestRequest } from "@/lib/use-latest-request"
+import { getStockModelParameters, getStockAnalysis, getWatchedStocks, syncStocks } from "@/features/stocks/stocks.api"
 import { StockDetailSkeleton } from "@/features/stocks/StockDetailSkeleton"
 import "./stocks.css"
 
@@ -35,6 +36,10 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
   const [detailError, setDetailError] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<StockDataSyncRunResult | null>(null)
+  const [detailRefreshVersion, setDetailRefreshVersion] = useState(0)
+  const { begin: beginStocks } = useLatestRequest()
+  const { begin: beginDetail } = useLatestRequest()
+  const { begin: beginSync } = useLatestRequest()
   const stocksRef = useRef<StockWatchlistItem[]>([])
   const readErrorRef = useRef(copy.states.readError)
   const analysisErrorRef = useRef(copy.states.analysisError)
@@ -53,28 +58,34 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
   }, [])
 
   const loadStocks = useCallback(async ({ preserveView = false }: { preserveView?: boolean } = {}) => {
+    const request = beginStocks()
     if (!preserveView) setLoading(true)
     setError(null)
     try {
-      const list = await getStocks()
+      const list = await getWatchedStocks(request.signal)
+      if (!request.isCurrent()) return
       applyStocks(list)
     } catch (loadError) {
-      setError(getApiErrorMessage(loadError, readErrorRef.current, messages.common.ui.errors))
+      if (request.isCurrent() && !isRequestAborted(loadError, request.signal)) setError(getApiErrorMessage(loadError, readErrorRef.current, messages.common.ui.errors))
     } finally {
-      if (!preserveView) setLoading(false)
+      if (!preserveView && request.isCurrent()) setLoading(false)
     }
-  }, [applyStocks, messages.common.ui.errors])
+  }, [applyStocks, beginStocks, messages.common.ui.errors])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void loadStocks() }, 0)
     return () => window.clearTimeout(timeoutId)
   }, [loadStocks])
 
-  const loadDetail = useCallback(async (signal?: AbortSignal) => {
+  const loadDetail = useCallback(async () => {
+    const request = beginDetail()
     const stock = stocksRef.current.find((item) => stockKey(item) === selectedKey)
     if (!stock) {
-      setAnalysis(null)
-      setParameters(null)
+      if (request.isCurrent()) {
+        setAnalysis(null)
+        setParameters(null)
+        setDetailLoading(false)
+      }
       return
     }
 
@@ -83,23 +94,23 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
     setDetailError(null)
     try {
       const [analysisResult, parameterResult] = await Promise.all([
-        getStockAnalysis(stock.securityCode, stock.exchangeCode, signal),
-        getModelParameters(stock.securityCode, stock.exchangeCode, signal),
+        getStockAnalysis(stock.securityCode, stock.exchangeCode, request.signal),
+        getStockModelParameters(stock.securityCode, stock.exchangeCode, request.signal),
       ])
-      if (!signal?.aborted) {
+      if (request.isCurrent()) {
         setAnalysis(analysisResult.analysis)
         setParameters(parameterResult)
       }
     } catch (detailLoadError) {
-      if (!signal?.aborted) {
+      if (request.isCurrent() && !isRequestAborted(detailLoadError, request.signal)) {
         setAnalysis(null)
         setParameters(null)
         setDetailError(getApiErrorMessage(detailLoadError, analysisErrorRef.current, messages.common.ui.errors))
       }
     } finally {
-      if (!signal?.aborted) setDetailLoading(false)
+      if (request.isCurrent()) setDetailLoading(false)
     }
-  }, [messages.common.ui.errors, selectedKey])
+  }, [beginDetail, messages.common.ui.errors, selectedKey])
 
   useEffect(() => {
     if (detailLoading || detailMinHeight === null) return
@@ -109,25 +120,25 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
   }, [detailLoading, detailMinHeight])
 
   useEffect(() => {
-    const controller = new AbortController()
-    const timeoutId = window.setTimeout(() => { void loadDetail(controller.signal) }, 0)
-    return () => {
-      window.clearTimeout(timeoutId)
-      controller.abort()
-    }
-  }, [loadDetail])
+    const timeoutId = window.setTimeout(() => { void loadDetail() }, 0)
+    return () => window.clearTimeout(timeoutId)
+  }, [detailRefreshVersion, loadDetail])
 
   async function syncAll() {
+    const request = beginSync()
     setSyncing(true)
     setSyncResult(null)
     setError(null)
     try {
-      setSyncResult(await syncStocks())
+      const result = await syncStocks(request.signal)
+      if (!request.isCurrent()) return
+      setSyncResult(result)
       await loadStocks({ preserveView: true })
+      if (request.isCurrent()) setDetailRefreshVersion((current) => current + 1)
     } catch (syncError) {
-      setError(getApiErrorMessage(syncError, copy.states.syncError, messages.common.ui.errors))
+      if (request.isCurrent() && !isRequestAborted(syncError, request.signal)) setError(getApiErrorMessage(syncError, copy.states.syncError, messages.common.ui.errors))
     } finally {
-      setSyncing(false)
+      if (request.isCurrent()) setSyncing(false)
     }
   }
 
@@ -192,7 +203,6 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
                 listLabel: copy.selector.listLabel,
                 pending: copy.selector.pending,
                 sectorUnset: copy.selector.sectorUnset,
-                signals: copy.selector.signals,
                 recommendationLabels: { label: copy.selector.signals, headline: messages.dividendStrategy.ui.overview.decision.headlines, signalTitle: messages.dividendStrategy.ui.overview.decision.signalTitles },
                 pendingName: copy.identity.pendingName,
               }}
