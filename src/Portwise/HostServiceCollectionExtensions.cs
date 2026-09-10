@@ -58,7 +58,6 @@ public static class HostServiceCollectionExtensions
                 options.SupportedUICultures = cultures;
             });
         services.AddSingleton<ApplicationDiagnosticContext, ActivityDiagnosticContext>();
-        services.AddSingleton<IHttpErrorRenderer, ProblemDetailsErrorRenderer>();
         services.AddExceptionHandler<ApplicationExceptionHandler>();
         services.AddPortwiseOpenApiDescription();
         services.AddSingleton<IValidateOptions<DailySyncOptions>, DailySyncOptionsValidator>();

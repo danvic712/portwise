@@ -2,15 +2,15 @@ using System.Globalization;
 using Portwise.Application.Contracts;
 using Portwise.Application.Diagnostics;
 using Portwise.Application.Exceptions;
-using Portwise.Contracts;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Portwise.ExceptionHandling;
 
 public sealed class ApplicationExceptionHandler(
     IApplicationErrorLocalizer errorLocalizer,
     IDiagnosticContext diagnosticContext,
-    IHttpErrorRenderer errorRenderer,
+    IProblemDetailsService problemDetailsService,
     ILogger<ApplicationExceptionHandler> logger) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(
@@ -40,9 +40,22 @@ public sealed class ApplicationExceptionHandler(
             localizedError.CultureName,
             causeType);
 
-        return await errorRenderer.RenderAsync(
-            httpContext,
-            localizedError,
-            cancellationToken);
+        httpContext.Response.StatusCode = localizedError.StatusCode;
+        return await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
+        {
+            HttpContext = httpContext,
+            ProblemDetails = new ProblemDetails
+            {
+                Status = localizedError.StatusCode,
+                Title = localizedError.Title,
+                Detail = localizedError.Detail,
+                Extensions =
+                {
+                    ["error_code"] = localizedError.ErrorCode,
+                    ["locale"] = localizedError.CultureName,
+                    ["trace_id"] = httpContext.TraceIdentifier
+                }
+            }
+        });
     }
 }

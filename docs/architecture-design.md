@@ -172,14 +172,12 @@ src/
     │   ├── StockDataSyncBackgroundService.cs
     │   └── StockDataSyncTaskQueue.cs
     ├── Contracts/                      # Host 层可替换边界
-    │   ├── IStockDataSyncRunner.cs
-    │   └── IHttpErrorRenderer.cs
+    │   └── IStockDataSyncRunner.cs
     ├── Diagnostics/                    # 隐私感知的 Activity 诊断上下文
     │   ├── ActivityDiagnosticContext.cs
     │   └── PortwiseActivitySource.cs
     ├── ExceptionHandling/              # 异常编排与 ProblemDetails 输出
-    │   ├── ApplicationExceptionHandler.cs
-    │   └── ProblemDetailsErrorRenderer.cs
+    │   └── ApplicationExceptionHandler.cs
     ├── HostServiceCollectionExtensions.cs
     ├── WebApplicationExtensions.cs
     ├── HealthChecks/                   # 原生 ASP.NET Core Health Checks
@@ -583,7 +581,7 @@ Application 自定义异常统一位于 `Application/Exceptions/`，但不再为
 
 错误码仍然按业务语义细分，例如 `stock_market_data_unavailable` 和 `portfolio_trade_conflict`，但错误码与异常类型解耦。这样既保留 `locales/{culture}/{domain}.json`、HTTP 状态和参数占位符的精确语义，也避免大量只重复错误码和字典参数的类。目录加载时校验 `ApplicationErrorCodes.All` 与语言 JSON 的完整集合，而不是反射扫描异常类属性。
 
-Host 的 `ApplicationExceptionHandler` 只负责识别 Application 异常、调用 `IApplicationErrorLocalizer` 生成语言和参数已解析的结果、记录安全的结构化日志，并把已解析的安全结果交给 `IHttpErrorRenderer`。renderer 不接收原始 `Exception`，`ProblemDetailsErrorRenderer` 只负责 HTTP 响应形状，返回目录解析出的 `status`、`title`、`detail`、稳定 `error_code`、`locale` 和 `trace_id`。验证错误映射为 400、状态冲突映射为 409、未配置股票映射为 404、外部资料不可用映射为 503。异常的 `InnerException`、FTShare 原始响应和凭据不会进入公共详情；调用方主动取消的 `OperationCanceledException` 不转换，继续传播。
+Host 的 `ApplicationExceptionHandler` 只负责识别 Application 异常、调用 `IApplicationErrorLocalizer` 生成语言和参数已解析的结果、记录安全的结构化日志，并直接调用 ASP.NET Core 注册的 `IProblemDetailsService` 写入响应。这样保留框架的 `IExceptionHandler` 与 `IProblemDetailsService` seam，删除只有一个 implementation 的 `IHttpErrorRenderer`/`ProblemDetailsErrorRenderer` 中间层；响应返回目录解析出的 `status`、`title`、`detail`、稳定 `error_code`、`locale` 和 `trace_id`。验证错误映射为 400、状态冲突映射为 409、未配置股票映射为 404、外部资料不可用映射为 503。异常的 `InnerException`、FTShare 原始响应和凭据不会进入公共详情；调用方主动取消的 `OperationCanceledException` 不转换，继续传播。
 
 新增错误时，只需在 `ApplicationErrorCodes` 添加稳定码、在每个受支持语言的对应领域 JSON 中定义它、通过 `ApplicationErrors` 选择结构化参数工厂并补充 Application 单元测试。缺少错误码定义、重复定义、跨语言状态码/占位符不一致、非法状态码或空文本应在目录加载时直接失败，而不是运行到请求时才产生隐性回退。
 
