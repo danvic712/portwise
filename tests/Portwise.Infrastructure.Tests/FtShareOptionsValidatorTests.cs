@@ -34,4 +34,19 @@ public sealed class FtShareOptionsValidatorTests
 
         Assert.True(result.Succeeded);
     }
+
+    [Fact]
+    public void OperationTimeoutCoversConfiguredHttpAttemptBudget()
+    {
+        var options = new FtShareOptions
+        {
+            McpEndpoint = "https://market.example",
+            RequestTimeoutSeconds = 5,
+            MaxRetryCount = 2,
+            RetryDelayMilliseconds = 10_000
+        };
+
+        Assert.Equal(TimeSpan.FromSeconds(15), options.HttpRequestTimeout);
+        Assert.Equal(TimeSpan.FromSeconds(60), options.OperationTimeout);
+    }
 }

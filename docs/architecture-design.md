@@ -514,9 +514,9 @@ IFtShareMcpToolInvoker
 FtShareMcpToolInvoker ──> official MCP Client ──> FTShare MCP
 ```
 
-`IFtShareMcpToolInvoker` 是 Infrastructure 内部 seam，位于 `Infrastructure/Contracts/`。`FtShareMcpToolInvoker` 负责 Streamable HTTP transport、单次调用超时和有限指数退避重试；只对网络、IO、超时类暂态失败重试，不重试 MCP 工具业务错误。`FtShareStockDataProvider` 负责 FTShare 返回值到 `StockData`、`StockMarketData`、`StockDividendData` 和 `StockFinancialData` DTO 的规范化，并集中构造股票代码/交易所参数；它只接受 A 股和 CNY 股票资料，并拒绝缺少关键字段或股票身份不匹配的结果。
+`IFtShareMcpToolInvoker` 是 Infrastructure 内部 seam，位于 `Infrastructure/Contracts/`。`FtShareMcpToolInvoker` 使用命名的 `IHttpClientFactory` client 创建 Streamable HTTP transport；连接池、handler 生命周期、HTTP 状态码分类、`Retry-After`、jitter、指数退避和每次 HTTP attempt 的超时由 `Microsoft.Extensions.Http.Resilience` 标准管线负责。由于一个 MCP exchange 可能包含 session 初始化、工具调用和流结束等多次 HTTP 往返，adapter 另外通过 DI 注册的 exchange resilience pipeline 保留一个覆盖完整 exchange（包括 response stream 读取）的有限 operation deadline，并把调用方取消与 operation timeout 分开处理。`FtShareResponseStreamHandler` 将响应流读取阶段的 `IOException` 转换为专用的 transport failure，使其只按明确的网络失败分类重试；MCP 工具业务错误不会进入任何 resilience 重试。FTShare 工具只读，因此 MCP 的 POST 请求可安全按暂态 HTTP 失败重试；如果未来接入有副作用的工具，必须使用独立 client 并重新声明幂等性契约。`FtShareStockDataProvider` 负责 FTShare 返回值到 `StockData`、`StockMarketData`、`StockDividendData` 和 `StockFinancialData` DTO 的规范化，并集中构造股票代码/交易所参数；它只接受 A 股和 CNY 股票资料，并拒绝缺少关键字段或股票身份不匹配的结果。
 
-MCP 地址、工具名、股票代码参数名、交易所参数名、请求超时、最大重试次数和重试间隔通过运行时配置注入。当前默认最多重试 2 次，使用 250ms 起步的有限退避；FTShare key 不进入代码、DTO、日志、镜像前端资源或 Git。
+MCP 地址、工具名、股票代码参数名、交易所参数名、每次 HTTP attempt 超时、最大重试次数和重试间隔通过运行时配置注入。当前默认最多重试 2 次，使用 250ms 起步的指数退避并启用 jitter；标准 HTTP resilience 管线同时尊重上游 `Retry-After`，而 exchange pipeline 只处理被 `FtShareResponseStreamHandler` 明确分类的响应流中断。完整 MCP exchange 的 operation deadline 按每次 attempt 超时和重试次数计算，退避时间消耗同一 hard cap，不会无限延长调用。FTShare key 不进入代码、DTO、日志、镜像前端资源或 Git。
 
 FTShare 连接、协议、配置和超时失败先由 Adapter 转换为 Infrastructure 的 `FtShareProviderException`，该异常实现 Application Contracts 中的 `IStockDataProviderFailure` 标记接口；Application 再把它转换为 `stock_data_provider_unavailable` 或具体数据类型的业务错误。这样 Infrastructure 不直接依赖 Application 的业务异常，Application 也不依赖具体 Adapter 类型。
 
@@ -661,3 +661,9 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | 04 Application module ownership executable | 已完成：module-specific Contracts/DTOs/Validators 使用 module namespace，Mapperly 映射拆分为 `StocksMapper`、`PortfolioMapper`、`RecommendationsMapper`；新增架构测试防止类型泄漏回根技术桶 | `dotnet test`（84 Application tests）、`dotnet build Portwise.slnx`；提交 `refactor: enforce application module ownership` |
 | 05 CONTEXT/ADR authority | 已完成：修正根上下文产品名与文档权威声明，新增 `docs/adr/` 索引及单组合、单 Host、HTTP 合约、Application module locality 四项 Accepted ADR，并清理实现地图中的过时路径 | `git diff --check`、全文旧路径扫描；提交 `docs: establish architecture decision authority` |
 | 06 Backend localization and native XML documentation | 已完成：移除后端源码中的中文诊断硬编码，为全部 Controller/DTO 增加 XML 注释；由 .NET 原生 OpenAPI transformer 读取各项目 XML 文档并写入操作、schema 和属性描述 | `dotnet build`、`dotnet test`、OpenAPI 摘要/schema 检查、中文源码扫描；本次提交 |
+
+## 17. 2026-09-10 FTShare HTTP transport 复审处理记录
+
+| 复审候选项 | 处理结果 | 验证 |
+| --- | --- | --- |
+| 03 托管 FTShare HTTP transport | 已完成：使用命名 `IHttpClientFactory` client 创建 MCP transport，连接池和 handler 生命周期由工厂管理；`Microsoft.Extensions.Http.Resilience` 负责 HTTP 状态码重试、`Retry-After`、jitter、指数退避和每次 attempt 超时；DI 注册的 exchange pipeline 只重试明确分类的响应流中断，adapter 保留覆盖完整 MCP exchange（含流读取）的 hard deadline，删除手写重试循环；增加命名 client 的 POST 暂态响应重试、非暂态响应不重试、响应流异常分类和 exchange pipeline 重试测试 | Infrastructure 定向测试、完整 `dotnet test`、`git diff --check`；本次提交 |

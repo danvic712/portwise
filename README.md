@@ -232,7 +232,7 @@ ASP.NET Core 按默认规则加载 `appsettings.json` 和当前环境对应的 `
 | `ASPNETCORE_ENVIRONMENT` | ASP.NET Core 环境 | `Production`（容器中建议显式设置） |
 | `ConnectionStrings__Default` | PostgreSQL 连接字符串 | `Host=localhost;Port=5432;Database=portwise;Username=portwise;Password=portwise` |
 | `FtShare__McpEndpoint` | FTShare MCP Streamable HTTP 地址 | `https://market.ft.tech/gateway/mcp` |
-| `FtShare__RequestTimeoutSeconds` | 单次 MCP 请求超时 | `30` |
+| `FtShare__RequestTimeoutSeconds` | 每次 HTTP attempt 超时；完整 MCP exchange deadline 会按重试次数扩展 | `30` |
 | `FtShare__MaxRetryCount` | MCP 请求最大重试次数 | `2` |
 | `FtShare__RetryDelayMilliseconds` | 重试间隔 | `250` |
 | `DailySync__Enabled` | 是否启用每日同步 | `true` |
@@ -240,6 +240,8 @@ ASP.NET Core 按默认规则加载 `appsettings.json` 和当前环境对应的 `
 | `DailySync__TimeZoneId` | 每日同步时区 | `Asia/Shanghai` |
 
 `FtShare` 和 `DailySync` 配置会在 Host 启动时校验。地址、时间格式、时区、超时和重试范围无效时，应用会直接报告配置错误，不会等到首次同步请求才失败。
+
+FTShare 通过命名的 `IHttpClientFactory` client 复用连接池；标准 resilience 管线负责暂态 HTTP 响应、`Retry-After`、jitter、指数退避和每次 attempt 超时。响应流中断会在 transport 边界被明确分类，并由 exchange resilience pipeline 重试；完整 MCP exchange 仍有一个有界 deadline，以覆盖 session 初始化和流式响应读取。当前 FTShare 工具为只读契约，若接入有副作用的 MCP 工具，必须使用独立 client 并重新声明幂等性。
 
 FTShare 工具名称和参数名也可以通过 `FtShare__*` 配置覆盖：
 

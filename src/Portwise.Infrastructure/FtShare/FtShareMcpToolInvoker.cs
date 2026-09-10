@@ -1,17 +1,24 @@
-using System.Runtime.ExceptionServices;
 using System.Text.Json;
 using Portwise.Infrastructure.Contracts;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
+using Polly.Registry;
+using Polly.Timeout;
 
 namespace Portwise.Infrastructure.FtShare;
 
 public sealed class FtShareMcpToolInvoker(
     IOptions<FtShareOptions> options,
+    IHttpClientFactory httpClientFactory,
+    ResiliencePipelineProvider<string> exchangePipelineProvider,
     TimeProvider timeProvider) : IFtShareMcpToolInvoker
 {
+    internal const string HttpClientName = "FTShareMcp";
+
+    internal const string ExchangePipelineName = "FTShareMcpExchange";
+
     public async Task<JsonElement?> InvokeAsync(
         string toolName,
         IReadOnlyDictionary<string, object?> arguments,
@@ -22,38 +29,38 @@ public sealed class FtShareMcpToolInvoker(
 
         var currentOptions = options.Value;
         var endpoint = new Uri(currentOptions.McpEndpoint, UriKind.Absolute);
+        using var timeoutCancellation = new CancellationTokenSource(
+            currentOptions.OperationTimeout,
+            timeProvider);
+        using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            timeoutCancellation.Token);
 
-        Exception? lastTransientException = null;
-        for (var attempt = 0; ; attempt++)
+        try
         {
-            try
-            {
-                return await InvokeOnceAsync(
-                    endpoint,
-                    currentOptions,
-                    toolName,
-                    arguments,
-                    cancellationToken);
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-                lastTransientException = new TimeoutException(
-                    "FTShare MCP tool call timed out.");
-            }
-            catch (Exception exception) when (IsTransient(exception))
-            {
-                lastTransientException = exception;
-            }
-
-            if (attempt >= currentOptions.MaxRetryCount)
-            {
-                ExceptionDispatchInfo.Capture(lastTransientException!).Throw();
-            }
-
-            await Task.Delay(
-                CalculateRetryDelay(currentOptions.RetryDelay, attempt),
-                timeProvider,
-                cancellationToken);
+            var pipeline = exchangePipelineProvider.GetPipeline(ExchangePipelineName);
+            return await pipeline.ExecuteAsync(
+                static (state, token) => new ValueTask<JsonElement?>(
+                    state.Invoker.InvokeOnceAsync(
+                        state.Endpoint,
+                        state.Options,
+                        state.ToolName,
+                        state.Arguments,
+                        token)),
+                (Invoker: this,
+                    Endpoint: endpoint,
+                    Options: currentOptions,
+                    ToolName: toolName,
+                    Arguments: arguments),
+                linkedCancellation.Token);
+        }
+        catch (TimeoutRejectedException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException("FTShare MCP tool call timed out.");
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException("FTShare MCP tool call timed out.");
         }
     }
 
@@ -64,31 +71,26 @@ public sealed class FtShareMcpToolInvoker(
         IReadOnlyDictionary<string, object?> arguments,
         CancellationToken cancellationToken)
     {
-        var transport = new HttpClientTransport(
+        await using var transport = new HttpClientTransport(
             new HttpClientTransportOptions
             {
                 Endpoint = endpoint,
                 TransportMode = HttpTransportMode.StreamableHttp,
                 ConnectionTimeout = options.RequestTimeout
-            });
-
-        using var timeoutCancellation = new CancellationTokenSource(
-            options.RequestTimeout,
-            timeProvider);
-        using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken,
-            timeoutCancellation.Token);
+            },
+            httpClientFactory.CreateClient(HttpClientName),
+            ownsHttpClient: false);
 
         await using var client = await McpClient.CreateAsync(
             transport,
-            cancellationToken: linkedCancellation.Token);
+            cancellationToken: cancellationToken);
 
         var result = await client.CallToolAsync(
             toolName,
             arguments,
             progress: null,
             options: null,
-            linkedCancellation.Token);
+            cancellationToken);
 
         if (result.IsError == true)
         {
@@ -120,14 +122,5 @@ public sealed class FtShareMcpToolInvoker(
         }
 
         return null;
-    }
-
-    private static bool IsTransient(Exception exception)
-        => exception is HttpRequestException or IOException or TimeoutException;
-
-    private static TimeSpan CalculateRetryDelay(TimeSpan baseDelay, int attempt)
-    {
-        var multiplier = 1 << Math.Min(attempt, 4);
-        return TimeSpan.FromMilliseconds(baseDelay.TotalMilliseconds * multiplier);
     }
 }
