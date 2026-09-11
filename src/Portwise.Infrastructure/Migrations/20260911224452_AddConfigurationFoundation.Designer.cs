@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Portwise.Infrastructure;
@@ -11,9 +12,11 @@ using Portwise.Infrastructure;
 namespace Portwise.Infrastructure.Migrations
 {
     [DbContext(typeof(PortwiseDbContext))]
-    partial class PortwiseDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260911224452_AddConfigurationFoundation")]
+    partial class AddConfigurationFoundation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

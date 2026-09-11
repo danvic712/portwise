@@ -11,6 +11,7 @@ using Portwise.ExceptionHandling;
 using Portwise.HealthChecks;
 using Portwise.Infrastructure;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,6 +39,17 @@ public static class HostServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        var dataProtectionOptions = configuration
+            .GetSection(PortwiseDataProtectionOptions.SectionName)
+            .Get<PortwiseDataProtectionOptions>() ?? new PortwiseDataProtectionOptions();
+        if (string.IsNullOrWhiteSpace(dataProtectionOptions.KeysPath))
+        {
+            throw new InvalidOperationException("DataProtection:KeysPath cannot be empty.");
+        }
+
+        services.AddDataProtection()
+            .SetApplicationName("Portwise")
+            .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionOptions.KeysPath));
         services.AddSerilog((serviceProvider, loggerConfiguration) =>
             loggerConfiguration
                 .ReadFrom.Configuration(configuration)

@@ -182,7 +182,7 @@ public sealed class RecommendationSnapshot
 
         return new RecommendationSnapshot
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             ModelRunId = modelRunId,
             PortfolioId = portfolioId,
             SecurityId = securityId,

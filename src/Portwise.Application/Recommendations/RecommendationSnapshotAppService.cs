@@ -16,7 +16,7 @@ public sealed class RecommendationSnapshotAppService(
     {
         var recommendation = await portfolioRecommendationAppService.GetAsync(
             cancellationToken);
-        var modelRunId = Guid.NewGuid();
+        var modelRunId = Guid.CreateVersion7();
         var snapshots = new List<RecommendationSnapshot>(recommendation.Stocks.Count);
 
         foreach (var stock in recommendation.Stocks)

@@ -74,7 +74,7 @@ public sealed class PriceObservation
 
         return new PriceObservation
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             SecurityId = securityId,
             TradingDate = tradingDate,
             ClosePrice = closePrice,

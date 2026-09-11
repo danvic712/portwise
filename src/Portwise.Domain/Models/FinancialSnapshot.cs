@@ -88,7 +88,7 @@ public sealed class FinancialSnapshot
 
         return new FinancialSnapshot
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             SecurityId = securityId,
             DataAsOfDate = dataAsOfDate,
             CapturedAt = capturedAt.ToUniversalTime(),

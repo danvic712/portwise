@@ -30,10 +30,13 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_HTTP_PORTS: 8080
+      DataProtection__KeysPath: /app/keys
       ConnectionStrings__Default: >-
         Host=postgres;Port=5432;Database=${POSTGRES_DB:-portwise};Username=${POSTGRES_USER:-portwise};Password=${POSTGRES_PASSWORD:-portwise_dev_only}
     ports:
       - "${PORTWISE_HOST_PORT:-8080}:8080"
+    volumes:
+      - portwise-keys:/app/keys
     healthcheck:
       test:
         - CMD-SHELL
@@ -45,3 +48,4 @@ services:
 
 volumes:
   portwise-postgres:
+  portwise-keys:

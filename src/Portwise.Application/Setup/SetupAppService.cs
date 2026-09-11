@@ -66,7 +66,7 @@ public sealed class SetupAppService(
             })
             .ToArray();
 
-        var portfolioId = Guid.NewGuid();
+        var portfolioId = Guid.CreateVersion7();
 
         var portfolioRepository = uow.Get<PortfolioEntity>();
         var securityRepository = uow.Get<Security>();
@@ -85,7 +85,7 @@ public sealed class SetupAppService(
         {
             var reference = references[index];
             var requestStock = request.Stocks[index];
-            var securityId = Guid.NewGuid();
+            var securityId = Guid.CreateVersion7();
             var initialHolding = requestStock.InitialHolding is null
                 ? null
                 : CreateInitialHolding(requestStock.InitialHolding);

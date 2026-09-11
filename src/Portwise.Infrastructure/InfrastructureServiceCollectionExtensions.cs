@@ -1,4 +1,4 @@
-using Portwise.Application.Contracts;
+using Portwise.Application.Configuration.Contracts;
 using Portwise.Application.Stocks.Contracts;
 using Portwise.Domain.Contracts;
 using Portwise.Infrastructure.Contracts;
@@ -28,6 +28,7 @@ public static class InfrastructureServiceCollectionExtensions
             options.UsePortwisePostgreSql(connectionString));
         services.AddScoped<IUow, Repositories.EFUow>();
         services.AddScoped<IDatabaseLifecycle, DatabaseLifecycle>();
+        services.AddSingleton<ISecretProtector, DataProtection.DataProtectionSecretProtector>();
 
         services.AddSingleton<
             IValidateOptions<FtShare.FtShareOptions>,

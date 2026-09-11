@@ -84,7 +84,7 @@ public sealed class PortfolioTrade
 
         return new PortfolioTrade
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             PortfolioId = portfolioId,
             SecurityId = securityId,
             TradeDate = tradeDate,

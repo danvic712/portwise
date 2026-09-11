@@ -114,7 +114,7 @@ public sealed class DividendEvent
 
         return new DividendEvent
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             SecurityId = securityId,
             DividendPerShare = dividendPerShare,
             DividendTypeCode = normalizedDividendType,

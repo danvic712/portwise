@@ -26,6 +26,23 @@ internal sealed class PortwiseDbContext(DbContextOptions<PortwiseDbContext> opti
 
     public DbSet<PortfolioTrade> PortfolioTrades => Set<PortfolioTrade>();
 
+    public DbSet<ApplicationPreference> ApplicationPreferences => Set<ApplicationPreference>();
+
+    public DbSet<InitializationState> InitializationStates => Set<InitializationState>();
+
+    public DbSet<StockDataProviderDefinition> StockDataProviderDefinitions =>
+        Set<StockDataProviderDefinition>();
+
+    public DbSet<FtShareProviderSettings> FtShareProviderSettings => Set<FtShareProviderSettings>();
+
+    public DbSet<StockDataProvider> StockDataProviders => Set<StockDataProvider>();
+
+    public DbSet<StockDataRoute> StockDataRoutes => Set<StockDataRoute>();
+
+    public DbSet<InferenceProvider> InferenceProviders => Set<InferenceProvider>();
+
+    public DbSet<InferenceRoute> InferenceRoutes => Set<InferenceRoute>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("public");

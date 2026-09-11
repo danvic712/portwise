@@ -75,7 +75,7 @@ public sealed class CashLedgerEntry
 
         return new CashLedgerEntry
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             PortfolioId = portfolioId,
             SecurityId = securityId,
             EntryDate = entryDate,

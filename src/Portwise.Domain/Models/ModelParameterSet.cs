@@ -138,7 +138,7 @@ public sealed class ModelParameterSet
 
         return new ModelParameterSet
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             PortfolioId = portfolioId,
             SecurityId = securityId,
             ModelVersion = modelVersion.Trim(),

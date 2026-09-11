@@ -165,3 +165,6 @@ src/Portwise/wwwroot/
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Local ASP.NET Core Data Protection key ring
+.portwise/
