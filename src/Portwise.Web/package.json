@@ -11,9 +11,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b --pretty false",
     "test": "node scripts/run-tests.mjs",
-    "api:generate": "openapi-typescript openapi/portwise_v1.json -o src/lib/api-contract.generated.ts",
+    "api:generate": "openapi-typescript openapi/portwise_v1.json -o src/shared/http/api-contract.generated.ts",
     "api:check": "node scripts/check-api-contract.mjs",
     "preview": "vite preview"
   },

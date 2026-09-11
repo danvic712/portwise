@@ -182,33 +182,50 @@ src/
     ├── WebApplicationExtensions.cs
     ├── HealthChecks/                   # 原生 ASP.NET Core Health Checks
     └── wwwroot/                        # 前端构建产物（由 Portwise.Web 构建写入）
-└── Portwise.Web/                # Vite + React + shadcn/ui 前端源码
-│   ├── src/features/                   # 每个 feature 自有页面、组件、API、CSS
-│   ├── src/components/                 # 跨页面的公共组合组件
-│   │   ├── site-header.tsx             # 公共顶部导航与主题/语言操作
-│   │   ├── site-footer.tsx             # 公共页脚与数据口径提示
-│   │   ├── page-frame.tsx              # 页面级公共布局组合
-│   │   ├── page-heading.tsx            # 页面标题与区块标题
-│   │   ├── site-navigation.ts          # 公共导航配置
-│   │   └── ui/                         # shadcn/ui 源码组件
-│   ├── openapi/                        # 从 Host Controller 元数据生成的版本化 HTTP 合约
-│   │   └── portwise_v1.json
-│   └── src/lib/                        # Axios client、HTTP 合约适配器和共享展示工具
-│       ├── api-contract.generated.ts  # openapi-typescript 生成；禁止手工修改
-│       ├── api-contract.ts             # 生成合约到前端运行时模型的唯一适配器
-│       ├── api-types.ts                # feature 使用的领域友好类型别名
-│       ├── navigation.ts                # 路由、Setup gate、历史记录和查询参数 Adapter
-│       ├── recommendation-display.ts  # 操作建议展示语义与价格阶梯
-│       └── stock-display.ts           # 股票身份与名称展示
+└── Portwise.Web/                       # Vite + React + shadcn/ui 前端源码
+    ├── src/
+    │   ├── app/                        # 应用组合、Provider 与路由 Adapter
+    │   │   ├── App.tsx
+    │   │   ├── ApplicationShell.tsx
+    │   │   ├── providers/
+    │   │   └── routing/
+    │   ├── components/                 # 跨业务复用的视觉 module
+    │   │   ├── feedback/
+    │   │   ├── layout/
+    │   │   ├── stock/
+    │   │   └── ui/                     # shadcn/ui 源码组件
+    │   ├── budget/                     # 业务 module 直接位于 src 下
+    │   ├── portfolio/
+    │   ├── recommendations/
+    │   ├── settings/
+    │   ├── setup/
+    │   ├── stocks/
+    │   └── shared/                     # 稳定的跨业务非视觉能力
+    │       ├── display/
+    │       ├── hooks/
+    │       ├── http/
+    │       │   ├── api-contract.generated.ts
+    │       │   ├── api-contract.ts
+    │       │   └── api-types.ts
+    │       ├── i18n/
+    │       └── utils/
+    ├── tests/                          # 与生产源码分离，按被测 module 映射
+    │   └── unit/
+    │       ├── app/
+    │       └── shared/
+    └── openapi/                        # Host 生成的版本化 HTTP 合约
+        └── portwise_v1.json
 ```
 
-Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfolio` 和 `Recommendations` 四个 module。每个 module 共置自己拥有的 Interface、DTO、Validator、实现和测试；因此修改一个用例时，主要知识和验证都集中在同一目录。module 内的 public type 使用对应的 `Portwise.Application.<Module>.(Contracts|Dtos|Validators)` namespace，`ModuleNamespaceArchitectureTests` 会阻止新的类型泄漏回技术桶。`Contracts`、`Dtos` 和 `Validators` 根目录只保留真正跨 module 的错误、本地化、诊断、共享持仓 DTO 和通用 A 股规则，避免技术桶重新变成所有业务的汇聚点。目录归并不等于合并 HTTP 契约：价格、股息和财务同步仍然保持独立的 Interface 与 AppService，因为它们具有不同的数据校验、幂等键和结果类型；资料、行情、股息和财务四类事实的共同摄取、Security 解析、FTShare 调用、幂等写入和逐类失败策略由 `IStockFactSyncAppService` / `StockFactSyncAppService` 这个深模块承载，三个 HTTP AppService 只是验证后转发。单股分析、组合分配和建议快照也保持独立的用例边界。前端按相同的业务边界拆分 feature，但只通过版本化 HTTP API 访问后端，不直接引用 Application 或 Infrastructure。
+前端命名约定：React 组件及 Provider/Context 模块使用 PascalCase，Hook 文件名与 hook 标识符保持一致的 camelCase（例如 `useLatestRequest.ts`）；API、工具、测试和 CSS 文件保留 lower-case、dotted 或 kebab-case，生成文件不手工改名。
 
-前端公共页面框架由 `SiteHeader`、`SiteFooter`、`PageFrame`、`PageTitle`、`SectionHeading` 和 `site-navigation` 组成；`application-shell.tsx` 是负责 Setup gate、路由选择和 feature 懒加载的应用编排 module，不是公共视觉组件。所有页面通过 `PageFrame` 复用框架，页面专属状态与布局留在对应 feature。`src/lib/navigation.ts` 是页面 shell 的导航 module：它集中路由识别、Setup gate 所需的路径判断、浏览器 history/popstate Adapter、查询参数更新和组合股票选择的 session 持久化；`App.tsx` 只负责提供 LocaleProvider，feature 通过 `onNavigate`/`onReplaceQuery` seam 操作导航，不直接写 `window.history` 或 `sessionStorage`。查询参数优先于旧 session 选择，避免从今日决策跳转到组合页面时恢复错误股票。操作建议的代码归类、买卖方向、展示状态、价格区间和未知代码降级统一由 `src/lib/recommendation-display.ts` 提供；页面和组件只消费归一化后的展示结果，不自行解析 `recommendation_code` 或 `price_zone_code`。`index.css` 只承载 token、reset 和跨页面共享原子样式；今日决策页的布局、等待态、就绪态、骨架屏、装饰和响应式样式统一位于 `features/recommendations/recommendations.css`。交互控件优先使用 `src/components/ui` 中的 shadcn/ui 原语，feature 样式只负责业务变体与布局。
+Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfolio` 和 `Recommendations` 四个 module。每个 module 共置自己拥有的 Interface、DTO、Validator、实现和测试；因此修改一个用例时，主要知识和验证都集中在同一目录。module 内的 public type 使用对应的 `Portwise.Application.<Module>.(Contracts|Dtos|Validators)` namespace，`ModuleNamespaceArchitectureTests` 会阻止新的类型泄漏回技术桶。`Contracts`、`Dtos` 和 `Validators` 根目录只保留真正跨 module 的错误、本地化、诊断、共享持仓 DTO 和通用 A 股规则，避免技术桶重新变成所有业务的汇聚点。目录归并不等于合并 HTTP 契约：价格、股息和财务同步仍然保持独立的 Interface 与 AppService，因为它们具有不同的数据校验、幂等键和结果类型；资料、行情、股息和财务四类事实的共同摄取、Security 解析、FTShare 调用、幂等写入和逐类失败策略由 `IStockFactSyncAppService` / `StockFactSyncAppService` 这个深模块承载，三个 HTTP AppService 只是验证后转发。单股分析、组合分配和建议快照也保持独立的用例边界。前端采用同样的业务边界，但不再增加 `features/` 包装层；每个业务 module 直接位于 `src/`，并只通过版本化 HTTP API 访问后端，不直接引用 Application 或 Infrastructure。
+
+前端公共页面框架由 `components/layout/` 下的 `Header`、`Footer`、`PageFrame`、`PageTitle`、`SectionHeading` 和 `app/routing/site-navigation.ts` 组成；`app/ApplicationShell.tsx` 是负责 Setup gate、路由选择和业务 module 懒加载的应用编排 module，不是公共视觉组件。所有页面通过 `PageFrame` 复用框架，页面专属状态与布局留在对应业务 module。`src/app/routing/navigation.ts` 是页面 shell 的导航 module：它集中路由识别、Setup gate 所需的路径判断、浏览器 history/popstate Adapter、查询参数更新和组合股票选择的 session 持久化；`App.tsx` 只负责提供 LocaleProvider，业务 module 通过 `onNavigate`/`onReplaceQuery` seam 操作导航，不直接写 `window.history` 或 `sessionStorage`。查询参数优先于旧 session 选择，避免从今日决策跳转到组合页面时恢复错误股票。操作建议的代码归类、买卖方向、展示状态、价格区间和未知代码降级统一由 `src/shared/display/recommendation-display.ts` 提供；页面和组件只消费归一化后的展示结果，不自行解析 `recommendation_code` 或 `price_zone_code`。`index.css` 只承载 token、reset 和跨页面共享原子样式；今日决策页的布局、等待态、就绪态、骨架屏、装饰和响应式样式统一位于 `src/recommendations/recommendations.css`。交互控件优先使用 `src/components/ui` 中的 shadcn/ui 原语，业务样式只负责业务变体与布局。
 
 前端使用 Node `24.16.0` 与 pnpm `12.3.4` 构建静态资源，输出到 Host 的 `wwwroot/`；该目录是构建产物并保持本地生成，不提交源代码仓库。根目录 `Dockerfile` 使用 Node Alpine、.NET SDK Alpine 和 ASP.NET Core Alpine 三阶段构建：前两阶段只负责编译，最终镜像只保留 .NET publish 输出，因此不会携带 Node、pnpm、源码或测试依赖。单镜像构建流程必须先完成前端构建，再执行 ASP.NET Core publish；开发预览使用 Vite proxy 将 `/api` 转发到本地 Host。
 
-前端 HTTP 类型不再手工复制 Controller DTO。Host 构建通过 `Microsoft.Extensions.ApiDescription.Server` 调用同一组 Controller、版本元数据和 `AddOpenApi` 配置，生成并提交 `src/Portwise.Web/openapi/portwise_v1.json`；前端的 `pnpm api:generate` 使用 `openapi-typescript` 生成 `src/lib/api-contract.generated.ts`。`api-contract.ts` 是生成类型与浏览器运行时 JSON 之间唯一的 Adapter，负责把 wire numeric（`number | string`）归一为 UI 使用的 `number`；feature 的 Axios module 只引用 `api-types.ts` 的领域友好别名，不直接依赖生成文件。新增或修改 Controller DTO 时，后端构建和前端生成都会暴露合约漂移，避免两套手工类型长期分叉。
+前端 HTTP 类型不再手工复制 Controller DTO。Host 构建通过 `Microsoft.Extensions.ApiDescription.Server` 调用同一组 Controller、版本元数据和 `AddOpenApi` 配置，生成并提交 `src/Portwise.Web/openapi/portwise_v1.json`；前端的 `pnpm api:generate` 使用 `openapi-typescript` 生成 `src/shared/http/api-contract.generated.ts`。`api-contract.ts` 是生成类型与浏览器运行时 JSON 之间唯一的 Adapter，负责把 wire numeric（`number | string`）归一为 UI 使用的 `number`；业务 module 的 Axios module 只引用 `api-types.ts` 的领域友好别名，不直接依赖生成文件。新增或修改 Controller DTO 时，后端构建和前端生成都会暴露合约漂移，避免两套手工类型长期分叉。
 
 `Stocks` 同时承载交易日同步编排，因为该编排只围绕关注股票的外部事实更新；交易日同步通过 `IStockFactSyncAppService.SyncAsync` 一次传递单只股票的规范化引用，并消费包含资料、行情、股息、财务结果和逐类失败的 `StockFactSyncResult`。如果未来出现多个互不相关的调度任务，再单独引入 `Operations` 模块。`StockModelParameterAppService` 与单股分析、组合分配、建议快照同属 `Recommendations` module，因为模型参数是建议规则的输入；Portfolio module 只拥有现金流水、交易和持仓不变量。
 
@@ -657,7 +674,7 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | --- | --- | --- |
 | 01 HTTP contract publication module | 已完成：集中运行时与 build-time OpenAPI 注册，前端请求消费生成路径约束，增加 wire numeric 运行时归一化与 contract drift 检查；CI/Docker 先生成并校验 contract，再构建前端 | `dotnet test`、`pnpm api:check`、`pnpm build`；提交 `refactor: close HTTP contract publication loop` |
 | 02 Recommendation 事实装配 module | 已完成：`StockAnalysisAppService` 增加关注列表批量事实读取，单股与组合入口共享一次计算时间和分析结果；组合分配拒绝混合计算时间，快照复用组合结果时间 | `dotnet test`（82 Application tests）；提交 `refactor: batch recommendation fact assembly` |
-| 03 Frontend application shell module | 已完成：路由选择、Setup gate、浏览器 session 读取和 feature 装载集中到 `application-shell.tsx`；feature 页面按路由懒加载；navigation 纯策略增加 Node 原生测试与 `pnpm test` 脚本 | `pnpm test`（4 tests）、`pnpm build`、`pnpm lint`；提交 `refactor: deepen frontend application shell` |
+| 03 Frontend application shell module | 已完成：路由选择、Setup gate、浏览器 session 读取和 feature 装载集中到 `ApplicationShell.tsx`；feature 页面按路由懒加载；navigation 纯策略增加 Node 原生测试与 `pnpm test` 脚本 | `pnpm test`（4 tests）、`pnpm build`、`pnpm lint`；提交 `refactor: deepen frontend application shell` |
 | 04 Application module ownership executable | 已完成：module-specific Contracts/DTOs/Validators 使用 module namespace，Mapperly 映射拆分为 `StocksMapper`、`PortfolioMapper`、`RecommendationsMapper`；新增架构测试防止类型泄漏回根技术桶 | `dotnet test`（84 Application tests）、`dotnet build Portwise.slnx`；提交 `refactor: enforce application module ownership` |
 | 05 CONTEXT/ADR authority | 已完成：修正根上下文产品名与文档权威声明，新增 `docs/adr/` 索引及单组合、单 Host、HTTP 合约、Application module locality 四项 Accepted ADR，并清理实现地图中的过时路径 | `git diff --check`、全文旧路径扫描；提交 `docs: establish architecture decision authority` |
 | 06 Backend localization and native XML documentation | 已完成：移除后端源码中的中文诊断硬编码，为全部 Controller/DTO 增加 XML 注释；通过 ASP.NET Core 编译期 source generator 读取 Host/Application/Domain XML 文档并写入操作、参数、响应、schema 和属性描述 | `dotnet build`、`dotnet test`、OpenAPI 摘要/参数/请求体/响应/schema 检查、中文源码扫描；本次提交 |

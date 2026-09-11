@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process"
 const outputDirectory = mkdtempSync(join(tmpdir(), "portwise-openapi-"))
 const generatedPath = join(outputDirectory, "api-contract.generated.ts")
 const sourcePath = resolve("openapi/portwise_v1.json")
-const checkedInPath = resolve("src/lib/api-contract.generated.ts")
+const checkedInPath = resolve("src/shared/http/api-contract.generated.ts")
 const packageRunner = process.platform === "win32" ? "pnpm.cmd" : "pnpm"
 
 try {

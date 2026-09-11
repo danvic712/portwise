@@ -10,9 +10,9 @@ function findTests(directory) {
   })
 }
 
-const testFiles = findTests(join(process.cwd(), "src"))
+const testFiles = findTests(join(process.cwd(), "tests")).sort()
 if (testFiles.length === 0) {
-  console.error("No TypeScript test files were found under src/")
+  console.error("No TypeScript test files were found under tests/")
   process.exit(1)
 }
 
