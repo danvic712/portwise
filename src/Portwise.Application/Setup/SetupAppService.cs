@@ -1,4 +1,3 @@
-using Portwise.Application.Contracts;
 using Portwise.Application.Setup.Contracts;
 using Portwise.Application.Setup.Dtos;
 using Portwise.Application.Stocks.Contracts;
@@ -19,14 +18,14 @@ public sealed class SetupAppService(
     IStockDataSyncScheduler stockDataSyncScheduler,
     IValidator<SetupRequest> requestValidator) : ISetupAppService
 {
-    public async Task<SetupStatus> GetStatusAsync(CancellationToken cancellationToken)
+    public async Task<SetupStatusDto> GetStatusAsync(CancellationToken cancellationToken)
     {
         var isComplete = await uow.Get<PortfolioEntity>()
             .AnyAsync(cancellationToken: cancellationToken);
 
         return isComplete
-            ? new SetupStatus(true, [])
-            : new SetupStatus(false, ["portfolio", "stocks"]);
+            ? new SetupStatusDto(true, [])
+            : new SetupStatusDto(false, ["portfolio", "stocks"]);
     }
 
     public async Task<SetupResult> InitializeAsync(

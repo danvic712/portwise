@@ -2,6 +2,7 @@ import { AlertCircle, ChevronRight, Clock3, Database, RefreshCw, Save, ShieldChe
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { PageFrame } from "@/components/layout/PageFrame"
+import { BrandMark } from "@/components/brand/BrandMark"
 import { SectionHeading } from "@/components/layout/PageHeading"
 import { EmptyState, ErrorState } from "@/components/feedback/AsyncState"
 import { Button } from "@/components/ui/Button"
@@ -145,7 +146,7 @@ function DailyNotebookHeader({ dataState, labels, lastUpdated, actions }: { data
 
   return (
     <section className={`d-notebook-header d-notebook-header-${dataState}`} aria-labelledby="daily-notebook-title">
-      <div className="d-notebook-index" aria-hidden="true"><span>D</span><small>{labels.indexNote}</small></div>
+      <div className="d-notebook-index" aria-hidden="true"><BrandMark className="d-notebook-index-mark" /><small>{labels.indexNote}</small></div>
       <div className="d-notebook-copy">
         <div className="d-kicker"><span>—</span><span>{labels.masthead.kicker}</span><i /></div>
         <h1 id="daily-notebook-title">{labels.masthead.title}</h1>

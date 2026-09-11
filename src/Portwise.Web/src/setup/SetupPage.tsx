@@ -2,6 +2,7 @@ import { ArrowRight, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert"
+import { BrandMark } from "@/components/brand/BrandMark"
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Checkbox } from "@/components/ui/Checkbox"
@@ -22,7 +23,7 @@ function newStock(): SetupStockDraft {
   return { id: crypto.randomUUID(), securityCode: "", exchangeCode: "SSE", initialHolding: null }
 }
 
-export function SetupPage({ onComplete }: { onComplete: (result: SetupResult) => void }) {
+export function SetupPage({ onComplete, disableEntryAnimation = false }: { onComplete: (result: SetupResult) => void; disableEntryAnimation?: boolean }) {
   const { messages } = useLocale()
   const copy = messages.setup.ui
   const [portfolioName, setPortfolioName] = useState("")
@@ -82,7 +83,7 @@ export function SetupPage({ onComplete }: { onComplete: (result: SetupResult) =>
     <div className="setup-frame">
       <header className="setup-topbar">
         <div className="setup-brand-lockup" aria-label={messages.common.ui.brandName}>
-          <span className="setup-brand-mark" aria-hidden="true">D</span>
+          <BrandMark className="setup-brand-mark" />
           <span className="setup-brand-copy">
             <strong>{messages.common.ui.brandName}</strong>
             <small>{messages.common.ui.brandCaption}</small>
@@ -95,7 +96,7 @@ export function SetupPage({ onComplete }: { onComplete: (result: SetupResult) =>
       </header>
 
       <main className="page-wrap setup-wrap">
-        <div className="setup-page">
+        <div className={disableEntryAnimation ? "setup-page setup-page-no-entry-motion" : "setup-page"}>
           <section className="setup-intro" aria-labelledby="setup-title">
             <div className="setup-intro-stamp" aria-hidden="true"><span>01</span><small>{copy.startStamp}</small></div>
             <p className="eyebrow">{copy.eyebrow}</p>
@@ -115,7 +116,7 @@ export function SetupPage({ onComplete }: { onComplete: (result: SetupResult) =>
                 <CardTitle id="setup-card-title">{copy.cardTitle}</CardTitle>
                 <CardDescription>{copy.cardDescription}</CardDescription>
               </div>
-              <span className="setup-card-mark" aria-hidden="true">D</span>
+              <span className="setup-card-mark" aria-hidden="true"><BrandMark /></span>
             </CardHeader>
             <Separator className="setup-card-divider" />
             {error && <Alert variant="destructive" className="setup-error"><AlertTitle>{copy.errorTitle}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}

@@ -10,6 +10,7 @@ import { getApiErrorMessage } from "@/shared/http/api-errors"
 import { useLocale } from "@/shared/i18n/i18n"
 import { isRequestAborted, useLatestRequest } from "@/shared/hooks/useLatestRequest"
 import { getSetupStatus } from "@/setup/setup.api"
+import { SetupPageLoading } from "@/setup/SetupPageLoading"
 import type { SetupResult, SetupStatus } from "@/shared/http/api-types"
 import {
   createBrowserNavigation,
@@ -54,9 +55,9 @@ export function ApplicationShell() {
   }, [navigation])
 
   useEffect(() => {
-    document.title = messages.common.ui.pageTitle
+    document.title = location.pathname === "/setup" ? messages.setup.ui.pageTitle : messages.common.ui.pageTitle
     document.documentElement.lang = locale
-  }, [locale, messages.common.ui.pageTitle])
+  }, [locale, location.pathname, messages.common.ui.pageTitle, messages.setup.ui.pageTitle])
 
   useEffect(() => {
     setupErrorRef.current = messages.common.application_error_unknown.detail
@@ -97,7 +98,7 @@ export function ApplicationShell() {
 
   function renderPage() {
     if (location.pathname === "/setup") {
-      return <SetupPage onComplete={(result: SetupResult) => {
+      return <SetupPage disableEntryAnimation onComplete={(result: SetupResult) => {
         setSetupStatus({ isComplete: true, missingRequirements: [] })
         setSetupNotice(result.stockDataSyncScheduled ? messages.common.ui.states.setupCompleteSync : messages.common.ui.states.setupCompleteDeferred)
         navigate("/overview")
@@ -121,8 +122,12 @@ export function ApplicationShell() {
     return <NotFoundPage onNavigate={navigate} />
   }
 
+  const isSetupRoute = location.pathname === "/setup"
+  const setupLoadingPage = <SetupPageLoading label={messages.common.ui.states.preparingSetup} />
   const page = loading
-    ? <StatusPageSkeleton label={messages.common.ui.states.connecting} onNavigate={navigate} />
+    ? isSetupRoute
+      ? setupLoadingPage
+      : <StatusPageSkeleton label={messages.common.ui.states.connecting} onNavigate={navigate} />
     : error
       ? <ApplicationErrorPage
         message={error}
@@ -134,7 +139,7 @@ export function ApplicationShell() {
           resetKey={`${location.pathname}${location.search.toString()}${location.hash}`}
           fallback={<ApplicationErrorPage message={messages.common.application_error_unknown.detail} onRetry={() => window.location.reload()} onNavigate={navigate} />}
         >
-          <Suspense fallback={<StatusPageSkeleton label={messages.common.ui.states.preparingSetup} onNavigate={navigate} />}>{renderPage()}</Suspense>
+          <Suspense fallback={isSetupRoute ? setupLoadingPage : <StatusPageSkeleton label={messages.common.ui.states.preparingSetup} onNavigate={navigate} />}>{renderPage()}</Suspense>
         </RouteErrorBoundary>
         : <StatusPageSkeleton label={messages.common.ui.states.preparingSetup} onNavigate={navigate} />
 

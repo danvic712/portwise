@@ -96,7 +96,7 @@ button { cursor: pointer; }
 .brand-lockup { display: inline-flex; align-items: center; gap: 11px; width: fit-content; border: 0; background: transparent; color: inherit; text-align: left; text-decoration: none; }
 .d-header .brand-lockup { height: auto; min-height: 0; padding: 0; border-color: transparent; }
 .d-header .brand-lockup:hover { background: transparent; color: inherit; }
-.brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--primary); color: var(--primary-foreground); }
+.brand-mark { display: block; width: 34px; height: 34px; flex: 0 0 auto; }
 .brand-copy { min-width: 0; }
 .brand-name, .brand-caption { display: block; }
 .brand-name { font-family: var(--font-heading); font-size: 20px; letter-spacing: -0.02em; }
@@ -339,7 +339,7 @@ button { cursor: pointer; }
 .d-watchlist { margin-top: 12px; }
 .d-header { display: grid; z-index: 20; grid-template-columns: minmax(220px, 1.05fr) auto minmax(280px, 1.05fr); min-height: 77px; padding-inline: clamp(24px, 4.3vw, 72px); column-gap: clamp(18px, 2vw, 34px); }
 .d-header .brand-lockup { justify-self: start; gap: 13px; }
-.d-header .brand-mark { border-radius: 7px 7px 7px 2px; font-family: Georgia, "Times New Roman", serif; font-size: 22px; font-weight: 700; }
+.d-header .brand-mark { border-radius: 7px 7px 7px 2px; }
 .d-header .brand-name { color: var(--foreground); font-size: 14px; font-weight: 800; letter-spacing: -0.025em; line-height: 1.15; white-space: nowrap; }
 .d-header .brand-caption { margin-top: 4px; color: var(--muted-foreground); font-size: 9px; letter-spacing: .01em; line-height: 1.1; white-space: nowrap; }
 .d-header-actions { gap: 10px; }

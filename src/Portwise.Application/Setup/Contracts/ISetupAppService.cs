@@ -4,9 +4,9 @@ namespace Portwise.Application.Setup.Contracts;
 
 public interface ISetupAppService
 {
-    Task<SetupStatus> GetStatusAsync(CancellationToken cancellationToken);
+    Task<SetupStatusDto> GetStatusAsync(CancellationToken cancellationToken =  default);
 
     Task<SetupResult> InitializeAsync(
         SetupRequest request,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken = default);
 }

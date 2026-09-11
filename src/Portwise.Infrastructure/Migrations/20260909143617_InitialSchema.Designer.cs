@@ -12,8 +12,8 @@ using Portwise.Infrastructure;
 namespace Portwise.Infrastructure.Migrations
 {
     [DbContext(typeof(PortwiseDbContext))]
-    [Migration("20260909143617_InitialPostgreSqlSchema")]
-    partial class InitialPostgreSqlSchema
+    [Migration("20260909143617_InitialSchema")]
+    partial class InitialSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

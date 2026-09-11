@@ -5,7 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f4f1eb" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Portwise · 策略参考</title>
+    <title>Portwise · 你的投资工作台</title>
+    <style>
+      html,
+      body {
+        min-width: 320px;
+        margin: 0;
+        background: #fff7e8;
+      }
+
+      html.dark,
+      html.dark body {
+        background: #1c2749;
+      }
+    </style>
+    <script>
+      (() => {
+        const storedTheme = localStorage.getItem("portwise-theme");
+        const storedLocale = localStorage.getItem("portwise-locale");
+        const theme =
+          storedTheme === "light" || storedTheme === "dark"
+            ? storedTheme
+            : window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+
+        document.documentElement.classList.add(theme);
+
+        const isEnglish = storedLocale === "en-US";
+        const isSetupRoute = window.location.pathname === "/setup";
+        document.title = isSetupRoute
+          ? isEnglish ? "Portwise · Build your workspace" : "Portwise · 建立你的工作台"
+          : isEnglish ? "Portwise · Long-term investing workspace" : "Portwise · 你的投资工作台";
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

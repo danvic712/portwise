@@ -15,6 +15,32 @@ namespace Portwise.Infrastructure.Tests;
 public sealed class FtShareHttpClientRegistrationTests
 {
     [Fact]
+    public void NamedClientCanBeCreatedWithTheDefaultAttemptTimeout()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:Default"] =
+                    "Host=localhost;Port=5432;Database=portwise;Username=portwise;Password=portwise",
+                ["FtShare:McpEndpoint"] = "https://market.example",
+                ["FtShare:RequestTimeoutSeconds"] = "30",
+                ["FtShare:MaxRetryCount"] = "2",
+                ["FtShare:RetryDelayMilliseconds"] = "250"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddPortwiseInfrastructure(configuration);
+
+        using var serviceProvider = services.BuildServiceProvider();
+        var client = serviceProvider
+            .GetRequiredService<IHttpClientFactory>()
+            .CreateClient(FtShareMcpToolInvoker.HttpClientName);
+
+        Assert.Equal(Timeout.InfiniteTimeSpan, client.Timeout);
+    }
+
+    [Fact]
     public async Task NamedClientUsesFactoryAndRetriesTransientResponses()
     {
         var attempts = 0;

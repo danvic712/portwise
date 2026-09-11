@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { useLocale } from "@/shared/i18n/i18n"
 import { cn } from "@/shared/utils/utils"
 import { siteNavigation } from "@/app/routing/site-navigation"
+import { BrandMark } from "@/components/brand/BrandMark"
 
 type HeaderProps = {
   currentPath: string
@@ -41,7 +42,7 @@ export function Header({ currentPath, onNavigate }: HeaderProps) {
     <>
       <header className="topbar d-header">
         <a href="/overview" className={cn(buttonVariants({ variant: "ghost" }), "brand-lockup")} onClick={(event) => handleNavigation(event, "/overview")} aria-label={messages.common.ui.backToOverview}>
-          <span className="brand-mark">D</span>
+          <BrandMark />
           <span className="brand-copy">
             <span className="brand-name">{messages.common.ui.brandName}</span>
             <span className="brand-caption">{messages.common.ui.brandCaption}</span>

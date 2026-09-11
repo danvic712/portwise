@@ -203,24 +203,24 @@
         "tags": [
           "Setup"
         ],
-        "summary": "Returns whether the initial portfolio setup is complete.",
+        "summary": "Returns whether the initial portfolio setup is complete.\n<param name=\"cancellationToken\">Token used to cancel the request.</param>",
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/SetupStatus"
+                  "$ref": "#/components/schemas/SetupStatusDto"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SetupStatus"
+                  "$ref": "#/components/schemas/SetupStatusDto"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SetupStatus"
+                  "$ref": "#/components/schemas/SetupStatusDto"
                 }
               }
             }
@@ -233,9 +233,8 @@
         "tags": [
           "Setup"
         ],
-        "summary": "Creates the initial portfolio and configured stock watchlist.",
+        "summary": "Creates the initial portfolio and configured stock watchlist.\n<param name=\"request\">Portfolio name, stocks and optional initial holdings.</param>\n<param name=\"cancellationToken\">Token used to cancel the request.</param>",
         "requestBody": {
-          "description": "Portfolio name, stocks and optional initial holdings.",
           "content": {
             "application/json": {
               "schema": {
@@ -1453,7 +1452,7 @@
         },
         "description": "Result of initial portfolio setup."
       },
-      "SetupStatus": {
+      "SetupStatusDto": {
         "required": [
           "isComplete",
           "missingRequirements"
@@ -1461,18 +1460,16 @@
         "type": "object",
         "properties": {
           "isComplete": {
-            "type": "boolean",
-            "description": "Whether all setup requirements are complete."
+            "type": "boolean"
           },
           "missingRequirements": {
             "type": "array",
             "items": {
               "type": "string"
-            },
-            "description": "Requirement codes that are still missing."
+            }
           }
         },
-        "description": "Reports whether first-run setup has been completed."
+        "description": "Reports whether first-run setup has been completed.\n            <param name=\"IsComplete\">Whether all setup requirements are complete.</param><param name=\"MissingRequirements\">Requirement codes that are still missing.</param>"
       },
       "SetupStockRequest": {
         "required": [

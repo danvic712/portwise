@@ -67,6 +67,8 @@ public static class InfrastructureServiceCollectionExtensions
 
                 resilienceOptions.TotalRequestTimeout.Timeout = configuredOptions.HttpRequestTimeout;
                 resilienceOptions.AttemptTimeout.Timeout = configuredOptions.RequestTimeout;
+                resilienceOptions.CircuitBreaker.SamplingDuration = TimeSpan.FromTicks(
+                    checked(configuredOptions.RequestTimeout.Ticks * 2));
                 resilienceOptions.Retry.MaxRetryAttempts = configuredOptions.MaxRetryCount;
                 resilienceOptions.Retry.Delay = configuredOptions.RetryDelay;
                 resilienceOptions.Retry.BackoffType = DelayBackoffType.Exponential;

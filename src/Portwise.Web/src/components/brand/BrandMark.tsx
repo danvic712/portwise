@@ -1,0 +1,15 @@
+import { cn } from "@/shared/utils/utils"
+
+type BrandMarkProps = {
+  className?: string
+}
+
+export function BrandMark({ className }: BrandMarkProps) {
+  return (
+    <svg className={cn("brand-mark", className)} viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+      <rect width="64" height="64" rx="16" fill="#3f6fb5" />
+      <path d="M18 50V14h14.2c10.6 0 16.8 5.2 16.8 14s-6.2 14-16.8 14H27v8h-9Zm9-16h5c5.1 0 8-2.1 8-6s-2.9-6-8-6h-5v12Z" fill="#fff9ee" />
+      <circle cx="49" cy="12" r="5" fill="#e4ad4b" />
+    </svg>
+  )
+}

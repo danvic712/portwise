@@ -874,6 +874,11 @@
   line-height: 1;
 }
 
+.overview-page .d-notebook-index-mark {
+  width: 34px;
+  height: 34px;
+}
+
 .overview-page .d-notebook-index small {
   margin-top: 5px;
   font-size: 8px;
