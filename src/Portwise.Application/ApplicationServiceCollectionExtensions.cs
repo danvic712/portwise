@@ -1,6 +1,7 @@
 using Portwise.Application.Contracts;
 using Portwise.Application.Localization;
 using Portwise.Application.Portfolio;
+using Portwise.Application.Preferences;
 using Portwise.Application.Recommendations;
 using Portwise.Application.Setup;
 using Portwise.Application.Stocks;
@@ -18,6 +19,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddPortwiseSetupModule();
         services.AddPortwiseStocksModule();
         services.AddPortwisePortfolioModule();
+        services.AddPortwisePreferencesModule();
         services.AddPortwiseRecommendationsModule();
         services.AddSingleton<IApplicationErrorCatalog, ApplicationErrorCatalog>();
         services.AddSingleton<IApplicationErrorLocalizer, ApplicationErrorLocalizer>();

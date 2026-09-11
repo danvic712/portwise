@@ -1,0 +1,17 @@
+{
+  "preferences_not_configured": {
+    "status_code": 409,
+    "title": "Application preferences are not configured",
+    "detail": "Complete onboarding before changing application preferences."
+  },
+  "preferences_validation_failed": {
+    "status_code": 400,
+    "title": "The application preferences are invalid",
+    "detail": "Choose a supported language and theme, then try again."
+  },
+  "preferences_revision_conflict": {
+    "status_code": 409,
+    "title": "Application preferences changed",
+    "detail": "Refresh the settings page and apply your changes again."
+  }
+}

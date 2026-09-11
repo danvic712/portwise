@@ -132,6 +132,73 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns the persisted application preferences. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PreferencesResponse"];
+                        "application/json": components["schemas"]["PreferencesResponse"];
+                        "text/json": components["schemas"]["PreferencesResponse"];
+                    };
+                };
+            };
+        };
+        /** Updates the application language and theme using optimistic concurrency. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Preference values and the expected revision. */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdatePreferencesRequest"];
+                    "text/json": components["schemas"]["UpdatePreferencesRequest"];
+                    "application/*+json": components["schemas"]["UpdatePreferencesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PreferencesResponse"];
+                        "application/json": components["schemas"]["PreferencesResponse"];
+                        "text/json": components["schemas"]["PreferencesResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/recommendations": {
         parameters: {
             query?: never;
@@ -231,9 +298,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["SetupStatus"];
-                        "application/json": components["schemas"]["SetupStatus"];
-                        "text/json": components["schemas"]["SetupStatus"];
+                        "text/plain": components["schemas"]["SetupStatusDto"];
+                        "application/json": components["schemas"]["SetupStatusDto"];
+                        "text/json": components["schemas"]["SetupStatusDto"];
                     };
                 };
             };
@@ -846,6 +913,23 @@ export interface components {
              */
             tradePrincipalAmount: number | string;
         };
+        /** @description Returns the persisted application language and theme. */
+        PreferencesResponse: {
+            /** @description Stable application language code. */
+            languageCode: string;
+            /** @description Stable application theme code. */
+            themeCode: string;
+            /**
+             * Format: int64
+             * @description Current optimistic concurrency revision.
+             */
+            revision: number | string;
+            /**
+             * Format: date-time
+             * @description Time at which the preferences were last updated.
+             */
+            updatedAtUtc: string;
+        };
         /** @description Request to record a cash ledger entry. */
         RecordCashLedgerEntryRequest: {
             /**
@@ -1016,7 +1100,7 @@ export interface components {
             stocks: components["schemas"]["SetupStockResult"][];
         };
         /** @description Reports whether first-run setup has been completed. */
-        SetupStatus: {
+        SetupStatusDto: {
             /** @description Whether all setup requirements are complete. */
             isComplete: boolean;
             /** @description Requirement codes that are still missing. */
@@ -1484,6 +1568,18 @@ export interface components {
              * @description Persistent identifier of the configured security.
              */
             securityId?: string;
+        };
+        /** @description Requests an optimistic-concurrency update to application preferences. */
+        UpdatePreferencesRequest: {
+            /** @description Stable application language code. */
+            languageCode: string;
+            /** @description Stable application theme code. */
+            themeCode: string;
+            /**
+             * Format: int64
+             * @description Revision last read by the caller.
+             */
+            expectedRevision: number | string;
         };
     };
     responses: never;

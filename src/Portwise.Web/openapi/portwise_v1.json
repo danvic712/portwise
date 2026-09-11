@@ -138,6 +138,85 @@
         }
       }
     },
+    "/api/v1/preferences": {
+      "get": {
+        "tags": [
+          "Preferences"
+        ],
+        "summary": "Returns the persisted application preferences.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Preferences"
+        ],
+        "summary": "Updates the application language and theme using optimistic concurrency.",
+        "requestBody": {
+          "description": "Preference values and the expected revision.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePreferencesRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePreferencesRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePreferencesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/recommendations": {
       "get": {
         "tags": [
@@ -203,7 +282,7 @@
         "tags": [
           "Setup"
         ],
-        "summary": "Returns whether the initial portfolio setup is complete.\n<param name=\"cancellationToken\">Token used to cancel the request.</param>",
+        "summary": "Returns whether the initial portfolio setup is complete.",
         "responses": {
           "200": {
             "description": "OK",
@@ -233,8 +312,9 @@
         "tags": [
           "Setup"
         ],
-        "summary": "Creates the initial portfolio and configured stock watchlist.\n<param name=\"request\">Portfolio name, stocks and optional initial holdings.</param>\n<param name=\"cancellationToken\">Token used to cancel the request.</param>",
+        "summary": "Creates the initial portfolio and configured stock watchlist.",
         "requestBody": {
+          "description": "Portfolio name, stocks and optional initial holdings.",
           "content": {
             "application/json": {
               "schema": {
@@ -1085,6 +1165,40 @@
         },
         "description": "Result returned after a portfolio trade is recorded."
       },
+      "PreferencesResponse": {
+        "required": [
+          "languageCode",
+          "themeCode",
+          "revision",
+          "updatedAtUtc"
+        ],
+        "type": "object",
+        "properties": {
+          "languageCode": {
+            "type": "string",
+            "description": "Stable application language code."
+          },
+          "themeCode": {
+            "type": "string",
+            "description": "Stable application theme code."
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Current optimistic concurrency revision.",
+            "format": "int64"
+          },
+          "updatedAtUtc": {
+            "type": "string",
+            "description": "Time at which the preferences were last updated.",
+            "format": "date-time"
+          }
+        },
+        "description": "Returns the persisted application language and theme."
+      },
       "RecordCashLedgerEntryRequest": {
         "required": [
           "entryDate",
@@ -1460,16 +1574,18 @@
         "type": "object",
         "properties": {
           "isComplete": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether all setup requirements are complete."
           },
           "missingRequirements": {
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Requirement codes that are still missing."
           }
         },
-        "description": "Reports whether first-run setup has been completed.\n            <param name=\"IsComplete\">Whether all setup requirements are complete.</param><param name=\"MissingRequirements\">Requirement codes that are still missing.</param>"
+        "description": "Reports whether first-run setup has been completed."
       },
       "SetupStockRequest": {
         "required": [
@@ -2455,6 +2571,34 @@
           }
         },
         "description": "Configured stock identity with its latest holding snapshot."
+      },
+      "UpdatePreferencesRequest": {
+        "required": [
+          "languageCode",
+          "themeCode",
+          "expectedRevision"
+        ],
+        "type": "object",
+        "properties": {
+          "languageCode": {
+            "type": "string",
+            "description": "Stable application language code."
+          },
+          "themeCode": {
+            "type": "string",
+            "description": "Stable application theme code."
+          },
+          "expectedRevision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Revision last read by the caller.",
+            "format": "int64"
+          }
+        },
+        "description": "Requests an optimistic-concurrency update to application preferences."
       }
     }
   },
@@ -2464,6 +2608,9 @@
     },
     {
       "name": "Portfolio"
+    },
+    {
+      "name": "Preferences"
     },
     {
       "name": "Recommendations"

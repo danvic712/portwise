@@ -32,6 +32,12 @@ internal sealed class EFUow(PortwiseDbContext dbContext) : IUow
         {
             return await dbContext.SaveChangesAsync(cancellationToken);
         }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new UnitOfWorkCommitException(
+                exception,
+                isConcurrencyConflict: true);
+        }
         catch (DbUpdateException exception)
         {
             throw new UnitOfWorkCommitException(

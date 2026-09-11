@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Portwise.Domain.Codes;
+using Portwise.Domain.Enums;
 using Portwise.Domain.Models;
 using Xunit;
 
@@ -43,7 +44,10 @@ public sealed class ConfigurationPersistenceModelTests
 
         var identifiers = new[]
         {
-            new ApplicationPreference().Id,
+            ApplicationPreference.Create(
+                ApplicationLanguage.ZhCn,
+                ApplicationTheme.System,
+                DateTimeOffset.UnixEpoch).Id,
             new InitializationState().Id,
             new StockDataProviderDefinition().Id,
             new FtShareProviderSettings().Id,

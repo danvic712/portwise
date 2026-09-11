@@ -16,8 +16,8 @@ public sealed class SetupController(ISetupAppService setupAppService) : Controll
 {
     /// <summary>
     /// Returns whether the initial portfolio setup is complete.
-    /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// </summary>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpGet("status")]
     public async Task<ActionResult<SetupStatusDto>> GetStatus(CancellationToken cancellationToken)
     {
@@ -27,9 +27,9 @@ public sealed class SetupController(ISetupAppService setupAppService) : Controll
 
     /// <summary>
     /// Creates the initial portfolio and configured stock watchlist.
-    /// <param name="request">Portfolio name, stocks and optional initial holdings.</param>
-    /// <param name="cancellationToken">Token used to cancel the request.</param>
     /// </summary>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
+    /// <param name="request">Portfolio name, stocks and optional initial holdings.</param>
     [HttpPost]
     public async Task<ActionResult<SetupResult>> Initialize(
         [FromBody] SetupRequest request,

@@ -5,6 +5,9 @@ public static class ApplicationErrorCodes
     public const string SetupValidationFailed = "setup_validation_failed";
     public const string SetupAlreadyCompleted = "setup_already_completed";
     public const string SetupNotCompleted = "setup_not_completed";
+    public const string PreferencesNotConfigured = "preferences_not_configured";
+    public const string PreferencesValidationFailed = "preferences_validation_failed";
+    public const string PreferencesRevisionConflict = "preferences_revision_conflict";
     public const string ModelParameterValidationFailed = "model_parameter_validation_failed";
     public const string ModelParameterVersionAlreadyExists = "model_parameter_version_already_exists";
     public const string StockAnalysisValidationFailed = "stock_analysis_validation_failed";
@@ -27,6 +30,9 @@ public static class ApplicationErrorCodes
         SetupValidationFailed,
         SetupAlreadyCompleted,
         SetupNotCompleted,
+        PreferencesNotConfigured,
+        PreferencesValidationFailed,
+        PreferencesRevisionConflict,
         ModelParameterValidationFailed,
         ModelParameterVersionAlreadyExists,
         StockAnalysisValidationFailed,

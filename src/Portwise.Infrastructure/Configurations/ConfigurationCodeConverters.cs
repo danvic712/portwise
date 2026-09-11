@@ -1,38 +1,23 @@
+using Portwise.Domain.Codes;
 using Portwise.Domain.Enums;
 
 namespace Portwise.Infrastructure.Configurations;
 
 internal static class ConfigurationCodeConverters
 {
-    public static string ToCode(ApplicationLanguage value) => value switch
-    {
-        ApplicationLanguage.ZhCn => "zh-CN",
-        ApplicationLanguage.EnUs => "en-US",
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
+    public static string ToCode(ApplicationLanguage value) => ApplicationLanguageCodes.From(value);
 
-    public static ApplicationLanguage ToApplicationLanguage(string value) => value switch
-    {
-        "zh-CN" => ApplicationLanguage.ZhCn,
-        "en-US" => ApplicationLanguage.EnUs,
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
+    public static ApplicationLanguage ToApplicationLanguage(string value) =>
+        ApplicationLanguageCodes.TryParse(value, out var language)
+            ? language
+            : throw new ArgumentOutOfRangeException(nameof(value), value, null);
 
-    public static string ToCode(ApplicationTheme value) => value switch
-    {
-        ApplicationTheme.System => "system",
-        ApplicationTheme.Light => "light",
-        ApplicationTheme.Dark => "dark",
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
+    public static string ToCode(ApplicationTheme value) => ApplicationThemeCodes.From(value);
 
-    public static ApplicationTheme ToApplicationTheme(string value) => value switch
-    {
-        "system" => ApplicationTheme.System,
-        "light" => ApplicationTheme.Light,
-        "dark" => ApplicationTheme.Dark,
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
+    public static ApplicationTheme ToApplicationTheme(string value) =>
+        ApplicationThemeCodes.TryParse(value, out var theme)
+            ? theme
+            : throw new ArgumentOutOfRangeException(nameof(value), value, null);
 
     public static string ToCode(ProviderVerificationState value) => value switch
     {
