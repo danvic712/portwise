@@ -13,7 +13,7 @@
     "steps": {
       "preferences": "Basics",
       "portfolio": "Portfolio",
-      "stockData": "Stock data",
+      "stockData": "Data services",
       "inference": "AI assistant"
     },
     "optional": "Set up later",
@@ -27,9 +27,9 @@
       "portfolioEyebrow": "CREATE YOUR PORTFOLIO",
       "portfolioTitle": "Name your portfolio",
       "portfolioDescription": "Name your portfolio, then add the stocks you want to follow over time.",
-      "stockEyebrow": "ADD STOCK DATA",
-      "stockTitle": "Choose a stock data source",
-      "stockDescription": "Add a source so Portwise can bring in the stock information you need. You can do this later.",
+      "stockEyebrow": "CONNECT STOCK DATA",
+      "stockTitle": "Bring stock information into Portwise",
+      "stockDescription": "Connect a data service so Portwise can sync stock profiles, market data, dividends, and financials. Start with FTShare, and add other services as they become available.",
       "inferenceEyebrow": "ADD YOUR AI ASSISTANT",
       "inferenceTitle": "Set up your AI assistant",
       "inferenceDescription": "Choose services and models for conversations and smart search, or come back to this later."
@@ -68,13 +68,25 @@
       "sharesPlaceholder": "For example 100"
     },
     "stock": {
-      "title": "Stock data",
-      "description": "Optional. Add a data source now so you can browse stock information in Portwise.",
-      "providerName": "FTShare",
-      "keyLabel": "Access key",
-      "keyPlaceholder": "Enter your access key",
-      "keyHint": "No key yet? That is okay—you can add it later in Settings.",
-      "loadError": "We could not load the available sources right now. You can add one later in Settings."
+      "title": "Stock data services",
+      "description": "Choose a data service and enter its access key. You can still enter Portwise without one; stock data will be ready after you configure a service.",
+      "providerSectionEyebrow": "DATA SERVICES",
+      "providerSectionTitle": "Choose a service to connect",
+      "providerSectionDescription": "Each service has its own access key. New services will appear here as they are added.",
+      "providerCount": "{count} available",
+      "providersLoading": "Loading available services…",
+      "providersUnavailableTitle": "The service list is temporarily unavailable",
+      "providersEmpty": "No data services are available yet. You can skip this step and return to Settings later.",
+      "providerLabel": "Stock data provider",
+      "ftShareDescription": "FTShare provides stock profiles, market data, dividends, and financial information.",
+      "genericProviderDescription": "This service can provide stock data for Portwise.",
+      "keyLabel": "{provider} access key",
+      "keyPlaceholder": "Enter the {provider} access key",
+      "keyHint": "Your access key is encrypted and used only to retrieve stock data.",
+      "configured": "Entered",
+      "notConfigured": "Not configured",
+      "loadError": "The available services could not be loaded right now. You can skip this step and configure one later in Settings.",
+      "futureProviderHint": "Set up only the service you want to use now. All stock data services will be managed here as more become available."
     },
     "inference": {
       "title": "AI assistant",
@@ -92,7 +104,7 @@
     },
     "actions": {
       "nextPortfolio": "Next: build your portfolio",
-      "nextStock": "Next: add stock data",
+      "nextStock": "Next: connect a data service",
       "nextInference": "Next: add your AI assistant",
       "save": "Save and start using Portwise",
       "saving": "Saving…",

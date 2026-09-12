@@ -13,7 +13,7 @@
     "steps": {
       "preferences": "基础设置",
       "portfolio": "投资组合",
-      "stockData": "股票数据",
+      "stockData": "数据服务",
       "inference": "AI 助手"
     },
     "optional": "可稍后设置",
@@ -27,9 +27,9 @@
       "portfolioEyebrow": "创建你的投资组合",
       "portfolioTitle": "给投资组合起个名字",
       "portfolioDescription": "先为投资组合命名，再加入你想长期关注的股票。",
-      "stockEyebrow": "准备股票数据",
-      "stockTitle": "选择股票数据来源",
-      "stockDescription": "选择一个数据来源，帮助 Portwise 获取你需要的股票信息；也可以稍后再设置。",
+      "stockEyebrow": "连接股票数据服务",
+      "stockTitle": "让 Portwise 获取股票信息",
+      "stockDescription": "连接数据服务后，Portwise 才能同步股票资料、行情、分红和财务信息。你可以先设置 FTShare，其他服务之后也能添加。",
       "inferenceEyebrow": "准备 AI 助手",
       "inferenceTitle": "设置你的 AI 助手",
       "inferenceDescription": "为对话和智能搜索选择服务与模型，也可以以后再补充。"
@@ -68,13 +68,25 @@
       "sharesPlaceholder": "例如 100"
     },
     "stock": {
-      "title": "股票数据",
-      "description": "可选。添加数据来源后，就能在 Portwise 中查看股票信息。",
-      "providerName": "FTShare",
-      "keyLabel": "访问密钥",
-      "keyPlaceholder": "输入访问密钥",
-      "keyHint": "现在没有也没关系，之后可以在设置中添加。",
-      "loadError": "数据来源暂时没有加载出来，你可以稍后在设置中添加。"
+      "title": "股票数据服务",
+      "description": "选择数据服务并填写访问密钥。未配置时仍可进入系统，股票数据功能会在设置后启用。",
+      "providerSectionEyebrow": "数据服务",
+      "providerSectionTitle": "选择要连接的服务",
+      "providerSectionDescription": "每个服务都有独立的访问密钥。接入新的服务后，它会自动出现在这里。",
+      "providerCount": "{count} 个可用服务",
+      "providersLoading": "正在读取可用的服务…",
+      "providersUnavailableTitle": "暂时无法读取服务列表",
+      "providersEmpty": "目前还没有可用的数据服务，可以先跳过，之后在设置中继续。",
+      "providerLabel": "股票数据提供方",
+      "ftShareDescription": "FTShare 可提供股票资料、行情、分红和财务信息。",
+      "genericProviderDescription": "这个服务可为 Portwise 提供股票数据。",
+      "keyLabel": "{provider} 访问密钥",
+      "keyPlaceholder": "输入 {provider} 的访问密钥",
+      "keyHint": "访问密钥会加密保存，仅用于获取股票数据。",
+      "configured": "已填写",
+      "notConfigured": "尚未配置",
+      "loadError": "暂时无法读取可用的数据服务；你可以先跳过，之后在设置中继续配置。",
+      "futureProviderHint": "现在只需要设置你要使用的服务，之后新增的服务也会在这里统一管理。"
     },
     "inference": {
       "title": "AI 助手",
@@ -92,7 +104,7 @@
     },
     "actions": {
       "nextPortfolio": "下一步：建立投资组合",
-      "nextStock": "下一步：准备股票数据",
+      "nextStock": "下一步：连接数据服务",
       "nextInference": "下一步：设置 AI 助手",
       "save": "保存并开始使用",
       "saving": "正在保存…",

@@ -1,7 +1,8 @@
-import { ArrowLeft, ArrowRight, Check, Info, Plus, Trash2 } from "lucide-react"
+import { ArrowLeft, ArrowRight, Check, Database, Info, KeyRound, Plus, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert"
+import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent, CardHeader } from "@/components/ui/Card"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/Field"
@@ -39,6 +40,7 @@ type InitialStockDraft = {
 }
 
 const defaultBaseUrl = "https://api.openai.com/v1"
+const ftShareProviderKind = "ftshare"
 const aShareExchangeCodes = {
   sse: "SSE",
   szse: "SZSE",
@@ -63,13 +65,14 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
   const [portfolioName, setPortfolioName] = useState("")
   const stockDraftSequence = useRef(0)
   const [initialStocks, setInitialStocks] = useState<InitialStockDraft[]>([])
-  const [ftShareKey, setFtShareKey] = useState("")
+  const [providerKeys, setProviderKeys] = useState<Record<string, string>>({})
   const [inferenceName, setInferenceName] = useState("")
   const [inferenceBaseUrl, setInferenceBaseUrl] = useState(defaultBaseUrl)
   const [inferenceKey, setInferenceKey] = useState("")
   const [chatModel, setChatModel] = useState("")
   const [embeddingModel, setEmbeddingModel] = useState("")
   const [definitions, setDefinitions] = useState<StockDataProvidersResponse["definitions"]>([])
+  const [definitionsLoading, setDefinitionsLoading] = useState(true)
   const [definitionsError, setDefinitionsError] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -82,20 +85,24 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
       .then((response) => {
         if (request.isCurrent()) {
           setDefinitions(response.definitions)
+          setDefinitionsLoading(false)
           setDefinitionsError(false)
         }
       })
       .catch(() => {
-        if (request.isCurrent()) setDefinitionsError(true)
+        if (request.isCurrent()) {
+          setDefinitionsLoading(false)
+          setDefinitionsError(true)
+        }
       })
   }, [beginDefinitions])
 
-  const ftShareDefinition = useMemo(
-    () => definitions.find((definition) => definition.providerKindCode === "ftshare"),
+  const enabledDefinitions = useMemo(
+    () => definitions.filter((definition) => definition.isEnabled),
     [definitions],
   )
 
-  const hasStockDataInput = Boolean(ftShareKey.trim())
+  const hasStockDataInput = Object.values(providerKeys).some((value) => value.trim())
   const hasInferenceInput = Boolean(inferenceName.trim() || inferenceKey.trim() || chatModel.trim() || embeddingModel.trim() || (inferenceBaseUrl.trim() && inferenceBaseUrl.trim() !== defaultBaseUrl))
   const hasPortfolioInput = Boolean(portfolioName.trim())
 
@@ -124,6 +131,10 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
     setError(null)
   }
 
+  function updateProviderKey(providerKindCode: string, value: string) {
+    setProviderKeys((current) => ({ ...current, [providerKindCode]: value }))
+  }
+
   function buildRequest(): CompleteInitializationRequest {
     const stocks = initialStocks
       .filter((stock) => stock.securityCode.trim())
@@ -132,9 +143,10 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
         exchangeCode: stock.exchangeCode,
         heldShares: Number(stock.heldShares),
       }))
-    const stockDataProviders = hasStockDataInput && ftShareDefinition
-      ? [{ providerDefinitionId: ftShareDefinition.id, name: copy.stock.providerName, credentials: { action: "replace" as const, value: ftShareKey.trim() } }]
-      : null
+    const stockDataProviders = enabledDefinitions
+      .map((definition) => ({ definition, key: providerKeys[definition.providerKindCode]?.trim() ?? "" }))
+      .filter((item) => item.key)
+      .map(({ definition, key }) => ({ providerDefinitionId: definition.id, name: definition.displayName, credentials: { action: "replace" as const, value: key } }))
     const inferenceProviders = hasInferenceInput
       ? [{ name: inferenceName.trim(), baseUrl: inferenceBaseUrl.trim(), apiKey: { action: inferenceKey.trim() ? "replace" as const : "clear" as const, value: inferenceKey.trim() || null } }]
       : null
@@ -145,7 +157,7 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
       ]
       : null
 
-    return { languageCode: locale, themeCode: theme, portfolioName: portfolioName.trim(), initialStocks: stocks.length ? stocks : null, stockDataProviders, stockDataRoutes: null, inferenceProviders, inferenceRoutes }
+    return { languageCode: locale, themeCode: theme, portfolioName: portfolioName.trim(), initialStocks: stocks.length ? stocks : null, stockDataProviders: stockDataProviders.length ? stockDataProviders : null, stockDataRoutes: null, inferenceProviders, inferenceRoutes }
   }
 
   function validatePortfolioStep() {
@@ -415,11 +427,55 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
                       </section>
                     </FieldGroup>}
 
-                    {activeStep.key === "stockData" && <Field>
-                      <FieldLabel htmlFor="onboarding-ftshare-key">{copy.stock.keyLabel}</FieldLabel>
-                      <Input id="onboarding-ftshare-key" type="password" value={ftShareKey} placeholder={copy.stock.keyPlaceholder} onChange={(event) => setFtShareKey(event.target.value)} autoComplete="new-password" />
-                      <FieldDescription>{definitionsError ? copy.stock.loadError : copy.stock.keyHint}</FieldDescription>
-                    </Field>}
+                    {activeStep.key === "stockData" && <section className="onboarding-provider-editor" aria-labelledby="onboarding-provider-editor-title">
+                      <div className="onboarding-provider-editor-heading">
+                        <div>
+                          <div className="onboarding-provider-kicker"><Database size={15} aria-hidden="true" />{copy.stock.providerSectionEyebrow}</div>
+                          <h4 id="onboarding-provider-editor-title">{copy.stock.providerSectionTitle}</h4>
+                          <p>{copy.stock.providerSectionDescription}</p>
+                        </div>
+                        {!definitionsLoading && !definitionsError && <Badge variant="outline">{interpolate(copy.stock.providerCount, { count: String(enabledDefinitions.length) })}</Badge>}
+                      </div>
+
+                      {definitionsLoading ? (
+                        <div className="onboarding-provider-loading" role="status"><span className="onboarding-provider-loading-dot" aria-hidden="true" />{copy.stock.providersLoading}</div>
+                      ) : definitionsError ? (
+                        <Alert variant="attention" className="onboarding-provider-alert">
+                          <AlertTitle>{copy.stock.providersUnavailableTitle}</AlertTitle>
+                          <AlertDescription>{copy.stock.loadError}</AlertDescription>
+                        </Alert>
+                      ) : enabledDefinitions.length === 0 ? (
+                        <div className="onboarding-provider-empty">{copy.stock.providersEmpty}</div>
+                      ) : (
+                        <div className="onboarding-provider-list">
+                          {enabledDefinitions.map((definition) => {
+                            const providerKey = providerKeys[definition.providerKindCode] ?? ""
+                            const hasProviderKey = Boolean(providerKey.trim())
+                            const isFtShare = definition.providerKindCode === ftShareProviderKind
+                            return <article className="onboarding-provider-card" key={definition.id}>
+                              <div className="onboarding-provider-card-header">
+                                <div className="onboarding-provider-identity">
+                                  <span className="onboarding-provider-icon"><Database size={18} aria-hidden="true" /></span>
+                                  <div>
+                                    <span className="onboarding-provider-label">{copy.stock.providerLabel}</span>
+                                    <h5>{definition.displayName}</h5>
+                                  </div>
+                                </div>
+                                <Badge variant={hasProviderKey ? "accent" : "outline"}>{hasProviderKey ? copy.stock.configured : copy.stock.notConfigured}</Badge>
+                              </div>
+                              <p className="onboarding-provider-card-description">{isFtShare ? copy.stock.ftShareDescription : copy.stock.genericProviderDescription}</p>
+                              <Field className="onboarding-provider-key-field">
+                                <FieldLabel htmlFor={`onboarding-provider-key-${definition.providerKindCode}`}><KeyRound size={14} aria-hidden="true" />{interpolate(copy.stock.keyLabel, { provider: definition.displayName })}</FieldLabel>
+                                <Input id={`onboarding-provider-key-${definition.providerKindCode}`} type="password" value={providerKey} placeholder={interpolate(copy.stock.keyPlaceholder, { provider: definition.displayName })} onChange={(event) => updateProviderKey(definition.providerKindCode, event.target.value)} autoComplete="new-password" />
+                                <FieldDescription>{copy.stock.keyHint}</FieldDescription>
+                              </Field>
+                            </article>
+                          })}
+                        </div>
+                      )}
+
+                      <p className="onboarding-provider-footer-hint">{copy.stock.futureProviderHint}</p>
+                    </section>}
 
                     {activeStep.key === "inference" && <FieldGroup className="onboarding-field-grid onboarding-inference-fields">
                       <Field><FieldLabel htmlFor="onboarding-inference-name">{copy.inference.nameLabel}</FieldLabel><Input id="onboarding-inference-name" value={inferenceName} placeholder={copy.inference.namePlaceholder} onChange={(event) => setInferenceName(event.target.value)} /></Field>
