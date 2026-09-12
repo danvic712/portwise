@@ -5,6 +5,8 @@ public static class ApplicationErrorCodes
     public const string SetupValidationFailed = "setup_validation_failed";
     public const string SetupAlreadyCompleted = "setup_already_completed";
     public const string SetupNotCompleted = "setup_not_completed";
+    public const string InitializationValidationFailed = "initialization_validation_failed";
+    public const string InitializationAlreadyCompleted = "initialization_already_completed";
     public const string PreferencesNotConfigured = "preferences_not_configured";
     public const string PreferencesValidationFailed = "preferences_validation_failed";
     public const string PreferencesRevisionConflict = "preferences_revision_conflict";
@@ -45,6 +47,8 @@ public static class ApplicationErrorCodes
         SetupValidationFailed,
         SetupAlreadyCompleted,
         SetupNotCompleted,
+        InitializationValidationFailed,
+        InitializationAlreadyCompleted,
         PreferencesNotConfigured,
         PreferencesValidationFailed,
         PreferencesRevisionConflict,

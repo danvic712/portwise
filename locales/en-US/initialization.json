@@ -1,0 +1,12 @@
+{
+  "initialization_validation_failed": {
+    "status_code": 400,
+    "title": "The initialization configuration is invalid",
+    "detail": "Review the language, theme, portfolio name, and provider settings, then try again."
+  },
+  "initialization_already_completed": {
+    "status_code": 409,
+    "title": "Initialization already completed",
+    "detail": "The system has already completed initialization and cannot save the first-run configuration again."
+  }
+}

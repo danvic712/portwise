@@ -407,6 +407,87 @@
         }
       }
     },
+    "/api/v1/initialization": {
+      "get": {
+        "tags": [
+          "Initialization"
+        ],
+        "summary": "Returns whether onboarding has been completed and which capabilities are limited.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitializationStatusResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitializationStatusResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitializationStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/initialization/complete": {
+      "post": {
+        "tags": [
+          "Initialization"
+        ],
+        "summary": "Atomically saves the first-run preferences and optional provider bindings.",
+        "requestBody": {
+          "description": "The preferences, portfolio, and optional provider configuration.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteInitializationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteInitializationRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteInitializationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteInitializationResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteInitializationResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteInitializationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/portfolio/trades": {
       "post": {
         "tags": [
@@ -1389,6 +1470,36 @@
   },
   "components": {
     "schemas": {
+      "ApplicationPreferenceDto": {
+        "required": [
+          "languageCode",
+          "themeCode",
+          "revision",
+          "updatedAtUtc"
+        ],
+        "type": "object",
+        "properties": {
+          "languageCode": {
+            "type": "string"
+          },
+          "themeCode": {
+            "type": "string"
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "updatedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Returns the persisted application language and theme codes."
+      },
       "BudgetSummary": {
         "required": [
           "portfolioId",
@@ -1453,6 +1564,22 @@
           }
         },
         "description": "Aggregated cash budget information for the configured portfolio."
+      },
+      "CapabilityLimitationDto": {
+        "required": [
+          "capabilityCode",
+          "statusCode"
+        ],
+        "type": "object",
+        "properties": {
+          "capabilityCode": {
+            "type": "string"
+          },
+          "statusCode": {
+            "type": "string"
+          }
+        },
+        "description": "Describes one capability that is unavailable or not fully configured."
       },
       "CashLedgerEntryResult": {
         "required": [
@@ -1523,6 +1650,164 @@
           }
         },
         "description": "Result returned after a cash ledger entry is recorded."
+      },
+      "CompleteInferenceProviderRequest": {
+        "required": [
+          "name",
+          "baseUrl",
+          "apiKey"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "baseUrl": {
+            "type": "string"
+          },
+          "apiKey": {
+            "$ref": "#/components/schemas/SecretUpdateRequest"
+          }
+        },
+        "description": "Describes an optional inference provider to save during onboarding."
+      },
+      "CompleteInferenceRouteRequest": {
+        "required": [
+          "capabilityCode",
+          "providerName",
+          "modelName"
+        ],
+        "type": "object",
+        "properties": {
+          "capabilityCode": {
+            "type": "string"
+          },
+          "providerName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "modelName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Describes an optional Chat or Embedding binding by provider name and model."
+      },
+      "CompleteInitializationRequest": {
+        "required": [
+          "languageCode",
+          "themeCode",
+          "portfolioName",
+          "stockDataProviders",
+          "stockDataRoutes",
+          "inferenceProviders",
+          "inferenceRoutes"
+        ],
+        "type": "object",
+        "properties": {
+          "languageCode": {
+            "type": "string"
+          },
+          "themeCode": {
+            "type": "string"
+          },
+          "portfolioName": {
+            "type": "string"
+          },
+          "stockDataProviders": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CompleteStockDataProviderRequest"
+            }
+          },
+          "stockDataRoutes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CompleteStockDataRouteRequest"
+            }
+          },
+          "inferenceProviders": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CompleteInferenceProviderRequest"
+            }
+          },
+          "inferenceRoutes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CompleteInferenceRouteRequest"
+            }
+          }
+        },
+        "description": "Supplies preferences, the unique portfolio, and optional external capabilities."
+      },
+      "CompleteInitializationResponse": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/InitializationStatusResponse"
+          }
+        },
+        "description": "Returns the persisted readiness and limitation state after onboarding."
+      },
+      "CompleteStockDataProviderRequest": {
+        "required": [
+          "providerDefinitionId",
+          "name",
+          "credentials"
+        ],
+        "type": "object",
+        "properties": {
+          "providerDefinitionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "credentials": {
+            "$ref": "#/components/schemas/SecretUpdateRequest"
+          }
+        },
+        "description": "Describes an optional stock data provider to save during onboarding."
+      },
+      "CompleteStockDataRouteRequest": {
+        "required": [
+          "capabilityCode",
+          "providerName"
+        ],
+        "type": "object",
+        "properties": {
+          "capabilityCode": {
+            "type": "string"
+          },
+          "providerName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Describes an optional stock data capability binding by provider name."
       },
       "CreateInferenceProviderRequest": {
         "required": [
@@ -1802,6 +2087,44 @@
           }
         },
         "description": "Optional initial holding values supplied during setup."
+      },
+      "InitializationStatusResponse": {
+        "required": [
+          "isComplete",
+          "completedAtUtc",
+          "preferences",
+          "limitations"
+        ],
+        "type": "object",
+        "properties": {
+          "isComplete": {
+            "type": "boolean"
+          },
+          "completedAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "preferences": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ApplicationPreferenceDto"
+              }
+            ]
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CapabilityLimitationDto"
+            }
+          }
+        },
+        "description": "Returns entry readiness, saved preferences, and independent capability limitations."
       },
       "PortfolioRecommendationResult": {
         "required": [
@@ -3848,6 +4171,9 @@
     },
     {
       "name": "Inference"
+    },
+    {
+      "name": "Initialization"
     },
     {
       "name": "Portfolio"

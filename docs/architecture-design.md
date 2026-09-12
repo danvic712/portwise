@@ -13,7 +13,7 @@ Portwise 是一个面向个人 A 股长期投资者的策略研究与组合记�
 ```text
 Portwise Host
 ├── Application.Shared (Contracts / Dtos / Validators / Exceptions)
-├── Application.Setup module
+├── Application.Initialization module
 ├── Application.Stocks module
 ├── Application.Portfolio module
 ├── Application.Recommendations module
@@ -41,6 +41,8 @@ Host 项目的配置文件位于 `src/Portwise/`：
 ASP.NET Core 默认环境名为 `Production`（大小写不敏感）时，会自动加载 `appsettings.Production.json`。环境变量仍作为后置覆盖层提供部署级连接字符串；FTShare MCP 地址、工具参数与重试参数由 migration seed 到 PostgreSQL，运行时不再从 Options 读取。配置文件只保存非敏感部署默认值，FTShare key 只能由用户录入并加密保存，不进入源代码、镜像或 Git。
 
 ## 3.1 多语言资源
+
+本轮新增 `initialization.json`，承载 Initialization API 的错误目录；旧 `setup.json` 仅为兼容过渡，待前端 onboarding 切换后移除。
 
 根目录 `locales/` 是跨层共享的文本资源源文件，当前包含 `zh-CN` 和 `en-US` 两个语言目录；每个语言目录按业务领域拆分为 `common.json`、`setup.json`、`stocks.json`、`portfolio.json` 和 `dividend-strategy.json`。异常定义使用稳定的 `error_code` 作为 JSON 键，并支持由 Application 异常提供的命名参数插值。业务领域 JSON 可以同时包含保留的 `ui` 节点，供前端页面读取产品文案；Application 异常目录加载器只读取顶层错误定义并显式忽略 `ui` 节点，避免前端文案改变异常目录语义。错误目录与参数插值仍由独立的 `IApplicationErrorLocalizer` 负责，HTTP 请求的语言协商交给 ASP.NET Core 的 `RequestLocalizationMiddleware`。
 
@@ -87,7 +89,7 @@ src/
 │   │   ├── RecommendationSnapshot.cs
 │   │   └── PortfolioTrade.cs
 │   ├── Codes/                          # 业务代码表（状态、区域和建议）
-│   ├── Enums/                           # 真正的枚举；当前暂无枚举
+│   ├── Enums/                           # 持久化与领域边界使用的真正枚举
 │   ├── Exceptions/                     # 跨层可识别的持久化异常
 │   ├── Portfolio/                      # 持仓领域规则
 │   ├── Securities/                     # A 股标识领域规则
@@ -107,7 +109,11 @@ src/
 │   ├── Exceptions/                     # Application 统一异常模型
 │   ├── Localization/                   # 错误目录与本地化实现
 │   ├── ApplicationServiceCollectionExtensions.cs
-│   ├── Setup/                          # Setup module：contract、DTO、validation、实现
+│   ├── Initialization/                 # Initialization module：readiness 与 onboarding 事务
+│   │   ├── Contracts/IInitializationAppService.cs
+│   │   ├── Dtos/{ApplicationPreferenceDto,CapabilityLimitationDto,Complete*Dto,InitializationStatusResponse}.cs
+│   │   └── InitializationAppService.cs
+│   ├── Setup/                          # 旧 Setup module（前端切换期间保留兼容）
 │   │   ├── Contracts/ISetupAppService.cs
 │   │   ├── Dtos/{InitialHoldingInput,SetupRequest,SetupResult,SetupStatusDto,SetupStockRequest,SetupStockResult}.cs
 │   │   ├── Validators/{InitialHoldingInput,SetupRequest,SetupStockRequest}Validator.cs
@@ -167,7 +173,8 @@ src/
     ├── appsettings.json                # 本地默认配置
     ├── appsettings.Production.json     # 生产环境配置
     ├── Controllers/                    # 业务 HTTP Controller
-    │   ├── SetupController.cs
+    │   ├── InitializationController.cs
+    │   ├── SetupController.cs             # 旧路由兼容层，最终移除
     │   ├── StockDataProvidersController.cs
     │   ├── InferenceController.cs
     │   ├── StocksController.cs
@@ -275,6 +282,8 @@ Application 的 DTO 按所属 module 放在 `Application/{Setup,Preferences,Stoc
 - 新增 DTO 或 Model 字段时，必须检查 Mapperly 的编译期诊断并补充对应映射；不得通过关闭警告掩盖未映射字段。
 
 ## 6. Uow 与 Repository 设计
+
+Initialization 作为独立 Application module 拥有自己的 Contracts、Dtos 和事务编排；`Setup` 目录仅保留迁移期间的旧契约，新的 onboarding 不再调用它。
 
 本项目参考 `salary-insights` 的通用 EF Core 数据访问模式，但保留本项目的 `IUow` 命名和“所有数据访问只能通过 Uow”的约束。
 
@@ -413,6 +422,30 @@ Security 1 ───────────── * PortfolioTrade
 组合删除持仓采用级联关系；股票删除持仓采用限制关系；股票的 `ExchangeCode + SecurityCode` 具有唯一索引。
 
 ## 8. Application 用例数据流
+
+### 8.0 Initialization onboarding
+
+首次进入系统由显式的 `initialization_states` 单例标记决定是否完成，而不是通过是否存在 Portfolio 推断。`GET /api/v1/initialization` 同时返回语言/主题摘要和六个独立能力的 readiness：股票资料、行情、股息、财务，以及 Chat、Embedding。缺少 provider、密钥、模型或最近验证失败只会形成明确的能力限制，用户仍可进入系统。
+
+```text
+Controller POST /api/v1/initialization/complete
+        │
+        ▼
+IInitializationAppService
+        │
+        ▼
+InitializationAppService
+        ├── 校验偏好、组合名、Provider/Route 形状
+        ├── IUow.Get<TEntity>() 添加偏好、唯一组合和可选配置
+        ├── Data Protection 保护用户提交的 key（不进入响应）
+        ├── 绑定 migration seed 的能力 Route
+        ├── 添加 initialization_states 单例标记
+        └── IUow.CommitAsync() 一次数据库事务提交
+```
+
+Initialization 不执行外部连接验证，也不创建股票、关注列表或期初持仓；外部网络故障不会阻止保存或进入系统。股票资料由独立的 Stocks 页面维护，Provider 的显式连接验证由 Stock Data Providers 和 Inference module 提供。
+
+以下为旧 Setup 兼容路径；新安装和前端 onboarding 使用上面的 Initialization 路径，旧端点将在前端切换完成后移除。
 
 首次建账的调用路径如下：
 
@@ -705,3 +738,4 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | 04 深化 FTShare payload 解析 | 已完成：将 800+ 行 `JsonElement` tree walk 拆为 source-generated wire models、统一 envelope reader 和单一 normalizer；保留原有兼容别名、字符串化 JSON、数字/日期/布尔值兼容与身份校验，Application 仍只接收规范化 DTO；增加 profile、market、dividend、financial 四类 fixture 测试 | Infrastructure 定向测试、编译、`git diff --check`；本次提交 |
 | 05 删除 XML→OpenAPI transformer | 已完成：删除手写 reflection/XML cache transformer；保留 `Asp.Versioning.OpenApi` 的版本化文档服务，并通过 direct literal `AddOpenApi()` 激活 ASP.NET Core 原生 XML comment source generation，自动合并 ProjectReference 文档；构建期 contract 检查覆盖 operation、parameter、request body、response 和 schema 描述 | `dotnet build`、OpenAPI 文档检查、`pnpm api:check`、全量 `dotnet test`、`git diff --check`；本次提交 |
 | 07 Provider-first Inference configuration | 已完成：新增 OpenAI-compatible Provider/Chat-Embedding Route 管理 module，Provider API key 使用独立 Data Protection purpose；验证器根据已绑定 Route 发送最小 Chat/Embedding 请求，模型或连接字段变更重置 verification，被 Route 引用的 Provider 拒绝删除 | `dotnet build`、全量 `dotnet test`（197 tests）、`pnpm api:check`、前端 typecheck/lint/test/build、pending-model-changes；2026-09-12 配置管理提交同步更新 |
+| 08 Initialization onboarding | 进行中：新增 `/api/v1/initialization` readiness 与 `/complete` 一次事务保存，使用显式 `initialization_states` 单例标记，偏好和六类能力限制独立返回；旧 Setup 路由待前端 onboarding 切换后移除 | `dotnet build`、Application/Host 定向测试、`pnpm api:check` |
