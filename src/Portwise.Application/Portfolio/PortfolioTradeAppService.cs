@@ -34,7 +34,7 @@ public sealed class PortfolioTradeAppService(
             .SingleOrDefaultAsync(cancellationToken: cancellationToken);
         if (portfolio is null)
         {
-            throw ApplicationErrors.Simple(ApplicationErrorCodes.SetupNotCompleted);
+            throw ApplicationErrors.Simple(ApplicationErrorCodes.InitializationNotCompleted);
         }
 
         var reference = AShareReference.Create(request.SecurityCode, request.ExchangeCode);

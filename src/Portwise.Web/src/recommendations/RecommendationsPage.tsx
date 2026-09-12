@@ -108,7 +108,7 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
 
   if (loading) return <PageFrame currentPath="/overview" onNavigate={onNavigate} dataState="pending"><div className="overview-page"><RecommendationsSkeleton label={copy.messages.loadingOverview} /></div></PageFrame>
   if (error && !stocks.length) return <PageFrame currentPath="/overview" onNavigate={onNavigate} dataState="pending"><div className="overview-page overview-state-page"><ErrorState message={error} onRetry={() => void load()} /></div></PageFrame>
-  if (!stocks.length) return <PageFrame currentPath="/overview" onNavigate={onNavigate} dataState="unknown"><div className="overview-page overview-state-page"><EmptyState title={copy.messages.emptyTitle} description={copy.messages.emptyDescription} action={<Button onClick={() => onNavigate("/onboarding")}>{copy.actions.setupPortfolio}</Button>} /></div></PageFrame>
+  if (!stocks.length) return <PageFrame currentPath="/overview" onNavigate={onNavigate} dataState="unknown"><div className="overview-page overview-state-page"><EmptyState title={copy.messages.emptyTitle} description={copy.messages.emptyDescription} action={<Button onClick={() => onNavigate("/onboarding")}>{copy.actions.onboardingPortfolio}</Button>} /></div></PageFrame>
 
   return (
     <PageFrame currentPath="/overview" onNavigate={onNavigate} lastUpdated={lastUpdated ? formatDateTime(lastUpdated) : null} dataState={hasCompleteRecommendation ? "synced" : "pending"}>

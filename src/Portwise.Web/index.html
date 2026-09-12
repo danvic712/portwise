@@ -33,8 +33,8 @@
         document.documentElement.classList.add(theme);
 
         const isEnglish = storedLocale === "en-US";
-        const isSetupRoute = window.location.pathname === "/setup";
-        document.title = isSetupRoute
+        const isOnboardingRoute = window.location.pathname === "/onboarding";
+        document.title = isOnboardingRoute
           ? isEnglish ? "Portwise · Build your workspace" : "Portwise · 建立你的工作台"
           : isEnglish ? "Portwise · Long-term investing workspace" : "Portwise · 你的投资工作台";
       })();

@@ -19,35 +19,35 @@ public sealed class ApplicationErrorCatalogTests
     public void Resolve_loads_embedded_zh_cn_error_definitions()
     {
         var localized = localizer.Localize(
-            ApplicationErrors.Simple(ApplicationErrorCodes.SetupAlreadyCompleted),
+            ApplicationErrors.Simple(ApplicationErrorCodes.InitializationAlreadyCompleted),
             "zh-CN");
 
         Assert.Contains("zh-CN", catalog.SupportedCultureNames);
         Assert.Equal("zh-CN", localized.CultureName);
-        Assert.Equal("setup_already_completed", localized.ErrorCode);
+        Assert.Equal("initialization_already_completed", localized.ErrorCode);
         Assert.Equal(409, localized.StatusCode);
-        Assert.Equal("系统已经完成建账", localized.Title);
-        Assert.Contains("不能重复初始化", localized.Detail);
+        Assert.Equal("系统已经完成初始化", localized.Title);
+        Assert.Contains("不能重复保存首次配置", localized.Detail);
     }
 
     [Fact]
     public void Resolve_supports_another_embedded_locale()
     {
         var localized = localizer.Localize(
-            ApplicationErrors.Simple(ApplicationErrorCodes.SetupAlreadyCompleted),
+            ApplicationErrors.Simple(ApplicationErrorCodes.InitializationAlreadyCompleted),
             "en-US");
 
         Assert.Contains("en-US", catalog.SupportedCultureNames);
         Assert.Equal("en-US", localized.CultureName);
-        Assert.Equal("Setup already completed", localized.Title);
-        Assert.Contains("cannot be initialized again", localized.Detail);
+        Assert.Equal("Initialization already completed", localized.Title);
+        Assert.Contains("cannot save the first-run configuration again", localized.Detail);
     }
 
     [Fact]
     public void Resolve_uses_the_highest_quality_supported_language()
     {
         var localized = localizer.Localize(
-            ApplicationErrors.Simple(ApplicationErrorCodes.SetupAlreadyCompleted),
+            ApplicationErrors.Simple(ApplicationErrorCodes.InitializationAlreadyCompleted),
             "zh-CN;q=0.1,en-US;q=0.9");
 
         Assert.Equal("en-US", localized.CultureName);
@@ -57,7 +57,7 @@ public sealed class ApplicationErrorCatalogTests
     public void Resolve_returns_the_canonical_culture_name()
     {
         var localized = localizer.Localize(
-            ApplicationErrors.Simple(ApplicationErrorCodes.SetupAlreadyCompleted),
+            ApplicationErrors.Simple(ApplicationErrorCodes.InitializationAlreadyCompleted),
             "en-us");
 
         Assert.Equal("en-US", localized.CultureName);
@@ -68,11 +68,11 @@ public sealed class ApplicationErrorCatalogTests
     {
         var localized = localizer.Localize(
             ApplicationErrors.Validation(
-                ApplicationErrorCodes.SetupValidationFailed,
+                ApplicationErrorCodes.InitializationValidationFailed,
                 "投资组合名称必须为 1 到 100 个字符。"),
             "en-US");
 
-        Assert.Contains("Please review", localized.Detail);
+        Assert.Contains("Review the language", localized.Detail);
         Assert.DoesNotContain("投资组合名称", localized.Detail);
     }
 
@@ -80,7 +80,7 @@ public sealed class ApplicationErrorCatalogTests
     public void Resolve_uses_default_locale_for_an_unsupported_accept_language()
     {
         var localized = localizer.Localize(
-            ApplicationErrors.Simple(ApplicationErrorCodes.SetupNotCompleted),
+            ApplicationErrors.Simple(ApplicationErrorCodes.InitializationNotCompleted),
             "fr-FR,fr;q=0.9");
 
         Assert.Equal(catalog.DefaultCultureName, localized.CultureName);
@@ -108,7 +108,7 @@ public sealed class ApplicationErrorCatalogTests
         ApplicationExceptionBase[] exceptions = ApplicationErrorCodes.All
             .Select<string, ApplicationExceptionBase>(errorCode => errorCode switch
             {
-                ApplicationErrorCodes.SetupValidationFailed
+                ApplicationErrorCodes.InitializationValidationFailed
                     or ApplicationErrorCodes.ModelParameterValidationFailed
                     or ApplicationErrorCodes.StockAnalysisValidationFailed
                     or ApplicationErrorCodes.StockDataSyncValidationFailed

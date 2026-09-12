@@ -22,7 +22,7 @@ public sealed class ApplicationExceptionTests
     {
         ApplicationValidationException[] exceptions =
         [
-            ApplicationErrors.Validation(ApplicationErrorCodes.SetupValidationFailed, "invalid"),
+            ApplicationErrors.Validation(ApplicationErrorCodes.InitializationValidationFailed, "invalid"),
             ApplicationErrors.Validation(ApplicationErrorCodes.ModelParameterValidationFailed, "invalid"),
             ApplicationErrors.Validation(ApplicationErrorCodes.StockAnalysisValidationFailed, "invalid"),
             ApplicationErrors.Validation(ApplicationErrorCodes.StockDataSyncValidationFailed, "invalid"),
@@ -33,7 +33,7 @@ public sealed class ApplicationExceptionTests
         Assert.All(exceptions, exception => Assert.NotEmpty(exception.ErrorCode));
         Assert.Equal(
             [
-                "setup_validation_failed",
+                "initialization_validation_failed",
                 "model_parameter_validation_failed",
                 "stock_analysis_validation_failed",
                 "stock_data_sync_validation_failed",

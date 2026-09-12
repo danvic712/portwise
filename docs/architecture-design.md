@@ -42,9 +42,9 @@ ASP.NET Core 默认环境名为 `Production`（大小写不敏感）时，会自
 
 ## 3.1 多语言资源
 
-本轮新增 `initialization.json`，承载 Initialization API 的错误目录；旧 `setup.json` 仅为兼容过渡，待前端 onboarding 切换后移除。
+本轮新增 `initialization.json`，承载 Initialization API 的错误目录；配置与初始化链路统一使用 Initialization/Onboarding 命名。
 
-根目录 `locales/` 是跨层共享的文本资源源文件，当前包含 `zh-CN` 和 `en-US` 两个语言目录；每个语言目录按业务领域拆分为 `common.json`、`setup.json`、`stocks.json`、`portfolio.json` 和 `dividend-strategy.json`。异常定义使用稳定的 `error_code` 作为 JSON 键，并支持由 Application 异常提供的命名参数插值。业务领域 JSON 可以同时包含保留的 `ui` 节点，供前端页面读取产品文案；Application 异常目录加载器只读取顶层错误定义并显式忽略 `ui` 节点，避免前端文案改变异常目录语义。错误目录与参数插值仍由独立的 `IApplicationErrorLocalizer` 负责，HTTP 请求的语言协商交给 ASP.NET Core 的 `RequestLocalizationMiddleware`。
+根目录 `locales/` 是跨层共享的文本资源源文件，当前包含 `zh-CN` 和 `en-US` 两个语言目录；每个语言目录按业务领域拆分为 `common.json`、`initialization.json`、`stocks.json`、`portfolio.json` 和 `dividend-strategy.json`。异常定义使用稳定的 `error_code` 作为 JSON 键，并支持由 Application 异常提供的命名参数插值。业务领域 JSON 可以同时包含保留的 `ui` 节点，供前端页面读取产品文案；Application 异常目录加载器只读取顶层错误定义并显式忽略 `ui` 节点，避免前端文案改变异常目录语义。错误目录与参数插值仍由独立的 `IApplicationErrorLocalizer` 负责，HTTP 请求的语言协商交给 ASP.NET Core 的 `RequestLocalizationMiddleware`。
 
 Application 项目通过 `EmbeddedResource` 将根目录 `locales/**/*.json` 编译嵌入 `Portwise.Application.dll`。运行时只从程序集资源读取文本，不读取可被容器或请求任意替换的本地文件。Host 注册 `RequestLocalizationOptions`，由 ASP.NET Core 根据 `Accept-Language` 的标准质量权重选择受支持语言；不支持、质量为 0 或缺失时回退到 `zh-CN`，并在 ProblemDetails 扩展中返回 `CultureInfo.CurrentUICulture` 的 canonical name。后台同步、CLI 和测试等非 HTTP 入口仍可通过 `IApplicationErrorLocalizer` 显式选择语言或使用默认语言。
 
@@ -113,11 +113,6 @@ src/
 │   │   ├── Contracts/IInitializationAppService.cs
 │   │   ├── Dtos/{ApplicationPreferenceDto,CapabilityLimitationDto,Complete*Dto,InitializationStatusResponse}.cs
 │   │   └── InitializationAppService.cs
-│   ├── Setup/                          # 旧 Setup module（前端切换期间保留兼容）
-│   │   ├── Contracts/ISetupAppService.cs
-│   │   ├── Dtos/{InitialHoldingInput,SetupRequest,SetupResult,SetupStatusDto,SetupStockRequest,SetupStockResult}.cs
-│   │   ├── Validators/{InitialHoldingInput,SetupRequest,SetupStockRequest}Validator.cs
-│   │   └── SetupAppService.cs
 │   ├── Preferences/                    # PostgreSQL 中的系统语言与主题偏好
 │   ├── StockDataProviders/             # Provider 实例、密钥状态、验证和四类能力 Route
 │   ├── Inference/                      # OpenAI-compatible Provider、密钥和 Chat/Embedding Route
@@ -174,7 +169,6 @@ src/
     ├── appsettings.Production.json     # 生产环境配置
     ├── Controllers/                    # 业务 HTTP Controller
     │   ├── InitializationController.cs
-    │   ├── SetupController.cs             # 旧路由兼容层，最终移除
     │   ├── StockDataProvidersController.cs
     │   ├── InferenceController.cs
     │   ├── StocksController.cs
@@ -237,19 +231,19 @@ src/
 
 当前前端入口已经按新边界命名为 `onboarding`、`settings` 和 `strategy`；`/onboarding` 负责一次性初始化，`/settings` 负责系统偏好与 Provider 管理，`/strategy` 负责单股策略参数。
 
-Application 的业务实现按业务能力归并到 `Setup`、`Preferences`、`StockDataProviders`、`Stocks`、`Portfolio` 和 `Recommendations` module。每个 module 共置自己拥有的 Interface、DTO、Validator、实现和测试；因此修改一个用例时，主要知识和验证都集中在同一目录。module 内的 public type 使用对应的 `Portwise.Application.<Module>.(Contracts|Dtos|Validators)` namespace，`ModuleNamespaceArchitectureTests` 会阻止新的类型泄漏回技术桶。`Contracts`、`Dtos` 和 `Validators` 根目录只保留真正跨 module 的错误、本地化、诊断、共享持仓 DTO 和通用 A 股规则；`Configuration` 只承载多个配置 module 共用的密钥保护抽象与 secret DTO。目录归并不等于合并 HTTP 契约：价格、股息和财务同步仍然保持独立的 Interface 与 AppService，因为它们具有不同的数据校验、幂等键和结果类型；资料、行情、股息和财务四类事实的共同摄取、Security 解析、运行时 Provider 调用、幂等写入和逐类失败策略由 `IStockFactSyncAppService` / `StockFactSyncAppService` 这个深模块承载，三个 HTTP AppService 只是验证后转发。单股分析、组合分配和建议快照也保持独立的用例边界。前端采用同样的业务边界，但不再增加 `features/` 包装层；每个业务 module 直接位于 `src/`，并只通过版本化 HTTP API 访问后端，不直接引用 Application 或 Infrastructure。
+Application 的业务实现按业务能力归并到 `Initialization`、`Preferences`、`StockDataProviders`、`Inference`、`Stocks`、`Portfolio` 和 `Recommendations` module。每个 module 共置自己拥有的 Interface、DTO、Validator、实现和测试；因此修改一个用例时，主要知识和验证都集中在同一目录。module 内的 public type 使用对应的 `Portwise.Application.<Module>.(Contracts|Dtos|Validators)` namespace，`ModuleNamespaceArchitectureTests` 会阻止新的类型泄漏回技术桶。`Contracts`、`Dtos` 和 `Validators` 根目录只保留真正跨 module 的错误、本地化、诊断、共享持仓 DTO 和通用 A 股规则；`Configuration` 只承载多个配置 module 共用的密钥保护抽象与 secret DTO。目录归并不等于合并 HTTP 契约：价格、股息和财务同步仍然保持独立的 Interface 与 AppService，因为它们具有不同的数据校验、幂等键和结果类型；资料、行情、股息和财务四类事实的共同摄取、Security 解析、运行时 Provider 调用、幂等写入和逐类失败策略由 `IStockFactSyncAppService` / `StockFactSyncAppService` 这个深模块承载，三个 HTTP AppService 只是验证后转发。单股分析、组合分配和建议快照也保持独立的用例边界。前端采用同样的业务边界，但不再增加 `features/` 包装层；每个业务 module 直接位于 `src/`，并只通过版本化 HTTP API 访问后端，不直接引用 Application 或 Infrastructure。
 
-前端公共页面框架由 `components/layout/` 下的 `Header`、`Footer`、`PageFrame`、`PageTitle`、`SectionHeading` 和 `app/routing/site-navigation.ts` 组成；`app/ApplicationShell.tsx` 是负责 Setup gate、路由选择和业务 module 懒加载的应用编排 module，不是公共视觉组件。所有页面通过 `PageFrame` 复用框架，页面专属状态与布局留在对应业务 module。`src/app/routing/navigation.ts` 是页面 shell 的导航 module：它集中路由识别、Setup gate 所需的路径判断、浏览器 history/popstate Adapter、查询参数更新和组合股票选择的 session 持久化；`App.tsx` 只负责提供 LocaleProvider，业务 module 通过 `onNavigate`/`onReplaceQuery` seam 操作导航，不直接写 `window.history` 或 `sessionStorage`。查询参数优先于旧 session 选择，避免从今日决策跳转到组合页面时恢复错误股票。操作建议的代码归类、买卖方向、展示状态、价格区间和未知代码降级统一由 `src/shared/display/recommendation-display.ts` 提供；页面和组件只消费归一化后的展示结果，不自行解析 `recommendation_code` 或 `price_zone_code`。`index.css` 只承载 token、reset 和跨页面共享原子样式；今日决策页的布局、等待态、就绪态、骨架屏、装饰和响应式样式统一位于 `src/recommendations/recommendations.css`。交互控件优先使用 `src/components/ui` 中的 shadcn/ui 原语，业务样式只负责业务变体与布局。
+前端公共页面框架由 `components/layout/` 下的 `Header`、`Footer`、`PageFrame`、`PageTitle`、`SectionHeading` 和 `app/routing/site-navigation.ts` 组成；`app/ApplicationShell.tsx` 是负责 Initialization readiness gate、路由选择和业务 module 懒加载的应用编排 module，不是公共视觉组件。所有页面通过 `PageFrame` 复用框架，页面专属状态与布局留在对应业务 module。`src/app/routing/navigation.ts` 是页面 shell 的导航 module：它集中路由识别、Initialization gate 所需的路径判断、浏览器 history/popstate Adapter、查询参数更新和组合股票选择的 session 持久化；`App.tsx` 负责提供 LocaleProvider 与 ThemeProvider，业务 module 通过 `onNavigate`/`onReplaceQuery` seam 操作导航，不直接写 `window.history` 或 `sessionStorage`。查询参数优先于旧 session 选择，避免从今日决策跳转到组合页面时恢复错误股票。操作建议的代码归类、买卖方向、展示状态、价格区间和未知代码降级统一由 `src/shared/display/recommendation-display.ts` 提供；页面和组件只消费归一化后的展示结果，不自行解析 `recommendation_code` 或 `price_zone_code`。`index.css` 只承载 token、reset 和跨页面共享原子样式；今日决策页的布局、等待态、就绪态、骨架屏、装饰和响应式样式统一位于 `src/recommendations/recommendations.css`。交互控件优先使用 `src/components/ui` 中的 shadcn/ui 原语，业务样式只负责业务变体与布局。
 
 前端使用 Node `24.16.0` 与 pnpm `12.3.4` 构建静态资源，输出到 Host 的 `wwwroot/`；该目录是构建产物并保持本地生成，不提交源代码仓库。根目录 `Dockerfile` 使用 Node Alpine、.NET SDK Alpine 和 ASP.NET Core Alpine 三阶段构建：前两阶段只负责编译，最终镜像只保留 .NET publish 输出，因此不会携带 Node、pnpm、源码或测试依赖。单镜像构建流程必须先完成前端构建，再执行 ASP.NET Core publish；开发预览使用 Vite proxy 将 `/api` 转发到本地 Host。
 
-`ApplicationShell` 先读取 Initialization readiness，再同步服务器偏好到 Locale/Theme Provider；未完成初始化时只放行 `/onboarding`，完成后旧 `/setup` 会替换到 `/overview`。Settings 概览和三个子页面共享 `/settings` 导航入口，策略参数页面固定使用 `/strategy`，不与系统设置混用。
+`ApplicationShell` 先读取 Initialization readiness，再同步服务器偏好到 Locale/Theme Provider；未完成初始化时只放行 `/onboarding`，完成后初始化入口会替换到 `/overview`。Settings 概览和三个子页面共享 `/settings` 导航入口，策略参数页面固定使用 `/strategy`，不与系统设置混用。
 
 前端 HTTP 类型不再手工复制 Controller DTO。Host 构建通过 `Microsoft.Extensions.ApiDescription.Server` 调用同一组 Controller、版本元数据和 `AddOpenApi` 配置，生成并提交 `src/Portwise.Web/openapi/portwise_v1.json`；前端的 `pnpm api:generate` 使用 `openapi-typescript` 生成 `src/shared/http/api-contract.generated.ts`。`api-contract.ts` 是生成类型与浏览器运行时 JSON 之间唯一的 Adapter，负责把 wire numeric（`number | string`）归一为 UI 使用的 `number`；业务 module 的 Axios module 只引用 `api-types.ts` 的领域友好别名，不直接依赖生成文件。新增或修改 Controller DTO 时，后端构建和前端生成都会暴露合约漂移，避免两套手工类型长期分叉。
 
 `Stocks` 同时承载交易日同步编排，因为该编排只围绕关注股票的外部事实更新；交易日同步通过 `IStockFactSyncAppService.SyncAsync` 一次传递单只股票的规范化引用，并消费包含资料、行情、股息、财务结果和逐类失败的 `StockFactSyncResult`。如果未来出现多个互不相关的调度任务，再单独引入 `Operations` 模块。`StockModelParameterAppService` 与单股分析、组合分配、建议快照同属 `Recommendations` module，因为模型参数是建议规则的输入；Portfolio module 只拥有现金流水、交易和持仓不变量。
 
-各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddPortwiseApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddPortwiseInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddPortwiseHost`。Application 根扩展只负责 FluentValidation、跨 module 的本地化/诊断和 `TimeProvider`，再调用各业务 module 的注册扩展，包括 `AddPortwiseStockDataProvidersModule` 与 `AddPortwiseInferenceModule`；每个 module 自己拥有实现到 Interface 的注册清单，新增用例不会把具体类型重新塞回技术桶。Host 另提供 `HostServiceCollectionExtensions.AddPortwise(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库 migration 统一放在 `WebApplicationExtensions`；手动、每日定时和 Setup 后台同步都通过 `StockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器统一串行化执行、run ID、诊断上下文和取消语义，避免不同入口同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
+各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddPortwiseApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddPortwiseInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddPortwiseHost`。Application 根扩展只负责 FluentValidation、跨 module 的本地化/诊断和 `TimeProvider`，再调用各业务 module 的注册扩展，包括 `AddPortwiseStockDataProvidersModule`、`AddPortwiseInferenceModule` 与 `AddPortwiseInitializationModule`；每个 module 自己拥有实现到 Interface 的注册清单，新增用例不会把具体类型重新塞回技术桶。Host 另提供 `HostServiceCollectionExtensions.AddPortwise(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库 migration 统一放在 `WebApplicationExtensions`；手动、每日定时和 Initialization 后台同步都通过 `StockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器统一串行化执行、run ID、诊断上下文和取消语义，避免不同入口同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
 
 公共基础能力也遵循相同的组合边界：Swagger/Serilog 注册在 `HostServiceCollectionExtensions`，Swagger UI、Serilog HTTP 请求日志中间件和其他 `WebApplication` 行为在 `WebApplicationExtensions`；Mapperly 映射定义由 `StocksMapper`、`PortfolioMapper` 和 `RecommendationsMapper` 分别归属各自 module，由构建期生成实际映射代码。
 
@@ -267,14 +261,14 @@ Application 的业务实现按业务能力归并到 `Setup`、`Preferences`、`S
 ### 5.1 Contracts 归属
 
 - `Domain/Contracts`：跨层需要依赖的通用持久化抽象，包括 `IRepository<TEntity>` 和 `IUow`。
-- `Application/{Setup,Preferences,StockDataProviders,Inference,Stocks,Portfolio,Recommendations}/Contracts`：各 module 的用例和外部资料 Interface；只有错误、本地化和诊断等跨 module Interface 位于 `Application/Contracts`。
+- `Application/{Initialization,Preferences,StockDataProviders,Inference,Stocks,Portfolio,Recommendations}/Contracts`：各 module 的用例和外部资料 Interface；只有错误、本地化和诊断等跨 module Interface 位于 `Application/Contracts`。
 - `Infrastructure/Contracts`：Infrastructure 内部 Adapter 的可替换抽象，包括 `IFtShareMcpToolInvoker`。
 
 Application 不认识 EF Core、PostgreSQL、HTTP 或 MCP SDK。Host 只依赖 Application 的 AppService Interface 和 Infrastructure 的组合注册扩展，不直接使用数据访问实现。
 
 ### 5.2 DTO
 
-Application 的 DTO 按所属 module 放在 `Application/{Setup,Preferences,StockDataProviders,Inference,Stocks,Portfolio,Recommendations}/Dtos/`，用于 Controller 与用例之间的输入输出，以及外部资料 Adapter 规范化后的结果；`Application/Dtos/` 只保留跨 module 的共享 DTO。DTO 不承担数据库实体职责，也不包含 Repository、DbContext 或 MCP 客户端。
+Application 的 DTO 按所属 module 放在 `Application/{Initialization,Preferences,StockDataProviders,Inference,Stocks,Portfolio,Recommendations}/Dtos/`，用于 Controller 与用例之间的输入输出，以及外部资料 Adapter 规范化后的结果；`Application/Dtos/` 只保留跨 module 的共享 DTO。DTO 不承担数据库实体职责，也不包含 Repository、DbContext 或 MCP 客户端。
 
 一个 DTO 文件只能包含一个 DTO 类型，文件名必须与类型名一致。
 
@@ -288,7 +282,7 @@ Application 的 DTO 按所属 module 放在 `Application/{Setup,Preferences,Stoc
 
 ## 6. Uow 与 Repository 设计
 
-Initialization 作为独立 Application module 拥有自己的 Contracts、Dtos 和事务编排；`Setup` 目录仅保留迁移期间的旧契约，新的 onboarding 不再调用它。
+Initialization 作为独立 Application module 拥有自己的 Contracts、Dtos 和事务编排；初始化完成后不再保留 Setup module 或 Setup HTTP route。
 
 本项目参考 `salary-insights` 的通用 EF Core 数据访问模式，但保留本项目的 `IUow` 命名和“所有数据访问只能通过 Uow”的约束。
 
@@ -350,7 +344,7 @@ public interface IUow
 ### 6.2 Infrastructure 实现
 
 ```text
-SetupAppService
+InitializationAppService
       │
       ▼
      IUow
@@ -405,7 +399,7 @@ modelBuilder.ApplyConfigurationsFromAssembly(
 
 因此实体类不使用 Data Annotation，也不需要知道数据库表结构。新增实体时必须同时新增对应的 `IEntityTypeConfiguration<TEntity>` 文件；一个配置文件只负责一个实体。
 
-V1 只有一个组合上下文。`PortfolioConfiguration` 使用 `portfolio_scope` 默认值和唯一索引在数据库层强制单组合不变量；`SetupAppService` 仍先给出正常的已完成错误，若并发初始化在提交阶段触发唯一约束，则把 Infrastructure 的 commit 错误转换为相同的 `setup_already_completed` Application 错误。
+V1 只有一个组合上下文。`PortfolioConfiguration` 使用 `portfolio_scope` 默认值和唯一索引在数据库层强制单组合不变量；`InitializationAppService` 先给出正常的已完成错误，若并发初始化在提交阶段触发唯一约束，则把 Infrastructure 的 commit 错误转换为相同的 `initialization_already_completed` Application 错误。
 
 当前基础关系：
 
@@ -449,26 +443,6 @@ InitializationAppService
 ```
 
 Initialization 不执行外部连接验证，也不创建股票、关注列表或期初持仓；外部网络故障不会阻止保存或进入系统。股票资料由独立的 Stocks 页面维护，Provider 的显式连接验证由 Stock Data Providers 和 Inference module 提供。
-
-以下为旧 Setup 兼容路径；新安装和前端 onboarding 使用上面的 Initialization 路径，旧端点将在前端切换完成后移除。
-
-首次建账的调用路径如下：
-
-```text
-Controller POST /api/v1/setup
-        │
-        ▼
-ISetupAppService
-        │
-        ▼
-SetupAppService
-        ├── IUow.Get<Portfolio>() 检查是否已完成建账
-        ├── IUow.Get<TEntity>() 添加组合、股票占位资料和期初持仓
-        ├── IUow.CommitAsync() 一次提交
-        └── IStockDataSyncScheduler.TrySchedule() 投递后台同步触发器
-```
-
-Setup 不调用 `IStockDataProvider`，因此 FTShare 未配置、暂时不可用或响应较慢都不会阻塞用户完成初始化。Setup 只保存 A 股代码、交易所、A-share/CNY 基础占位值和可选期初持仓，并在提交成功后以非阻塞方式投递后台同步；队列已满时仅把 `stockDataSyncScheduled` 返回为 `false`，初始化数据仍然保留，后续交易日同步和手动同步仍可尝试。后台同步再通过 `IStockFactSyncAppService` 获取并校验每只股票的资料、行情、股息和财务数据，资料成功后以显式 `asNoTracking: false` 加载并更新 `Security`，缺失资料时关注列表显示 `待同步 {securityCode}`，不伪造股票名称。
 
 ### 8.1 Controller 与请求验证
 
@@ -556,7 +530,7 @@ PortfolioRecommendationAppService ──┘                 ▼
                                       (直接使用同一分析结果写入快照)
 ```
 
-Host 的 `DailyStockDataSyncHostedService` 按 `DailySync:LocalTime` 和 `DailySync:TimeZoneId` 调度，默认使用上海时间每日 18:00，并跳过周末；A 股法定节假日由数据源实际返回结果决定，重复快照通过事实同步用例幂等处理。`StockDataSyncBackgroundService` 监听有界队列，在 Setup 提交后执行一次即时后台同步；它与每日调度和 HTTP 手动同步共享 `StockDataSyncRunner` 的串行闸门。runner 为每次实际执行生成 run ID，并统一记录触发来源、结果和失败摘要。生产环境可以通过 `DailySync:Enabled=false` 关闭定时调度，但 Setup 后的一次性队列同步和手动接口仍然可用；后台单次失败不会终止 hosted service，详细的逐项失败仍由手动同步接口返回，后续运行会重试。
+Host 的 `DailyStockDataSyncHostedService` 按 `DailySync:LocalTime` 和 `DailySync:TimeZoneId` 调度，默认使用上海时间每日 18:00，并跳过周末；A 股法定节假日由数据源实际返回结果决定，重复快照通过事实同步用例幂等处理。`StockDataSyncBackgroundService` 监听有界队列，在 Initialization 提交后执行一次即时后台同步；它与每日调度和 HTTP 手动同步共享 `StockDataSyncRunner` 的串行闸门。runner 为每次实际执行生成 run ID，并统一记录触发来源、结果和失败摘要。生产环境可以通过 `DailySync:Enabled=false` 关闭定时调度，但 Initialization 后的一次性队列同步和手动接口仍然可用；后台单次失败不会终止 hosted service，详细的逐项失败仍由手动同步接口返回，后续运行会重试。
 
 ### 8.11 交易记录与持仓成本
 
@@ -698,7 +672,7 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | 报告项 | 处理结果 | 提交/触发条件 |
 | --- | --- | --- |
 | 01 EF Core migrations | 已修复：启动统一执行 `MigrateAsync`，设计时工厂和初始 migration 已纳入 Infrastructure | `0e74ad0` |
-| 02 同步执行 seam | 已修复：HTTP、Setup 和定时任务统一经过 `IStockDataSyncRunner` | `62d81b3` |
+| 02 同步执行 seam | 已修复：HTTP、Initialization 和定时任务统一经过 `IStockDataSyncRunner` | `62d81b3` |
 | 03 Options 与时间 | 已修复：Options `ValidateOnStart`，调度/重试/超时使用注入的 `TimeProvider` | `7776ddb` |
 | 04 启动退出码 | 已修复：启动异常刷新日志后返回非零退出码 | `3ea1ab7` |
 | 05 行为型持久化 seam | 保留 `IUow` + 通用 Repository；当前没有足够的重复查询或性能证据 | 出现具体查询/性能问题后再引入窄接口 |
@@ -708,7 +682,7 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | 09 单组合不变量 | 已修复：`portfolio_scope` 唯一索引和并发冲突映射 | `44439cd` |
 | 10 股票事实 AppService | 保留独立事实类型契约；当前重复主要是入口校验与转发 | 出现共享事务、幂等或真实 adapter 复用需求后再提取内部 module |
 
-截至本记录，后端完整测试共 141 个通过；EF Core `has-pending-model-changes` 检查通过。
+截至本记录，后端完整测试共 190 个通过；EF Core `has-pending-model-changes` 检查通过。
 
 ## 15. 2026-09-08 架构深化处理记录
 
@@ -719,8 +693,8 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | 01 前端推荐展示 module | 已修复：`recommendation-display.ts` 统一 recommendation/price-zone 的展示语义，feature 只消费归一化结果 | `58b1465` |
 | 02 后端 Recommendation module | 已修复：Domain `RecommendationModule` 集中单股分析与组合分配规则，Application AppService 变为薄 Adapter | `196a4ff` |
 | 03 HTTP contract 单一事实源 | 已修复：Host build-time 生成版本化 OpenAPI，前端从 `openapi-typescript` 生成 transport contract，`api-contract.ts` 是唯一 wire-to-UI Adapter | `e97c070` |
-| 04 导航与 Setup gate module | 已修复：`navigation.ts` 集中路由、history、查询参数和 Setup gate seam，修复 query 与旧 session 选择冲突 | `e4ff8f3` |
-| 05 Application 领域 module locality | 已修复：Setup、Stocks、Portfolio、Recommendations 各自共置 contract/DTO/validator/实现/测试，根目录只保留跨 module 共享项 | `aa2dae8` |
+| 04 导航与 Initialization gate module | 已修复：`navigation.ts` 集中路由、history、查询参数和 Initialization gate seam，修复 query 与旧 session 选择冲突 | `e4ff8f3` |
+| 05 Application 领域 module locality | 已修复：Initialization、Stocks、Portfolio、Recommendations 各自共置 contract/DTO/validator/实现/测试，根目录只保留跨 module 共享项 | `aa2dae8` |
 
 ## 16. 2026-09-09 架构复审候选项处理记录
 
@@ -730,7 +704,7 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | --- | --- | --- |
 | 01 HTTP contract publication module | 已完成：集中运行时与 build-time OpenAPI 注册，前端请求消费生成路径约束，增加 wire numeric 运行时归一化与 contract drift 检查；CI/Docker 先生成并校验 contract，再构建前端 | `dotnet test`、`pnpm api:check`、`pnpm build`；提交 `refactor: close HTTP contract publication loop` |
 | 02 Recommendation 事实装配 module | 已完成：`StockAnalysisAppService` 增加关注列表批量事实读取，单股与组合入口共享一次计算时间和分析结果；组合分配拒绝混合计算时间，快照复用组合结果时间 | `dotnet test`（82 Application tests）；提交 `refactor: batch recommendation fact assembly` |
-| 03 Frontend application shell module | 已完成：路由选择、Setup gate、浏览器 session 读取和 feature 装载集中到 `ApplicationShell.tsx`；feature 页面按路由懒加载；navigation 纯策略增加 Node 原生测试与 `pnpm test` 脚本 | `pnpm test`（4 tests）、`pnpm build`、`pnpm lint`；提交 `refactor: deepen frontend application shell` |
+| 03 Frontend application shell module | 已完成：路由选择、Initialization gate、浏览器 session 读取和 feature 装载集中到 `ApplicationShell.tsx`；feature 页面按路由懒加载；navigation 纯策略增加 Node 原生测试与 `pnpm test` 脚本 | `pnpm test`（4 tests）、`pnpm build`、`pnpm lint`；提交 `refactor: deepen frontend application shell` |
 | 04 Application module ownership executable | 已完成：module-specific Contracts/DTOs/Validators 使用 module namespace，Mapperly 映射拆分为 `StocksMapper`、`PortfolioMapper`、`RecommendationsMapper`；新增架构测试防止类型泄漏回根技术桶 | `dotnet test`（84 Application tests）、`dotnet build Portwise.slnx`；提交 `refactor: enforce application module ownership` |
 | 05 CONTEXT/ADR authority | 已完成：修正根上下文产品名与文档权威声明，新增 `docs/adr/` 索引及单组合、单 Host、HTTP 合约、Application module locality 四项 Accepted ADR，并清理实现地图中的过时路径 | `git diff --check`、全文旧路径扫描；提交 `docs: establish architecture decision authority` |
 | 06 Backend localization and native XML documentation | 已完成：移除后端源码中的中文诊断硬编码，为全部 Controller/DTO 增加 XML 注释；通过 ASP.NET Core 编译期 source generator 读取 Host/Application/Domain XML 文档并写入操作、参数、响应、schema 和属性描述 | `dotnet build`、`dotnet test`、OpenAPI 摘要/参数/请求体/响应/schema 检查、中文源码扫描；本次提交 |
@@ -742,5 +716,5 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | 03 托管 FTShare HTTP transport | 已完成，后续由数据库配置管理演进：继续使用命名 `IHttpClientFactory` client 管理连接池和 handler 生命周期；调用级 deadline、有限指数退避和完整 MCP exchange 重试由 invoker 按当前数据库 settings 执行，`FtShareResponseStreamHandler` 继续分类响应流中断，业务错误不重试 | Infrastructure 定向测试、完整 `dotnet test`、`git diff --check`；2026-09-12 配置管理提交同步更新 |
 | 04 深化 FTShare payload 解析 | 已完成：将 800+ 行 `JsonElement` tree walk 拆为 source-generated wire models、统一 envelope reader 和单一 normalizer；保留原有兼容别名、字符串化 JSON、数字/日期/布尔值兼容与身份校验，Application 仍只接收规范化 DTO；增加 profile、market、dividend、financial 四类 fixture 测试 | Infrastructure 定向测试、编译、`git diff --check`；本次提交 |
 | 05 删除 XML→OpenAPI transformer | 已完成：删除手写 reflection/XML cache transformer；保留 `Asp.Versioning.OpenApi` 的版本化文档服务，并通过 direct literal `AddOpenApi()` 激活 ASP.NET Core 原生 XML comment source generation，自动合并 ProjectReference 文档；构建期 contract 检查覆盖 operation、parameter、request body、response 和 schema 描述 | `dotnet build`、OpenAPI 文档检查、`pnpm api:check`、全量 `dotnet test`、`git diff --check`；本次提交 |
-| 07 Provider-first Inference configuration | 已完成：新增 OpenAI-compatible Provider/Chat-Embedding Route 管理 module，Provider API key 使用独立 Data Protection purpose；验证器根据已绑定 Route 发送最小 Chat/Embedding 请求，模型或连接字段变更重置 verification，被 Route 引用的 Provider 拒绝删除 | `dotnet build`、全量 `dotnet test`（197 tests）、`pnpm api:check`、前端 typecheck/lint/test/build、pending-model-changes；2026-09-12 配置管理提交同步更新 |
-| 08 Initialization onboarding | 进行中：新增 `/api/v1/initialization` readiness 与 `/complete` 一次事务保存，使用显式 `initialization_states` 单例标记，偏好和六类能力限制独立返回；旧 Setup 路由待前端 onboarding 切换后移除 | `dotnet build`、Application/Host 定向测试、`pnpm api:check` |
+| 07 Provider-first Inference configuration | 已完成：新增 OpenAI-compatible Provider/Chat-Embedding Route 管理 module，Provider API key 使用独立 Data Protection purpose；验证器根据已绑定 Route 发送最小 Chat/Embedding 请求，模型或连接字段变更重置 verification，被 Route 引用的 Provider 拒绝删除 | `dotnet build`、全量 `dotnet test`（190 tests）、`pnpm api:check`、前端 typecheck/lint/test/build、pending-model-changes；2026-09-12 配置管理提交同步更新 |
+| 08 Initialization onboarding | 已完成：新增 `/api/v1/initialization` readiness 与 `/complete` 一次事务保存，前端入口统一为 `/onboarding`，系统设置与策略参数分别使用 `/settings` 与 `/strategy`；旧 Setup module、route、locale 和 DTO 已移除 | `dotnet build`、全量 `dotnet test`、`pnpm api:check`、前端 typecheck/lint/test/build；提交 `75d16b6` + 本次清理提交 |

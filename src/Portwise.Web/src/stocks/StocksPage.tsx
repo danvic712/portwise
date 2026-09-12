@@ -163,7 +163,7 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
   }
 
   if (!stocks.length) {
-    return <PageFrame currentPath="/stocks" onNavigate={onNavigate} dataState="unknown" contentClassName="stocks-page-wrap"><EmptyState title={copy.states.emptyTitle} description={copy.states.emptyDescription} action={<Button onClick={() => onNavigate("/onboarding")}>{copy.actions.goSetup}</Button>} /></PageFrame>
+    return <PageFrame currentPath="/stocks" onNavigate={onNavigate} dataState="unknown" contentClassName="stocks-page-wrap"><EmptyState title={copy.states.emptyTitle} description={copy.states.emptyDescription} action={<Button onClick={() => onNavigate("/onboarding")}>{copy.actions.goOnboarding}</Button>} /></PageFrame>
   }
 
   const selectedStock = stocks.find((stock) => stockKey(stock) === selectedKey) ?? stocks[0]

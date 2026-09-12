@@ -53,5 +53,10 @@
     "status_code": 409,
     "title": "Initialization already completed",
     "detail": "The system has already completed initialization and cannot save the first-run configuration again."
+  },
+  "initialization_not_completed": {
+    "status_code": 409,
+    "title": "Initialization is not complete",
+    "detail": "Complete initialization before using features that require a workspace."
   }
 }

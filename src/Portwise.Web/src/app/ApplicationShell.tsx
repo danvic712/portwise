@@ -126,7 +126,7 @@ export function ApplicationShell() {
   }
 
   const isOnboardingRoute = location.pathname === "/onboarding"
-  const onboardingLoadingPage = <StatusPageSkeleton label={messages.common.ui.states.preparingSetup} onNavigate={navigate} />
+  const onboardingLoadingPage = <StatusPageSkeleton label={messages.common.ui.states.preparingInitialization} onNavigate={navigate} />
   const page = loading
     ? isOnboardingRoute
       ? onboardingLoadingPage
@@ -142,9 +142,9 @@ export function ApplicationShell() {
           resetKey={`${location.pathname}${location.search.toString()}${location.hash}`}
           fallback={<ApplicationErrorPage message={messages.common.application_error_unknown.detail} onRetry={() => window.location.reload()} onNavigate={navigate} />}
         >
-          <Suspense fallback={isOnboardingRoute ? onboardingLoadingPage : <StatusPageSkeleton label={messages.common.ui.states.preparingSetup} onNavigate={navigate} />}>{renderPage()}</Suspense>
+          <Suspense fallback={isOnboardingRoute ? onboardingLoadingPage : <StatusPageSkeleton label={messages.common.ui.states.preparingInitialization} onNavigate={navigate} />}>{renderPage()}</Suspense>
         </RouteErrorBoundary>
-        : <StatusPageSkeleton label={messages.common.ui.states.preparingSetup} onNavigate={navigate} />
+        : <StatusPageSkeleton label={messages.common.ui.states.preparingInitialization} onNavigate={navigate} />
 
   return (
     <>

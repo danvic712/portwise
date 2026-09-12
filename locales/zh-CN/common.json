@@ -46,7 +46,7 @@
     "errors": {
       "requestFailed": "暂时无法完成请求，请稍后再试。",
       "timeout": "请求超时，请检查服务状态后重试。",
-      "stockModelParametersMissing": "这只股票还没有模型参数，请先完成配置。"
+      "stockModelParametersMissing": "这只股票还没有模型参数，请先完成初始化配置。"
     },
     "statusSticker": {
       "calm": "嗯",
@@ -58,9 +58,7 @@
       "readingData": "正在读取数据…",
       "errorTitle": "数据读取失败",
       "connecting": "正在连接本地组合…",
-      "preparingSetup": "正在准备首次设置…",
-      "setupCompleteSync": "组合已建立，股票资料正在后台同步。",
-      "setupCompleteDeferred": "组合已建立；本次后台同步未入队，系统会在下一次手动或交易日同步时重试。",
+      "preparingInitialization": "正在准备初始化工作台…",
       "notFound": {
         "eyebrow": "这页暂时找不到",
         "title": "这张手帐页走丢了。",

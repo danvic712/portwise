@@ -25,7 +25,7 @@ internal sealed class StockDataSyncBackgroundService(
     {
         try
         {
-            await syncRunner.RunAsync(StockDataSyncTrigger.Setup, cancellationToken);
+            await syncRunner.RunAsync(StockDataSyncTrigger.Initialization, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

@@ -19,7 +19,7 @@ public sealed class ApplicationExceptionHandlerTests
     public async Task TryHandleAsync_writes_problem_details_through_framework_service()
     {
         var localizedError = new LocalizedApplicationError(
-            ApplicationErrorCodes.SetupAlreadyCompleted,
+            ApplicationErrorCodes.InitializationAlreadyCompleted,
             "zh-CN",
             StatusCodes.Status409Conflict,
             "Setup already completed",
@@ -55,7 +55,7 @@ public sealed class ApplicationExceptionHandlerTests
 
         var handled = await handler.TryHandleAsync(
             httpContext,
-            ApplicationErrors.Simple(ApplicationErrorCodes.SetupAlreadyCompleted),
+            ApplicationErrors.Simple(ApplicationErrorCodes.InitializationAlreadyCompleted),
             CancellationToken.None);
 
         Assert.True(handled);

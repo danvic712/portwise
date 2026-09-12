@@ -4,7 +4,6 @@ import enCommon from "../../../../../locales/en-US/common.json"
 import enBudget from "../../../../../locales/en-US/budget.json"
 import enDividendStrategy from "../../../../../locales/en-US/dividend-strategy.json"
 import enPortfolio from "../../../../../locales/en-US/portfolio.json"
-import enSetup from "../../../../../locales/en-US/setup.json"
 import enOnboarding from "../../../../../locales/en-US/initialization.json"
 import enStocks from "../../../../../locales/en-US/stocks.json"
 import enSettings from "../../../../../locales/en-US/settings.json"
@@ -14,7 +13,6 @@ import zhCommon from "../../../../../locales/zh-CN/common.json"
 import zhBudget from "../../../../../locales/zh-CN/budget.json"
 import zhDividendStrategy from "../../../../../locales/zh-CN/dividend-strategy.json"
 import zhPortfolio from "../../../../../locales/zh-CN/portfolio.json"
-import zhSetup from "../../../../../locales/zh-CN/setup.json"
 import zhOnboarding from "../../../../../locales/zh-CN/initialization.json"
 import zhStocks from "../../../../../locales/zh-CN/stocks.json"
 import zhSettings from "../../../../../locales/zh-CN/settings.json"
@@ -33,9 +31,6 @@ type LocaleMessages = {
   }
   portfolio: {
     ui: typeof zhPortfolio.ui
-  }
-  setup: {
-    ui: typeof zhSetup.ui
   }
   onboarding: {
     ui: typeof zhOnboarding.ui
@@ -60,7 +55,6 @@ const catalogs: Record<Locale, LocaleMessages> = {
     budget: { ui: zhBudget.ui },
     dividendStrategy: { ui: zhDividendStrategy.ui },
     portfolio: { ui: zhPortfolio.ui },
-    setup: { ui: zhSetup.ui },
     onboarding: { ui: zhOnboarding.ui },
     stocks: { ui: zhStocks.ui },
     settings: { ui: zhSettings.ui },
@@ -72,7 +66,6 @@ const catalogs: Record<Locale, LocaleMessages> = {
     budget: { ui: enBudget.ui },
     dividendStrategy: { ui: enDividendStrategy.ui },
     portfolio: { ui: enPortfolio.ui },
-    setup: { ui: enSetup.ui },
     onboarding: { ui: enOnboarding.ui },
     stocks: { ui: enStocks.ui },
     settings: { ui: enSettings.ui },

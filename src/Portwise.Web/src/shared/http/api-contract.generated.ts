@@ -612,89 +612,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/setup/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Returns whether the initial portfolio setup is complete. */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["SetupStatusDto"];
-                        "application/json": components["schemas"]["SetupStatusDto"];
-                        "text/json": components["schemas"]["SetupStatusDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/setup": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Creates the initial portfolio and configured stock watchlist. */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            /** @description Portfolio name, stocks and optional initial holdings. */
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["SetupRequest"];
-                    "text/json": components["schemas"]["SetupRequest"];
-                    "application/*+json": components["schemas"]["SetupRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["SetupResult"];
-                        "application/json": components["schemas"]["SetupResult"];
-                        "text/json": components["schemas"]["SetupResult"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/stock-data-providers": {
         parameters: {
             query?: never;
@@ -1487,29 +1404,6 @@ export interface components {
         InferenceRoutesResponse: {
             routes: components["schemas"]["InferenceRouteDto"][];
         };
-        /** @description Optional initial holding values supplied during setup. */
-        InitialHoldingInput: {
-            /**
-             * Format: int32
-             * @description Initial total held shares.
-             */
-            heldShares: number | string;
-            /**
-             * Format: int32
-             * @description Initial core shares.
-             */
-            coreShares: number | string;
-            /**
-             * Format: int32
-             * @description Initial target share quantity.
-             */
-            targetShares: number | string;
-            /**
-             * Format: double
-             * @description Initial average cost per share.
-             */
-            averageCostPerShare: number | string;
-        };
         /** @description Returns entry readiness, saved preferences, and independent capability limitations. */
         InitializationStatusResponse: {
             isComplete: boolean;
@@ -1793,51 +1687,6 @@ export interface components {
             action: string;
             /** @description New plaintext only when the action is replace. */
             value: null | string;
-        };
-        /** @description Request to initialize the local portfolio workspace. */
-        SetupRequest: {
-            /** @description Display name of the portfolio. */
-            portfolioName: string;
-            /** @description Stock watchlist to configure. */
-            stocks: components["schemas"]["SetupStockRequest"][];
-        };
-        /** @description Result of initial portfolio setup. */
-        SetupResult: {
-            /**
-             * Format: uuid
-             * @description Identifier of the created portfolio.
-             */
-            portfolioId: string;
-            /** @description Display name of the created portfolio. */
-            portfolioName: string;
-            /** @description Whether initial stock synchronization was scheduled. */
-            stockDataSyncScheduled: boolean;
-            /** @description Stocks created during setup. */
-            stocks: components["schemas"]["SetupStockResult"][];
-        };
-        /** @description Reports whether first-run setup has been completed. */
-        SetupStatusDto: {
-            /** @description Whether all setup requirements are complete. */
-            isComplete: boolean;
-            /** @description Requirement codes that are still missing. */
-            missingRequirements: string[];
-        };
-        /** @description Stock identity and optional initial holding used during setup. */
-        SetupStockRequest: {
-            /** @description Six-digit security code. */
-            securityCode: string;
-            /** @description Exchange code. */
-            exchangeCode: string;
-            initialHolding: null | components["schemas"]["InitialHoldingInput"];
-        };
-        /** @description Result describing a stock created during setup. */
-        SetupStockResult: {
-            /** @description Created security code. */
-            securityCode: string;
-            /** @description Created exchange code. */
-            exchangeCode: string;
-            /** @description Resolved display name, when available. */
-            securityName: null | string;
         };
         /** @description Current market, dividend, position and recommendation analysis for one stock. */
         StockAnalysisResult: {

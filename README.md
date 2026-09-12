@@ -265,16 +265,17 @@ FtShare__ExchangeCodeArgumentName=exchange_code
 
 | 路由 | 用途 |
 | --- | --- |
-| `/setup` | 首次建立组合和添加关注股票 |
+| `/onboarding` | 首次保存工作区基础配置 |
 | `/overview` | 今日决策、组合状态和下一步提示 |
 | `/stocks` | 股票资料、行情、股息、财务和模型结果 |
 | `/budget` | 组合预算与现金流水 |
 | `/portfolio` | 持仓摘要和模拟交易记录 |
-| `/settings` | 每只股票独立的模型参数 |
+| `/settings` | 系统偏好、股票数据 Provider 与 AI Provider 配置 |
+| `/strategy` | 每只股票独立的策略参数 |
 | `/404` | 未知前端路由 |
 | `/error` | 全局初始化或 API 读取失败 |
 
-根路径 `/` 会进入 `/overview`。首次运行且尚未建立组合时会进入 `/setup`。未知路径和全局错误分别归一到 `/404` 与 `/error`，恢复成功后返回 `/overview`。
+根路径 `/` 会进入 `/overview`。首次运行且尚未完成初始化时会进入 `/onboarding`；初始化完成后即使部分 Provider 未配置，也允许进入系统并显示受限能力。未知路径和全局错误分别归一到 `/404` 与 `/error`，恢复成功后返回 `/overview`。
 
 ## API 入口
 
@@ -282,8 +283,8 @@ API 使用 URL Segment 版本号，当前版本为 `v1`，完整接口和请求�
 
 | API | 用途 |
 | --- | --- |
-| `GET /api/v1/setup/status` | 查询是否已完成首次设置 |
-| `POST /api/v1/setup` | 建立组合、保存多只股票和可选初始持仓 |
+| `GET /api/v1/initialization` | 查询初始化完成标记、偏好和能力 readiness |
+| `POST /api/v1/initialization/complete` | 以一个数据库事务保存初始化基础配置和可选 Provider/Route |
 | `GET /api/v1/stocks` | 获取关注股票和持仓摘要 |
 | `POST /api/v1/stocks/sync` | 手动触发全部股票资料同步 |
 | `GET /api/v1/stocks/{securityCode}/{exchangeCode}/analysis` | 获取单只股票分析与交易参考 |

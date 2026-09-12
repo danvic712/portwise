@@ -46,7 +46,7 @@
     "errors": {
       "requestFailed": "The request could not be completed. Please try again later.",
       "timeout": "The request timed out. Check the service and try again.",
-      "stockModelParametersMissing": "This stock has no model parameters yet. Complete its setup first."
+      "stockModelParametersMissing": "This stock has no model parameters yet. Complete initialization first."
     },
     "statusSticker": {
       "calm": "Okay",
@@ -58,9 +58,7 @@
       "readingData": "Reading data…",
       "errorTitle": "Could not read the data",
       "connecting": "Connecting to your local portfolio…",
-      "preparingSetup": "Preparing first-time setup…",
-      "setupCompleteSync": "Portfolio created. Stock data is syncing in the background.",
-      "setupCompleteDeferred": "Portfolio created. Background sync was not queued; it will retry on the next manual or trading-day sync.",
+      "preparingInitialization": "Preparing your initialization workspace…",
       "notFound": {
         "eyebrow": "This page wandered off",
         "title": "This notebook page is missing.",

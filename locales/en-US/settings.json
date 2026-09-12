@@ -26,7 +26,7 @@
     "actions": {
       "save": "Save parameters",
       "saving": "Saving…",
-      "goSetup": "Build my portfolio"
+      "goOnboarding": "Complete initialization"
     },
     "workflow": {
       "eyebrow": "SETTINGS FLOW",
@@ -96,7 +96,7 @@
       "successTitle": "Saved",
       "successMessage": "The model parameters were saved. The next analysis will use the new settings.",
       "emptyTitle": "No stock data yet",
-      "emptyDescription": "Complete first-time setup before configuring model parameters per stock.",
+      "emptyDescription": "Complete initialization before configuring model parameters per stock.",
       "noParametersTitle": "This stock has no model parameters yet",
       "noParametersDescription": "Initialize or import its model parameters from the backend first. This page will not overwrite your settings with defaults.",
       "noSummary": "There are no model settings to show yet."

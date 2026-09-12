@@ -13,7 +13,7 @@
         "saveSnapshot": "Save snapshot",
         "savingSnapshot": "Saving…",
         "checkUpdates": "Check for updates",
-        "setupPortfolio": "Set up portfolio",
+        "onboardingPortfolio": "Complete initialization",
         "viewStockData": "View stock data",
         "fillHolding": "Add holdings",
         "recordCash": "Record cash"
@@ -33,7 +33,7 @@
         "saveSuccess": "This portfolio reference snapshot was saved.",
         "saveFailed": "The snapshot could not be saved. Try again later.",
         "emptyTitle": "No stock data yet",
-        "emptyDescription": "Finish setting up the portfolio before generating price ranges and trading references.",
+        "emptyDescription": "Complete initialization before generating price ranges and trading references.",
         "emptyStockTitle": "No reference for this stock yet",
         "emptyStockDescription": "The stock data may still be syncing. Try the stock data page first.",
         "noticeTitle": "Data sync status",

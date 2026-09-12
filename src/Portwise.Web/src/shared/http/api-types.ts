@@ -1,10 +1,5 @@
 import type { ApiSchema } from "@/shared/http/api-contract"
 
-export type SetupStatus = ApiSchema<"SetupStatusDto">
-export type SetupStockRequest = ApiSchema<"SetupStockRequest">
-export type SetupRequest = ApiSchema<"SetupRequest">
-export type InitialHoldingInput = ApiSchema<"InitialHoldingInput">
-export type SetupResult = ApiSchema<"SetupResult">
 export type SecretStateDto = ApiSchema<"SecretStateDto">
 export type SecretUpdateRequest = ApiSchema<"SecretUpdateRequest">
 export type InitializationStatusResponse = ApiSchema<"InitializationStatusResponse">

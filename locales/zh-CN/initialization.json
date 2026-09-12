@@ -53,5 +53,10 @@
     "status_code": 409,
     "title": "系统已经完成初始化",
     "detail": "系统已经完成初始化，不能重复保存首次配置。"
+  },
+  "initialization_not_completed": {
+    "status_code": 409,
+    "title": "系统尚未完成初始化",
+    "detail": "请先完成初始化，再使用需要工作区配置的功能。"
   }
 }

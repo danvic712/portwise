@@ -26,7 +26,7 @@
     "actions": {
       "save": "保存参数",
       "saving": "保存中…",
-      "goSetup": "去建立组合"
+      "goOnboarding": "去完成初始化"
     },
     "workflow": {
       "eyebrow": "设置流程",
@@ -96,7 +96,7 @@
       "successTitle": "已保存",
       "successMessage": "模型参数已保存，下一次分析将读取新配置。",
       "emptyTitle": "还没有股票资料",
-      "emptyDescription": "完成首次设置后，才能按股票配置模型参数。",
+      "emptyDescription": "完成初始化后，才能按股票配置模型参数。",
       "noParametersTitle": "这只股票还没有模型参数",
       "noParametersDescription": "请先通过后端初始化或导入模型参数；当前页面不会用默认值覆盖你的设置。",
       "noSummary": "暂时没有可展示的模型设置。"

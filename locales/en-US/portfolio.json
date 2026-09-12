@@ -10,7 +10,7 @@
       "refreshing": "Reading…",
       "submit": "Save trade record",
       "submitting": "Saving…",
-      "goSetup": "Build my portfolio"
+      "goOnboarding": "Complete initialization"
     },
     "guide": {
       "eyebrow": "START HERE",
@@ -86,7 +86,7 @@
       "recordError": "The trade record could not be saved. Check the fields and try again.",
       "noticeTitle": "Record notice",
       "emptyTitle": "There are no stocks to record yet",
-      "emptyDescription": "Complete the first setup before recording buys and sells."
+      "emptyDescription": "Complete initialization before recording buys and sells."
     },
     "validation": {
       "stock": "Choose the stock you want to record.",

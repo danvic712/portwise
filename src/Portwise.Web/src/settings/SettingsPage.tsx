@@ -209,7 +209,7 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey, curr
   }
 
   if (!stocks.length) {
-    return <PageFrame currentPath={currentPath} onNavigate={onNavigate} dataState="unknown" contentClassName="settings-page-wrap"><EmptyState title={copy.states.emptyTitle} description={copy.states.emptyDescription} action={<Button onClick={() => onNavigate("/onboarding")}>{copy.actions.goSetup}</Button>} /></PageFrame>
+    return <PageFrame currentPath={currentPath} onNavigate={onNavigate} dataState="unknown" contentClassName="settings-page-wrap"><EmptyState title={copy.states.emptyTitle} description={copy.states.emptyDescription} action={<Button onClick={() => onNavigate("/onboarding")}>{copy.actions.goOnboarding}</Button>} /></PageFrame>
   }
 
   const stockLabel = selectedStock ? `${displayStockName(selectedStock, messages.stocks.ui.identity.pendingName)} · ${selectedStock.securityCode}` : copy.form.stockFallback

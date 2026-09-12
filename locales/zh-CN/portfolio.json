@@ -10,7 +10,7 @@
       "refreshing": "读取中…",
       "submit": "保存交易记录",
       "submitting": "保存中…",
-      "goSetup": "去建立组合"
+      "goOnboarding": "去完成初始化"
     },
     "guide": {
       "eyebrow": "先看这三步",
@@ -86,7 +86,7 @@
       "recordError": "交易记录失败，请检查填写内容。",
       "noticeTitle": "记录提醒",
       "emptyTitle": "还没有可记录的股票",
-      "emptyDescription": "完成首次设置后，才能为股票记录买入和卖出。"
+      "emptyDescription": "完成初始化后，才能为股票记录买入和卖出。"
     },
     "validation": {
       "stock": "请选择要记录的股票。",

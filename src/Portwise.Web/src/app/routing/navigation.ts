@@ -40,12 +40,9 @@ export function isApplicationPath(pathname: string): pathname is ApplicationPath
 
 export function resolveInitializationPath(isComplete: boolean, pathname: string): ApplicationPath | null {
   if (!isComplete) return pathname === "/onboarding" ? null : "/onboarding"
-  if (pathname === "/onboarding" || pathname === "/setup" || pathname === "/error") return "/overview"
+  if (pathname === "/onboarding" || pathname === "/error") return "/overview"
   return isApplicationPath(pathname) ? null : "/404"
 }
-
-/** @deprecated Use resolveInitializationPath for the onboarding gate. */
-export const resolveSetupPath = resolveInitializationPath
 
 export function readNavigationLocation(href: string): NavigationLocation {
   const url = new URL(href, "http://portwise.local")

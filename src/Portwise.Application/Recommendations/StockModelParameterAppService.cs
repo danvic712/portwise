@@ -85,7 +85,7 @@ public sealed class StockModelParameterAppService(
             .SingleOrDefaultAsync(cancellationToken: cancellationToken);
         if (portfolio is null)
         {
-            throw ApplicationErrors.Simple(ApplicationErrorCodes.SetupNotCompleted);
+            throw ApplicationErrors.Simple(ApplicationErrorCodes.InitializationNotCompleted);
         }
 
         var parameterRepository = uow.Get<ModelParameterSet>();

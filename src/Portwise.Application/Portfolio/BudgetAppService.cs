@@ -35,7 +35,7 @@ public sealed class BudgetAppService(
             .SingleOrDefaultAsync(cancellationToken: cancellationToken);
         if (portfolio is null)
         {
-            throw ApplicationErrors.Simple(ApplicationErrorCodes.SetupNotCompleted);
+            throw ApplicationErrors.Simple(ApplicationErrorCodes.InitializationNotCompleted);
         }
 
         var reference = string.IsNullOrWhiteSpace(request.SecurityCode)
@@ -130,7 +130,7 @@ public sealed class BudgetAppService(
             .SingleOrDefaultAsync(cancellationToken: cancellationToken);
         if (portfolio is null)
         {
-            throw ApplicationErrors.Simple(ApplicationErrorCodes.SetupNotCompleted);
+            throw ApplicationErrors.Simple(ApplicationErrorCodes.InitializationNotCompleted);
         }
 
         var entries = await uow.Get<CashLedgerEntry>()

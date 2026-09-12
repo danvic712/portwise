@@ -57,7 +57,7 @@
       "syncing": "Syncing…",
       "resync": "Sync again",
       "configure": "Configure parameters",
-      "goSetup": "Create a portfolio"
+      "goOnboarding": "Complete initialization"
     },
     "states": {
       "loadingList": "Reading stock data…",
@@ -66,7 +66,7 @@
       "analysisError": "This stock’s analysis is temporarily unavailable.",
       "syncError": "Data sync failed. Please try again later.",
       "emptyTitle": "No stock data yet",
-      "emptyDescription": "After first-time setup, this page shows each stock’s data, holdings, and model parameters.",
+      "emptyDescription": "After initialization, this page shows each stock’s data, holdings, and model parameters.",
       "dataWarningTitle": "Read notice",
       "syncComplete": "Data sync complete",
       "pendingTitle": "The data is still on its way.",
