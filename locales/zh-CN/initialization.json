@@ -26,7 +26,7 @@
       "preferencesHint": "这些设置会自动保存，之后也可以随时修改。",
       "portfolioEyebrow": "创建你的投资组合",
       "portfolioTitle": "给投资组合起个名字",
-      "portfolioDescription": "先为投资组合命名，之后可以随时添加股票和持仓。",
+      "portfolioDescription": "先为投资组合命名，再加入你想长期关注的股票。",
       "stockEyebrow": "准备股票数据",
       "stockTitle": "选择股票数据来源",
       "stockDescription": "选择一个数据来源，帮助 Portwise 获取你需要的股票信息；也可以稍后再设置。",
@@ -44,9 +44,28 @@
     "fields": {
       "portfolioName": "投资组合名称",
       "portfolioPlaceholder": "例如：长期投资组合",
-      "portfolioHint": "股票和持仓之后都可以慢慢添加。",
+      "portfolioHint": "可以一次添加多只股票，股票数据之后也能随时补充。",
       "language": "语言",
       "theme": "主题"
+    },
+    "portfolio": {
+      "stockSectionTitle": "添加股票",
+      "stockSectionDescription": "填写代码、交易所和当前持股数，之后可以继续调整。",
+      "stockEmpty": "还没有添加股票，可以先从一只开始。",
+      "addFirstStock": "添加第一只股票",
+      "addStock": "添加股票",
+      "removeStock": "移除这只股票",
+      "stockItem": "股票 {number}",
+      "stockCode": "股票代码",
+      "stockCodePlaceholder": "例如 000001",
+      "exchangeCode": "交易所",
+      "exchangeOptions": {
+        "SSE": "上海证券交易所（沪市）",
+        "SZSE": "深圳证券交易所（深市）",
+        "BSE": "北京证券交易所（北市）"
+      },
+      "heldShares": "当前持股数",
+      "sharesPlaceholder": "例如 100"
     },
     "stock": {
       "title": "股票数据",
@@ -81,13 +100,19 @@
       "useDefaults": "恢复默认设置"
     },
     "footer": "完成后，你可以随时在设置中修改这些选择。",
-    "validation": { "portfolio": "请先给投资组合起个名字。", "inference": "请把 AI 服务、访问密钥和两个模型填写完整，也可以先全部跳过。" },
+    "validation": {
+      "portfolio": "请先给投资组合起个名字。",
+      "stockCodeRequired": "请填写股票代码。",
+      "stockCode": "股票代码需要是 6 位数字。",
+      "heldShares": "持仓股数需要是 0 或更大的整数。",
+      "inference": "请把 AI 服务、访问密钥和两个模型填写完整，也可以先全部跳过。"
+    },
     "states": { "errorTitle": "暂时没有保存成功", "saveError": "保存失败，请检查填写内容后再试。" }
   },
   "initialization_validation_failed": {
     "status_code": 400,
     "title": "设置内容需要调整",
-    "detail": "请检查语言、主题、投资组合名称和服务信息后再试。"
+    "detail": "请检查语言、主题、投资组合、股票信息和服务信息后再试。"
   },
   "initialization_already_completed": {
     "status_code": 409,

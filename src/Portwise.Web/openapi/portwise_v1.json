@@ -442,9 +442,9 @@
         "tags": [
           "Initialization"
         ],
-        "summary": "Atomically saves the first-run preferences and optional provider bindings.",
+        "summary": "Atomically saves the first-run preferences, portfolio, optional initial stocks, and provider bindings.",
         "requestBody": {
-          "description": "The preferences, portfolio, and optional provider configuration.",
+          "description": "The preferences, portfolio, optional initial stocks, and provider configuration.",
           "content": {
             "application/json": {
               "schema": {
@@ -1629,13 +1629,16 @@
         "type": "object",
         "properties": {
           "languageCode": {
-            "type": "string"
+            "type": "string",
+            "description": "The language selected for the workspace."
           },
           "themeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "The display theme selected for the workspace."
           },
           "portfolioName": {
-            "type": "string"
+            "type": "string",
+            "description": "The name of the initial portfolio."
           },
           "stockDataProviders": {
             "type": [
@@ -1644,7 +1647,8 @@
             ],
             "items": {
               "$ref": "#/components/schemas/CompleteStockDataProviderRequest"
-            }
+            },
+            "description": "Optional stock data provider configurations."
           },
           "stockDataRoutes": {
             "type": [
@@ -1653,7 +1657,8 @@
             ],
             "items": {
               "$ref": "#/components/schemas/CompleteStockDataRouteRequest"
-            }
+            },
+            "description": "Optional stock data capability routes."
           },
           "inferenceProviders": {
             "type": [
@@ -1662,7 +1667,8 @@
             ],
             "items": {
               "$ref": "#/components/schemas/CompleteInferenceProviderRequest"
-            }
+            },
+            "description": "Optional inference provider configurations."
           },
           "inferenceRoutes": {
             "type": [
@@ -1671,10 +1677,21 @@
             ],
             "items": {
               "$ref": "#/components/schemas/CompleteInferenceRouteRequest"
-            }
+            },
+            "description": "Optional chat and embedding model routes."
+          },
+          "initialStocks": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/InitialStockRequest"
+            },
+            "description": "Optional initial stocks saved with the portfolio."
           }
         },
-        "description": "Supplies preferences, the unique portfolio, and optional external capabilities."
+        "description": "Supplies preferences, the unique portfolio, its optional initial stocks, and external capabilities."
       },
       "CompleteInitializationResponse": {
         "required": [
@@ -1996,6 +2013,34 @@
           }
         },
         "description": "Returns entry readiness, saved preferences, and independent capability limitations."
+      },
+      "InitialStockRequest": {
+        "required": [
+          "securityCode",
+          "exchangeCode",
+          "heldShares"
+        ],
+        "type": "object",
+        "properties": {
+          "securityCode": {
+            "type": "string",
+            "description": "Six-digit A-share security code."
+          },
+          "exchangeCode": {
+            "type": "string",
+            "description": "Exchange code."
+          },
+          "heldShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Number of shares currently held; use zero when there is no position.",
+            "format": "int32"
+          }
+        },
+        "description": "Describes one stock saved with the portfolio during onboarding."
       },
       "PortfolioRecommendationResult": {
         "required": [

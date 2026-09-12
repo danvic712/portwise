@@ -5,6 +5,7 @@ using Portwise.Application.Configuration.Dtos;
 using Portwise.Application.Exceptions;
 using Portwise.Application.Initialization;
 using Portwise.Application.Initialization.Dtos;
+using Portwise.Application.Initialization.Validators;
 using Portwise.Domain.Codes;
 using Portwise.Domain.Contracts;
 using Portwise.Domain.Enums;
@@ -122,6 +123,87 @@ public sealed class InitializationAppServiceTests
     }
 
     [Fact]
+    public async Task CompleteAsync_SavesMultipleInitialStocksInTheSameCommit()
+    {
+        var securityRepository = RepositoryMock.Create<Security>([]);
+        var positionRepository = RepositoryMock.Create<PortfolioPosition>([]);
+        var (service, unitOfWork, _) = CreateService(
+            securityRepository: securityRepository,
+            positionRepository: positionRepository);
+
+        var response = await service.CompleteAsync(
+            new CompleteInitializationRequest(
+                "zh-CN",
+                "system",
+                "长期组合",
+                null,
+                null,
+                null,
+                null,
+                [
+                    new InitialStockRequest(" 000001 ", " szse ", 100),
+                    new InitialStockRequest("600000", "SSE", 50)
+                ]),
+            CancellationToken.None);
+
+        var securities = securityRepository.Invocations
+                .Where(invocation => invocation.Method.Name == nameof(IRepository<Security>.AddAsync))
+                .Select(invocation => invocation.Arguments[0])
+                .OfType<Security>()
+                .ToList();
+        Assert.Equal(2, securities.Count);
+        var security = Assert.Single(securities, item => item.SecurityCode == "000001");
+        Assert.Equal("000001", security.SecurityCode);
+        Assert.Equal("SZSE", security.ExchangeCode);
+        Assert.Equal(MarketCodes.AShare, security.MarketCode);
+        Assert.NotEqual(Guid.Empty, security.Id);
+        Assert.All(
+            securities,
+            item => positionRepository.Verify(repository => repository.AddAsync(
+                It.Is<PortfolioPosition>(position =>
+                    position.SecurityId == item.Id
+                    && position.HeldShares == (item.SecurityCode == "000001" ? 100 : 50)
+                    && position.CoreShares == position.HeldShares
+                    && position.TargetShares == position.HeldShares
+                    && position.AverageCostPerShare == 0m),
+                It.IsAny<CancellationToken>()), Times.Once));
+        unitOfWork.Verify(item => item.CommitAsync(CancellationToken.None), Times.Once);
+        Assert.True(response.Status.IsComplete);
+    }
+
+    [Fact]
+    public async Task CompleteAsync_RejectsAnInvalidInitialStockWithoutWriting()
+    {
+        var securityRepository = RepositoryMock.Create<Security>([]);
+        var positionRepository = RepositoryMock.Create<PortfolioPosition>([]);
+        var (service, unitOfWork, _) = CreateService(
+            securityRepository: securityRepository,
+            positionRepository: positionRepository);
+
+        var exception = await Assert.ThrowsAsync<ApplicationErrorException>(() =>
+            service.CompleteAsync(
+                new CompleteInitializationRequest(
+                    "zh-CN",
+                    "system",
+                    "长期组合",
+                    null,
+                    null,
+                    null,
+                    null,
+                    [new InitialStockRequest("123", "SSE", 100)]),
+                CancellationToken.None));
+
+        Assert.Equal(ApplicationErrorCodes.InitializationValidationFailed, exception.ErrorCode);
+        securityRepository.Verify(repository => repository.AddAsync(
+            It.IsAny<Security>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+        positionRepository.Verify(repository => repository.AddAsync(
+            It.IsAny<PortfolioPosition>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+        unitOfWork.Verify(item => item.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task CompleteAsync_RejectsWhenInitializationAlreadyExists()
     {
         var state = new InitializationState
@@ -168,7 +250,9 @@ public sealed class InitializationAppServiceTests
         InitializationState? initializationState = null,
         IReadOnlyList<StockDataProviderDefinition>? definitions = null,
         IReadOnlyList<StockDataRoute>? stockRoutes = null,
-        IReadOnlyList<InferenceRoute>? inferenceRoutes = null)
+        IReadOnlyList<InferenceRoute>? inferenceRoutes = null,
+        Mock<IRepository<Security>>? securityRepository = null,
+        Mock<IRepository<PortfolioPosition>>? positionRepository = null)
     {
         var data = new InitializationData
         {
@@ -179,8 +263,12 @@ public sealed class InitializationAppServiceTests
             StockProviders = [],
             StockRoutes = stockRoutes?.ToList() ?? [],
             InferenceProviders = [],
-            InferenceRoutes = inferenceRoutes?.ToList() ?? []
+            InferenceRoutes = inferenceRoutes?.ToList() ?? [],
+            Securities = [],
+            Positions = []
         };
+        securityRepository ??= RepositoryMock.Create<Security>(data.Securities);
+        positionRepository ??= RepositoryMock.Create<PortfolioPosition>(data.Positions);
         var repositories = new Dictionary<Type, object>
         {
             [typeof(InitializationState)] = RepositoryMock.Create(data.InitializationStates),
@@ -190,7 +278,9 @@ public sealed class InitializationAppServiceTests
             [typeof(StockDataProvider)] = RepositoryMock.Create(data.StockProviders),
             [typeof(StockDataRoute)] = RepositoryMock.Create(data.StockRoutes),
             [typeof(InferenceProvider)] = RepositoryMock.Create(data.InferenceProviders),
-            [typeof(InferenceRoute)] = RepositoryMock.Create(data.InferenceRoutes)
+            [typeof(InferenceRoute)] = RepositoryMock.Create(data.InferenceRoutes),
+            [typeof(Security)] = securityRepository,
+            [typeof(PortfolioPosition)] = positionRepository
         };
         var unitOfWork = new Mock<IUow>();
         unitOfWork
@@ -218,6 +308,12 @@ public sealed class InitializationAppServiceTests
             .Setup(item => item.Get<InferenceRoute>())
             .Returns(((Mock<IRepository<InferenceRoute>>)repositories[typeof(InferenceRoute)]).Object);
         unitOfWork
+            .Setup(item => item.Get<Security>())
+            .Returns(securityRepository.Object);
+        unitOfWork
+            .Setup(item => item.Get<PortfolioPosition>())
+            .Returns(positionRepository.Object);
+        unitOfWork
             .Setup(item => item.CommitAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
@@ -236,7 +332,8 @@ public sealed class InitializationAppServiceTests
             new InitializationAppService(
                 unitOfWork.Object,
                 secretProtector.Object,
-                new FixedTimeProvider(Now)),
+                new FixedTimeProvider(Now),
+                new InitialStockRequestValidator()),
             unitOfWork,
             data);
     }
@@ -256,5 +353,7 @@ public sealed class InitializationAppServiceTests
         public List<StockDataRoute> StockRoutes { get; init; } = [];
         public List<InferenceProvider> InferenceProviders { get; init; } = [];
         public List<InferenceRoute> InferenceRoutes { get; init; } = [];
+        public List<Security> Securities { get; init; } = [];
+        public List<PortfolioPosition> Positions { get; init; } = [];
     }
 }

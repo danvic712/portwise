@@ -6,11 +6,13 @@ using Portwise.Application.Inference;
 using Portwise.Application.Initialization.Contracts;
 using Portwise.Application.Initialization.Dtos;
 using Portwise.Application.StockDataProviders;
+using FluentValidation;
 using Portwise.Domain.Codes;
 using Portwise.Domain.Contracts;
 using Portwise.Domain.Enums;
 using Portwise.Domain.Exceptions;
 using Portwise.Domain.Models;
+using Portwise.Domain.Securities;
 using PortfolioEntity = Portwise.Domain.Models.Portfolio;
 
 namespace Portwise.Application.Initialization;
@@ -21,7 +23,8 @@ namespace Portwise.Application.Initialization;
 public sealed class InitializationAppService(
     IUow uow,
     ISecretProtector secretProtector,
-    TimeProvider timeProvider) : IInitializationAppService
+    TimeProvider timeProvider,
+    IValidator<InitialStockRequest> initialStockValidator) : IInitializationAppService
 {
     private static readonly StockDataCapability[] StockCapabilities =
         Enum.GetValues<StockDataCapability>();
@@ -85,6 +88,7 @@ public sealed class InitializationAppService(
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        var initialStockValues = await ValidateInitialStocksAsync(request, cancellationToken);
         if (!TryParsePreferences(request, out var language, out var theme)
             || !IsValidPortfolioName(request.PortfolioName)
             || !ValidateProviderAndRouteShape(request))
@@ -109,6 +113,10 @@ public sealed class InitializationAppService(
 
         await uow.Get<ApplicationPreference>().AddAsync(preference, cancellationToken);
         await uow.Get<PortfolioEntity>().AddAsync(portfolio, cancellationToken);
+        await SaveInitialStocksAsync(
+            initialStockValues,
+            portfolio.Id,
+            cancellationToken);
 
         var stockProvidersByName = await SaveStockProvidersAsync(
             request.StockDataProviders,
@@ -352,6 +360,85 @@ public sealed class InitializationAppService(
         }
 
         return true;
+    }
+
+    private async Task<IReadOnlyList<(AShareReference Reference, int HeldShares)>> ValidateInitialStocksAsync(
+        CompleteInitializationRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.InitialStocks is null)
+        {
+            return [];
+        }
+
+        var values = new List<(AShareReference Reference, int HeldShares)>(request.InitialStocks.Count);
+        var seenReferences = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var requestItem in request.InitialStocks)
+        {
+            if (requestItem is null)
+            {
+                throw InvalidRequest();
+            }
+
+            var validationResult = await initialStockValidator.ValidateAsync(
+                requestItem,
+                cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                throw InvalidRequest();
+            }
+
+            try
+            {
+                var reference = AShareReference.Create(
+                    requestItem.SecurityCode,
+                    requestItem.ExchangeCode);
+                if (!seenReferences.Add($"{reference.SecurityCode}:{reference.ExchangeCode}"))
+                {
+                    throw InvalidRequest();
+                }
+
+                values.Add((reference, requestItem.HeldShares));
+            }
+            catch (ArgumentException)
+            {
+                throw InvalidRequest();
+            }
+        }
+
+        return values;
+    }
+
+    private async Task SaveInitialStocksAsync(
+        IReadOnlyList<(AShareReference Reference, int HeldShares)> values,
+        Guid portfolioId,
+        CancellationToken cancellationToken)
+    {
+        foreach (var (reference, heldShares) in values)
+        {
+            var security = new Security
+            {
+                Id = Guid.CreateVersion7(),
+                SecurityCode = reference.SecurityCode,
+                ExchangeCode = reference.ExchangeCode,
+                SecurityName = string.Empty,
+                MarketCode = MarketCodes.AShare,
+                CurrencyCode = CurrencyCodes.Cny
+            };
+            await uow.Get<Security>().AddAsync(security, cancellationToken);
+
+            await uow.Get<PortfolioPosition>().AddAsync(
+                new PortfolioPosition
+                {
+                    PortfolioId = portfolioId,
+                    SecurityId = security.Id,
+                    HeldShares = heldShares,
+                    CoreShares = heldShares,
+                    TargetShares = heldShares,
+                    AverageCostPerShare = 0m
+                },
+                cancellationToken);
+        }
     }
 
     private static bool TryParsePreferences(

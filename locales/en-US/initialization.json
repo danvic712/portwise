@@ -26,7 +26,7 @@
       "preferencesHint": "Your choices are saved automatically and can be changed anytime.",
       "portfolioEyebrow": "CREATE YOUR PORTFOLIO",
       "portfolioTitle": "Name your portfolio",
-      "portfolioDescription": "Give your portfolio a name first. You can add stocks and holdings whenever you are ready.",
+      "portfolioDescription": "Name your portfolio, then add the stocks you want to follow over time.",
       "stockEyebrow": "ADD STOCK DATA",
       "stockTitle": "Choose a stock data source",
       "stockDescription": "Add a source so Portwise can bring in the stock information you need. You can do this later.",
@@ -44,9 +44,28 @@
     "fields": {
       "portfolioName": "Portfolio name",
       "portfolioPlaceholder": "For example: Long-term portfolio",
-      "portfolioHint": "You can add stocks and holdings gradually whenever you are ready.",
+      "portfolioHint": "Add several stocks now, and adjust your list whenever you need to.",
       "language": "Language",
       "theme": "Theme"
+    },
+    "portfolio": {
+      "stockSectionTitle": "Add stocks",
+      "stockSectionDescription": "Enter each code, exchange, and current holding. You can update them later.",
+      "stockEmpty": "No stocks added yet. Start with one you follow.",
+      "addFirstStock": "Add your first stock",
+      "addStock": "Add stock",
+      "removeStock": "Remove this stock",
+      "stockItem": "Stock {number}",
+      "stockCode": "Stock code",
+      "stockCodePlaceholder": "For example 000001",
+      "exchangeCode": "Exchange",
+      "exchangeOptions": {
+        "SSE": "Shanghai Stock Exchange",
+        "SZSE": "Shenzhen Stock Exchange",
+        "BSE": "Beijing Stock Exchange"
+      },
+      "heldShares": "Current holding",
+      "sharesPlaceholder": "For example 100"
     },
     "stock": {
       "title": "Stock data",
@@ -81,13 +100,19 @@
       "useDefaults": "Restore defaults"
     },
     "footer": "You can change these choices anytime in Settings.",
-    "validation": { "portfolio": "Give your portfolio a name first.", "inference": "Fill in the AI service, access key, and both models, or leave them all for later." },
+    "validation": {
+      "portfolio": "Give your portfolio a name first.",
+      "stockCodeRequired": "Enter a stock code.",
+      "stockCode": "The stock code must contain six digits.",
+      "heldShares": "Held shares must be a whole number of 0 or more.",
+      "inference": "Fill in the AI service, access key, and both models, or leave them all for later."
+    },
     "states": { "errorTitle": "We could not save that just yet", "saveError": "Something went wrong while saving. Check the fields and try again." }
   },
   "initialization_validation_failed": {
     "status_code": 400,
     "title": "A few details need another look",
-    "detail": "Review the language, theme, portfolio name, and service details, then try again."
+    "detail": "Review the language, theme, portfolio, stock details, and service information, then try again."
   },
   "initialization_already_completed": {
     "status_code": 409,

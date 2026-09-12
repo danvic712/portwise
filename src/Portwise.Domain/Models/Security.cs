@@ -2,7 +2,7 @@ namespace Portwise.Domain.Models;
 
 public sealed class Security
 {
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.CreateVersion7();
 
     public string SecurityCode { get; set; } = string.Empty;
 

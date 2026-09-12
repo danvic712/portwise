@@ -1,11 +1,12 @@
-import { ArrowLeft, ArrowRight, Check, Info } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { ArrowLeft, ArrowRight, Check, Info, Plus, Trash2 } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert"
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent, CardHeader } from "@/components/ui/Card"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/Field"
 import { Input } from "@/components/ui/Input"
+import { NumberInput } from "@/components/ui/NumberInput"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
 import { PageFrame } from "@/components/layout/PageFrame"
 import { getApiErrorMessage } from "@/shared/http/api-errors"
@@ -30,7 +31,23 @@ type StepDefinition = {
   optional?: boolean
 }
 
+type InitialStockDraft = {
+  id: number
+  securityCode: string
+  exchangeCode: string
+  heldShares: string
+}
+
 const defaultBaseUrl = "https://api.openai.com/v1"
+const aShareExchangeCodes = {
+  sse: "SSE",
+  szse: "SZSE",
+  bse: "BSE",
+} as const
+
+function exchangeDisplayName(code: string, options: Record<string, string>) {
+  return options[code] ?? code
+}
 const stepDefinitions: StepDefinition[] = [
   { number: 1, key: "preferences" },
   { number: 2, key: "portfolio" },
@@ -44,6 +61,8 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
   const copy = messages.onboarding.ui
   const [step, setStep] = useState<OnboardingStep>(1)
   const [portfolioName, setPortfolioName] = useState("")
+  const stockDraftSequence = useRef(0)
+  const [initialStocks, setInitialStocks] = useState<InitialStockDraft[]>([])
   const [ftShareKey, setFtShareKey] = useState("")
   const [inferenceName, setInferenceName] = useState("")
   const [inferenceBaseUrl, setInferenceBaseUrl] = useState(defaultBaseUrl)
@@ -80,7 +99,39 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
   const hasInferenceInput = Boolean(inferenceName.trim() || inferenceKey.trim() || chatModel.trim() || embeddingModel.trim() || (inferenceBaseUrl.trim() && inferenceBaseUrl.trim() !== defaultBaseUrl))
   const hasPortfolioInput = Boolean(portfolioName.trim())
 
+  function createStockDraft(): InitialStockDraft {
+    stockDraftSequence.current += 1
+    return {
+      id: stockDraftSequence.current,
+      securityCode: "",
+      exchangeCode: aShareExchangeCodes.sse,
+      heldShares: "0",
+    }
+  }
+
+  function addInitialStock() {
+    const draft = createStockDraft()
+    setInitialStocks((current) => [...current, draft])
+    setError(null)
+  }
+
+  function updateInitialStock(id: number, patch: Partial<Omit<InitialStockDraft, "id">>) {
+    setInitialStocks((current) => current.map((stock) => stock.id === id ? { ...stock, ...patch } : stock))
+  }
+
+  function removeInitialStock(id: number) {
+    setInitialStocks((current) => current.filter((stock) => stock.id !== id))
+    setError(null)
+  }
+
   function buildRequest(): CompleteInitializationRequest {
+    const stocks = initialStocks
+      .filter((stock) => stock.securityCode.trim())
+      .map((stock) => ({
+        securityCode: stock.securityCode.trim(),
+        exchangeCode: stock.exchangeCode,
+        heldShares: Number(stock.heldShares),
+      }))
     const stockDataProviders = hasStockDataInput && ftShareDefinition
       ? [{ providerDefinitionId: ftShareDefinition.id, name: copy.stock.providerName, credentials: { action: "replace" as const, value: ftShareKey.trim() } }]
       : null
@@ -94,7 +145,21 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
       ]
       : null
 
-    return { languageCode: locale, themeCode: theme, portfolioName: portfolioName.trim(), stockDataProviders, stockDataRoutes: null, inferenceProviders, inferenceRoutes }
+    return { languageCode: locale, themeCode: theme, portfolioName: portfolioName.trim(), initialStocks: stocks.length ? stocks : null, stockDataProviders, stockDataRoutes: null, inferenceProviders, inferenceRoutes }
+  }
+
+  function validatePortfolioStep() {
+    for (const stock of initialStocks) {
+      const stockCode = stock.securityCode.trim()
+      const hasStockInput = Boolean(stockCode || stock.heldShares.trim())
+      if (!hasStockInput) continue
+      if (!stockCode) return copy.validation.stockCodeRequired
+      if (!/^\d{6}$/.test(stockCode)) return copy.validation.stockCode
+
+      const parsedHeldShares = Number(stock.heldShares)
+      if (stock.heldShares.trim() === "" || !Number.isInteger(parsedHeldShares) || parsedHeldShares < 0) return copy.validation.heldShares
+    }
+    return null
   }
 
   async function submit() {
@@ -102,6 +167,12 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
     if (!portfolioName.trim()) {
       setStep(2)
       setError(copy.validation.portfolio)
+      return
+    }
+    const portfolioError = validatePortfolioStep()
+    if (portfolioError) {
+      setStep(2)
+      setError(portfolioError)
       return
     }
     if (hasInferenceInput && (!inferenceName.trim() || !inferenceKey.trim() || !chatModel.trim() || !embeddingModel.trim())) {
@@ -132,6 +203,13 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
     if (step === 2 && !portfolioName.trim()) {
       setError(copy.validation.portfolio)
       return
+    }
+    if (step === 2) {
+      const portfolioError = validatePortfolioStep()
+      if (portfolioError) {
+        setError(portfolioError)
+        return
+      }
     }
     if (step === 4) {
       void submit()
@@ -270,11 +348,72 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
                       <FieldDescription>{activeCopy.preferencesHint}</FieldDescription>
                     </>}
 
-                    {activeStep.key === "portfolio" && <Field>
-                      <FieldLabel htmlFor="onboarding-portfolio">{copy.fields.portfolioName}</FieldLabel>
-                      <Input id="onboarding-portfolio" value={portfolioName} placeholder={copy.fields.portfolioPlaceholder} onChange={(event) => setPortfolioName(event.target.value)} autoComplete="off" required />
-                      <FieldDescription>{copy.fields.portfolioHint}</FieldDescription>
-                    </Field>}
+                    {activeStep.key === "portfolio" && <FieldGroup className="onboarding-portfolio-fields">
+                      <Field>
+                        <FieldLabel htmlFor="onboarding-portfolio">{copy.fields.portfolioName}</FieldLabel>
+                        <Input id="onboarding-portfolio" value={portfolioName} placeholder={copy.fields.portfolioPlaceholder} onChange={(event) => setPortfolioName(event.target.value)} autoComplete="off" required />
+                        <FieldDescription>{copy.fields.portfolioHint}</FieldDescription>
+                      </Field>
+
+                      <section className="onboarding-stock-editor" aria-labelledby="onboarding-stock-editor-title">
+                        <div className="onboarding-stock-editor-heading">
+                          <div>
+                            <FieldLabel id="onboarding-stock-editor-title">{copy.portfolio.stockSectionTitle}</FieldLabel>
+                            <FieldDescription>{copy.portfolio.stockSectionDescription}</FieldDescription>
+                          </div>
+                          <Button type="button" variant="outline" size="sm" onClick={addInitialStock}>
+                            <Plus data-icon="inline-start" />
+                            {copy.portfolio.addStock}
+                          </Button>
+                        </div>
+
+                        {initialStocks.length === 0 ? (
+                          <div className="onboarding-stock-editor-empty">
+                            <span>{copy.portfolio.stockEmpty}</span>
+                            <Button type="button" variant="link" onClick={addInitialStock}>{copy.portfolio.addFirstStock}</Button>
+                          </div>
+                        ) : (
+                          <div className="onboarding-stock-list">
+                            {initialStocks.map((stock, index) => (
+                              <div className="onboarding-stock-row" key={stock.id}>
+                                <div className="onboarding-stock-row-heading">
+                                  <span className="onboarding-stock-row-number">{String(index + 1).padStart(2, "0")}</span>
+                                  <span>{interpolate(copy.portfolio.stockItem, { number: String(index + 1) })}</span>
+                                  <Button type="button" variant="ghost" size="icon" className="onboarding-stock-remove" onClick={() => removeInitialStock(stock.id)} aria-label={copy.portfolio.removeStock}>
+                                    <Trash2 size={15} aria-hidden="true" />
+                                  </Button>
+                                </div>
+                                <FieldGroup className="onboarding-stock-row-fields">
+                                  <Field>
+                                    <FieldLabel htmlFor={`onboarding-stock-code-${stock.id}`}>{copy.portfolio.stockCode}</FieldLabel>
+                                    <Input id={`onboarding-stock-code-${stock.id}`} value={stock.securityCode} placeholder={copy.portfolio.stockCodePlaceholder} onChange={(event) => updateInitialStock(stock.id, { securityCode: event.target.value })} inputMode="numeric" maxLength={6} autoComplete="off" />
+                                  </Field>
+                                  <Field>
+                                    <FieldLabel htmlFor={`onboarding-stock-exchange-${stock.id}`}>{copy.portfolio.exchangeCode}</FieldLabel>
+                                    <Select value={stock.exchangeCode} onValueChange={(value) => { if (value) updateInitialStock(stock.id, { exchangeCode: value }) }}>
+                                      <SelectTrigger id={`onboarding-stock-exchange-${stock.id}`}>
+                                        <SelectValue>{exchangeDisplayName(stock.exchangeCode, copy.portfolio.exchangeOptions)}</SelectValue>
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectGroup>
+                                          <SelectItem value={aShareExchangeCodes.sse}>{copy.portfolio.exchangeOptions.SSE}</SelectItem>
+                                          <SelectItem value={aShareExchangeCodes.szse}>{copy.portfolio.exchangeOptions.SZSE}</SelectItem>
+                                          <SelectItem value={aShareExchangeCodes.bse}>{copy.portfolio.exchangeOptions.BSE}</SelectItem>
+                                        </SelectGroup>
+                                      </SelectContent>
+                                    </Select>
+                                  </Field>
+                                  <Field>
+                                    <FieldLabel htmlFor={`onboarding-stock-held-${stock.id}`}>{copy.portfolio.heldShares}</FieldLabel>
+                                    <NumberInput id={`onboarding-stock-held-${stock.id}`} min="0" step="1" value={stock.heldShares} onChange={(event) => updateInitialStock(stock.id, { heldShares: event.target.value })} placeholder={copy.portfolio.sharesPlaceholder} />
+                                  </Field>
+                                </FieldGroup>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </section>
+                    </FieldGroup>}
 
                     {activeStep.key === "stockData" && <Field>
                       <FieldLabel htmlFor="onboarding-ftshare-key">{copy.stock.keyLabel}</FieldLabel>

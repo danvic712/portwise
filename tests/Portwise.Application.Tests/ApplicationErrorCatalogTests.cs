@@ -26,8 +26,8 @@ public sealed class ApplicationErrorCatalogTests
         Assert.Equal("zh-CN", localized.CultureName);
         Assert.Equal("initialization_already_completed", localized.ErrorCode);
         Assert.Equal(409, localized.StatusCode);
-        Assert.Equal("系统已经完成初始化", localized.Title);
-        Assert.Contains("不能重复保存首次配置", localized.Detail);
+        Assert.Equal("已经设置完成", localized.Title);
+        Assert.Contains("工作区已经设置好了", localized.Detail);
     }
 
     [Fact]
@@ -39,8 +39,8 @@ public sealed class ApplicationErrorCatalogTests
 
         Assert.Contains("en-US", catalog.SupportedCultureNames);
         Assert.Equal("en-US", localized.CultureName);
-        Assert.Equal("Initialization already completed", localized.Title);
-        Assert.Contains("cannot save the first-run configuration again", localized.Detail);
+        Assert.Equal("You are all set", localized.Title);
+        Assert.Contains("already set up", localized.Detail);
     }
 
     [Fact]

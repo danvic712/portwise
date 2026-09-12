@@ -25,10 +25,10 @@ public sealed class InitializationController(
         => Ok(await initializationAppService.GetAsync(cancellationToken));
 
     /// <summary>
-    /// Atomically saves the first-run preferences and optional provider bindings.
+    /// Atomically saves the first-run preferences, portfolio, optional initial stocks, and provider bindings.
     /// </summary>
     /// <param name="cancellationToken">Token used to cancel the request.</param>
-    /// <param name="request">The preferences, portfolio, and optional provider configuration.</param>
+    /// <param name="request">The preferences, portfolio, optional initial stocks, and provider configuration.</param>
     [HttpPost("complete")]
     [ProducesResponseType<CompleteInitializationResponse>(StatusCodes.Status200OK)]
     public async Task<ActionResult<CompleteInitializationResponse>> Complete(

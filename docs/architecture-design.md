@@ -111,7 +111,8 @@ src/
 │   ├── ApplicationServiceCollectionExtensions.cs
 │   ├── Initialization/                 # Initialization module：readiness 与 onboarding 事务
 │   │   ├── Contracts/IInitializationAppService.cs
-│   │   ├── Dtos/{ApplicationPreferenceDto,CapabilityLimitationDto,Complete*Dto,InitializationStatusResponse}.cs
+│   │   ├── Dtos/{ApplicationPreferenceDto,CapabilityLimitationDto,Complete*Dto,Initial*Request,InitializationStatusResponse}.cs
+│   │   ├── Validators/InitialStockRequestValidator.cs
 │   │   └── InitializationAppService.cs
 │   ├── Preferences/                    # PostgreSQL 中的系统语言与主题偏好
 │   ├── StockDataProviders/             # Provider 实例、密钥状态、验证和四类能力 Route
@@ -434,6 +435,7 @@ IInitializationAppService
         │
         ▼
 InitializationAppService
+        ├── FluentValidation 校验首批股票输入
         ├── 校验偏好、组合名、Provider/Route 形状
         ├── IUow.Get<TEntity>() 添加偏好、唯一组合和可选配置
         ├── Data Protection 保护用户提交的 key（不进入响应）
@@ -442,9 +444,9 @@ InitializationAppService
         └── IUow.CommitAsync() 一次数据库事务提交
 ```
 
-Initialization 不执行外部连接验证，也不创建股票、关注列表或期初持仓；外部网络故障不会阻止保存或进入系统。股票资料由独立的 Stocks 页面维护，Provider 的显式连接验证由 Stock Data Providers 和 Inference module 提供。
+Initialization 不执行外部连接验证；外部网络故障不会阻止保存或进入系统。Onboarding 的投资组合步骤可以同时保存多只股票，每只股票只需要股票代码、交易所和当前持股数，并与偏好、组合、Provider/Route、初始化状态一起提交；未填写股票时仍然可以完成基础设置。已登记股票的资料由独立的 Stocks 页面查看和同步，后续独立股票录入入口由该 module 继续扩展；Provider 的显式连接验证由 Stock Data Providers 和 Inference module 提供。
 
-Onboarding Web 按原型实现为四步渐进式工作区向导：基础偏好、投资组合、股票数据提供方和 AI 推理。首屏只展开语言与主题，后续步骤在同一 draft 中保留输入并在最后一次提交时调用上述 Initialization 事务；股票数据与 AI 步骤标记为可选，完成前检查持续显示每项状态。初始化页沿用共享 Header 的品牌与偏好控件，但隐藏业务中央导航，避免首次进入时出现与向导无关的菜单。
+Onboarding Web 按原型实现为四步渐进式工作区向导：基础偏好、投资组合、股票数据提供方和 AI 推理。首屏只展开语言与主题，投资组合步骤负责组合名称，并可选添加多只股票；每只股票填写代码、交易所和当前持股数，列表可以随时增删。后续步骤在同一 draft 中保留输入并在最后一次提交时调用上述 Initialization 事务。股票数据与 AI 步骤标记为可选，完成前检查持续显示每项状态。初始化页沿用共享 Header 的品牌与偏好控件，但隐藏业务中央导航，避免首次进入时出现与向导无关的菜单。
 
 ### 8.1 Controller 与请求验证
 
@@ -454,7 +456,9 @@ FluentValidation 负责请求形状、字段范围、跨字段关系和集合重
 
 ### 8.2 Watchlist 查询
 
-`GET /api/v1/stocks` 通过 `IStockWatchlistAppService` 返回已配置的 A 股股票，按股票代码和交易所稳定排序；如果存在对应的 `PortfolioPosition`，响应同时包含当前持股、核心仓、目标股数和平均成本，否则 `holding` 为 `null`。Controller 不直接查询 `Security` 或 `PortfolioPosition`，股票资料和持仓摘要由 Application 用例统一组装。
+`CompleteInitializationRequest.initialStocks` 是 onboarding 投资组合步骤的可选股票列表。Application 逐项校验 A 股代码、交易所和当前持股数，并拒绝同一组合中的重复股票，再在同一 `IUow` 中创建 `Security` 与 `PortfolioPosition`；股票身份使用 UUID v7，名称保持为空，等待后续资料同步补全。当前持股数同时作为初始核心股数和目标股数，平均成本在用户尚未提供成本信息时初始化为 0。未填写 `initialStocks` 时只创建组合，不产生股票或持仓记录。
+
+`GET /api/v1/stocks` 通过 `IStockWatchlistAppService` 返回已配置的 A 股股票，按股票代码和交易所稳定排序；如果存在对应的 `PortfolioPosition`，响应同时包含当前持股、核心仓、目标股数和平均成本，否则 `holding` 为 `null`。Controller 不直接查询 `Security` 或 `PortfolioPosition`，股票资料和持仓摘要由 Application 用例统一组装。完成 onboarding 后，已登记股票仍在独立的 Stocks 页面查看和同步；独立股票录入入口不属于本次 onboarding 改动范围。
 
 ### 8.3 股票模型参数
 

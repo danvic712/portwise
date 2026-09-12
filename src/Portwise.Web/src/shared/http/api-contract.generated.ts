@@ -388,7 +388,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Atomically saves the first-run preferences and optional provider bindings. */
+        /** Atomically saves the first-run preferences, portfolio, optional initial stocks, and provider bindings. */
         post: {
             parameters: {
                 query?: never;
@@ -396,7 +396,7 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            /** @description The preferences, portfolio, and optional provider configuration. */
+            /** @description The preferences, portfolio, optional initial stocks, and provider configuration. */
             requestBody: {
                 content: {
                     "application/json": components["schemas"]["CompleteInitializationRequest"];
@@ -1300,15 +1300,24 @@ export interface components {
             providerName: null | string;
             modelName: null | string;
         };
-        /** @description Supplies preferences, the unique portfolio, and optional external capabilities. */
+        /** @description Supplies preferences, the unique portfolio, its optional initial stocks, and external capabilities. */
         CompleteInitializationRequest: {
+            /** @description The language selected for the workspace. */
             languageCode: string;
+            /** @description The display theme selected for the workspace. */
             themeCode: string;
+            /** @description The name of the initial portfolio. */
             portfolioName: string;
+            /** @description Optional stock data provider configurations. */
             stockDataProviders: null | components["schemas"]["CompleteStockDataProviderRequest"][];
+            /** @description Optional stock data capability routes. */
             stockDataRoutes: null | components["schemas"]["CompleteStockDataRouteRequest"][];
+            /** @description Optional inference provider configurations. */
             inferenceProviders: null | components["schemas"]["CompleteInferenceProviderRequest"][];
+            /** @description Optional chat and embedding model routes. */
             inferenceRoutes: null | components["schemas"]["CompleteInferenceRouteRequest"][];
+            /** @description Optional initial stocks saved with the portfolio. */
+            initialStocks?: null | components["schemas"]["InitialStockRequest"][];
         };
         /** @description Returns the persisted readiness and limitation state after onboarding. */
         CompleteInitializationResponse: {
@@ -1411,6 +1420,18 @@ export interface components {
             completedAtUtc: null | string;
             preferences: null | components["schemas"]["ApplicationPreferenceDto"];
             limitations: components["schemas"]["CapabilityLimitationDto"][];
+        };
+        /** @description Describes one stock saved with the portfolio during onboarding. */
+        InitialStockRequest: {
+            /** @description Six-digit A-share security code. */
+            securityCode: string;
+            /** @description Exchange code. */
+            exchangeCode: string;
+            /**
+             * Format: int32
+             * @description Number of shares currently held; use zero when there is no position.
+             */
+            heldShares: number | string;
         };
         /** @description Portfolio-level recommendation and budget allocation result. */
         PortfolioRecommendationResult: {
