@@ -87,6 +87,326 @@
         }
       }
     },
+    "/api/v1/inference/providers": {
+      "get": {
+        "tags": [
+          "Inference"
+        ],
+        "summary": "Returns all configured inference providers.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceProvidersResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceProvidersResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceProvidersResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Inference"
+        ],
+        "summary": "Creates one OpenAI-compatible inference provider.",
+        "requestBody": {
+          "description": "Provider name, Base URL, and explicit API key action.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInferenceProviderRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInferenceProviderRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInferenceProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceProviderDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceProviderDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceProviderDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inference/providers/{providerId}": {
+      "put": {
+        "tags": [
+          "Inference"
+        ],
+        "summary": "Updates one inference provider.",
+        "parameters": [
+          {
+            "name": "providerId",
+            "in": "path",
+            "description": "Inference provider identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Provider values, API key action, and expected revision.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInferenceProviderRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInferenceProviderRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInferenceProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceProviderDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceProviderDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceProviderDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Inference"
+        ],
+        "summary": "Deletes an inference provider that is not bound to a route.",
+        "parameters": [
+          {
+            "name": "providerId",
+            "in": "path",
+            "description": "Inference provider identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "expectedRevision",
+            "in": "query",
+            "description": "Revision last read by the caller.",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/inference/providers/{providerId}/verify": {
+      "post": {
+        "tags": [
+          "Inference"
+        ],
+        "summary": "Verifies every complete route bound to one saved provider.",
+        "parameters": [
+          {
+            "name": "providerId",
+            "in": "path",
+            "description": "Inference provider identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Expected provider revision.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyInferenceProviderRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyInferenceProviderRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyInferenceProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyInferenceProviderResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyInferenceProviderResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyInferenceProviderResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inference/routes": {
+      "get": {
+        "tags": [
+          "Inference"
+        ],
+        "summary": "Returns the Chat and Embedding inference routes.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceRoutesResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceRoutesResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceRoutesResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Inference"
+        ],
+        "summary": "Atomically updates the Chat and Embedding inference routes.",
+        "requestBody": {
+          "description": "Both route bindings and their expected revisions.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInferenceRoutesRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInferenceRoutesRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInferenceRoutesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceRoutesResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceRoutesResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceRoutesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/portfolio/trades": {
       "post": {
         "tags": [
@@ -1204,6 +1524,26 @@
         },
         "description": "Result returned after a cash ledger entry is recorded."
       },
+      "CreateInferenceProviderRequest": {
+        "required": [
+          "name",
+          "baseUrl",
+          "apiKey"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "baseUrl": {
+            "type": "string"
+          },
+          "apiKey": {
+            "$ref": "#/components/schemas/SecretUpdateRequest"
+          }
+        },
+        "description": "Requests creation of one OpenAI-compatible inference provider."
+      },
       "CreateRecommendationSnapshotResult": {
         "required": [
           "modelRunId",
@@ -1268,6 +1608,152 @@
           }
         },
         "description": "Requests creation of one stock data provider instance."
+      },
+      "InferenceProviderDto": {
+        "required": [
+          "id",
+          "name",
+          "providerTypeCode",
+          "baseUrl",
+          "secretState",
+          "runtimeStatusCode",
+          "verificationStateCode",
+          "lastVerifiedAtUtc",
+          "lastVerificationErrorCode",
+          "revision",
+          "updatedAtUtc"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "providerTypeCode": {
+            "type": "string"
+          },
+          "baseUrl": {
+            "type": "string"
+          },
+          "secretState": {
+            "$ref": "#/components/schemas/SecretStateDto"
+          },
+          "runtimeStatusCode": {
+            "type": "string"
+          },
+          "verificationStateCode": {
+            "type": "string"
+          },
+          "lastVerifiedAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "lastVerificationErrorCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "updatedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Describes one inference provider without returning its API key."
+      },
+      "InferenceProvidersResponse": {
+        "required": [
+          "providers"
+        ],
+        "type": "object",
+        "properties": {
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InferenceProviderDto"
+            }
+          }
+        },
+        "description": "Returns all configured inference providers."
+      },
+      "InferenceRouteDto": {
+        "required": [
+          "id",
+          "capabilityCode",
+          "providerId",
+          "modelName",
+          "runtimeStatusCode",
+          "revision",
+          "updatedAtUtc"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "capabilityCode": {
+            "type": "string"
+          },
+          "providerId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "modelName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "runtimeStatusCode": {
+            "type": "string"
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "updatedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Describes one inference capability binding and its effective runtime status."
+      },
+      "InferenceRoutesResponse": {
+        "required": [
+          "routes"
+        ],
+        "type": "object",
+        "properties": {
+          "routes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InferenceRouteDto"
+            }
+          }
+        },
+        "description": "Returns the fixed Chat and Embedding inference routes."
       },
       "InitialHoldingInput": {
         "required": [
@@ -3119,6 +3605,86 @@
         },
         "description": "Configured stock identity with its latest holding snapshot."
       },
+      "UpdateInferenceProviderRequest": {
+        "required": [
+          "name",
+          "baseUrl",
+          "apiKey",
+          "expectedRevision"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "baseUrl": {
+            "type": "string"
+          },
+          "apiKey": {
+            "$ref": "#/components/schemas/SecretUpdateRequest"
+          },
+          "expectedRevision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          }
+        },
+        "description": "Requests an optimistic-concurrency update to one inference provider."
+      },
+      "UpdateInferenceRouteRequest": {
+        "required": [
+          "capabilityCode",
+          "providerId",
+          "modelName",
+          "expectedRevision"
+        ],
+        "type": "object",
+        "properties": {
+          "capabilityCode": {
+            "type": "string"
+          },
+          "providerId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "modelName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "expectedRevision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          }
+        },
+        "description": "Requests one inference route binding update."
+      },
+      "UpdateInferenceRoutesRequest": {
+        "required": [
+          "routes"
+        ],
+        "type": "object",
+        "properties": {
+          "routes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateInferenceRouteRequest"
+            }
+          }
+        },
+        "description": "Requests one atomic update to both inference capability routes."
+      },
       "UpdatePreferencesRequest": {
         "required": [
           "languageCode",
@@ -3216,6 +3782,35 @@
         },
         "description": "Requests one atomic update to all fixed stock data capability routes."
       },
+      "VerifyInferenceProviderRequest": {
+        "required": [
+          "expectedRevision"
+        ],
+        "type": "object",
+        "properties": {
+          "expectedRevision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          }
+        },
+        "description": "Requests connection verification for the last observed provider revision."
+      },
+      "VerifyInferenceProviderResponse": {
+        "required": [
+          "provider"
+        ],
+        "type": "object",
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/InferenceProviderDto"
+          }
+        },
+        "description": "Returns the provider state recorded after a connection verification attempt."
+      },
       "VerifyStockDataProviderRequest": {
         "required": [
           "expectedRevision"
@@ -3250,6 +3845,9 @@
   "tags": [
     {
       "name": "Budgets"
+    },
+    {
+      "name": "Inference"
     },
     {
       "name": "Portfolio"

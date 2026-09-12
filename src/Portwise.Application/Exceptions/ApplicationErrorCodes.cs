@@ -16,6 +16,13 @@ public static class ApplicationErrorCodes
     public const string StockDataProviderInUse = "stock_data_provider_in_use";
     public const string StockDataRouteValidationFailed = "stock_data_route_validation_failed";
     public const string StockDataRouteRevisionConflict = "stock_data_route_revision_conflict";
+    public const string InferenceProviderValidationFailed = "inference_provider_validation_failed";
+    public const string InferenceProviderNameConflict = "inference_provider_name_conflict";
+    public const string InferenceProviderNotFound = "inference_provider_not_found";
+    public const string InferenceProviderRevisionConflict = "inference_provider_revision_conflict";
+    public const string InferenceProviderInUse = "inference_provider_in_use";
+    public const string InferenceRouteValidationFailed = "inference_route_validation_failed";
+    public const string InferenceRouteRevisionConflict = "inference_route_revision_conflict";
     public const string ModelParameterValidationFailed = "model_parameter_validation_failed";
     public const string ModelParameterVersionAlreadyExists = "model_parameter_version_already_exists";
     public const string StockAnalysisValidationFailed = "stock_analysis_validation_failed";
@@ -49,6 +56,13 @@ public static class ApplicationErrorCodes
         StockDataProviderInUse,
         StockDataRouteValidationFailed,
         StockDataRouteRevisionConflict,
+        InferenceProviderValidationFailed,
+        InferenceProviderNameConflict,
+        InferenceProviderNotFound,
+        InferenceProviderRevisionConflict,
+        InferenceProviderInUse,
+        InferenceRouteValidationFailed,
+        InferenceRouteRevisionConflict,
         ModelParameterValidationFailed,
         ModelParameterVersionAlreadyExists,
         StockAnalysisValidationFailed,

@@ -43,29 +43,19 @@ internal static class ConfigurationCodeConverters
             ? capability
             : throw new ArgumentOutOfRangeException(nameof(value), value, null);
 
-    public static string ToCode(InferenceProviderType value) => value switch
-    {
-        InferenceProviderType.OpenAiCompatible => "openai-compatible",
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
+    public static string ToCode(InferenceProviderType value) =>
+        InferenceProviderTypeCodes.From(value);
 
-    public static InferenceProviderType ToInferenceProviderType(string value) => value switch
-    {
-        "openai-compatible" => InferenceProviderType.OpenAiCompatible,
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
+    public static InferenceProviderType ToInferenceProviderType(string value) =>
+        InferenceProviderTypeCodes.TryParse(value, out var providerType)
+            ? providerType
+            : throw new ArgumentOutOfRangeException(nameof(value), value, null);
 
-    public static string ToCode(InferenceCapability value) => value switch
-    {
-        InferenceCapability.Chat => "chat",
-        InferenceCapability.Embedding => "embedding",
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
+    public static string ToCode(InferenceCapability value) =>
+        InferenceCapabilityCodes.From(value);
 
-    public static InferenceCapability ToInferenceCapability(string value) => value switch
-    {
-        "chat" => InferenceCapability.Chat,
-        "embedding" => InferenceCapability.Embedding,
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
+    public static InferenceCapability ToInferenceCapability(string value) =>
+        InferenceCapabilityCodes.TryParse(value, out var capability)
+            ? capability
+            : throw new ArgumentOutOfRangeException(nameof(value), value, null);
 }

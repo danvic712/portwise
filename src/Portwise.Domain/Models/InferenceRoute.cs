@@ -1,4 +1,6 @@
 using Portwise.Domain.Enums;
+using Portwise.Domain.Codes;
+using Portwise.Domain.Exceptions;
 
 namespace Portwise.Domain.Models;
 
@@ -18,4 +20,21 @@ public sealed class InferenceRoute
     public long Revision { get; set; } = 1;
 
     public DateTimeOffset UpdatedAtUtc { get; set; }
+
+    public void Bind(
+        Guid? providerId,
+        string? modelName,
+        DateTimeOffset updatedAtUtc)
+    {
+        if ((providerId is null) != (modelName is null))
+        {
+            throw new DomainRuleViolationException(
+                DomainRuleCodes.InferenceRouteBindingInvalid);
+        }
+
+        ProviderId = providerId;
+        ModelName = modelName?.Trim();
+        Revision = checked(Revision + 1);
+        UpdatedAtUtc = updatedAtUtc.ToUniversalTime();
+    }
 }

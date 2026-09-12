@@ -114,6 +114,7 @@ src/
 │   │   └── SetupAppService.cs
 │   ├── Preferences/                    # PostgreSQL 中的系统语言与主题偏好
 │   ├── StockDataProviders/             # Provider 实例、密钥状态、验证和四类能力 Route
+│   ├── Inference/                      # OpenAI-compatible Provider、密钥和 Chat/Embedding Route
 │   ├── Configuration/                  # 跨配置 module 的密钥保护 contract/DTO
 │   ├── Stocks/                         # Market Data module：股票事实、关注列表和同步
 │   │   ├── Contracts/                   # 股票资料与同步 Interface
@@ -167,6 +168,8 @@ src/
     ├── appsettings.Production.json     # 生产环境配置
     ├── Controllers/                    # 业务 HTTP Controller
     │   ├── SetupController.cs
+    │   ├── StockDataProvidersController.cs
+    │   ├── InferenceController.cs
     │   ├── StocksController.cs
     │   ├── BudgetsController.cs
     │   ├── RecommendationsController.cs
@@ -234,7 +237,7 @@ Application 的业务实现按业务能力归并到 `Setup`、`Preferences`、`S
 
 `Stocks` 同时承载交易日同步编排，因为该编排只围绕关注股票的外部事实更新；交易日同步通过 `IStockFactSyncAppService.SyncAsync` 一次传递单只股票的规范化引用，并消费包含资料、行情、股息、财务结果和逐类失败的 `StockFactSyncResult`。如果未来出现多个互不相关的调度任务，再单独引入 `Operations` 模块。`StockModelParameterAppService` 与单股分析、组合分配、建议快照同属 `Recommendations` module，因为模型参数是建议规则的输入；Portfolio module 只拥有现金流水、交易和持仓不变量。
 
-各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddPortwiseApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddPortwiseInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddPortwiseHost`。Application 根扩展只负责 FluentValidation、跨 module 的本地化/诊断和 `TimeProvider`，再调用各业务 module 的注册扩展，包括 `AddPortwiseStockDataProvidersModule`；每个 module 自己拥有实现到 Interface 的注册清单，新增用例不会把具体类型重新塞回技术桶。Host 另提供 `HostServiceCollectionExtensions.AddPortwise(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库 migration 统一放在 `WebApplicationExtensions`；手动、每日定时和 Setup 后台同步都通过 `StockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器统一串行化执行、run ID、诊断上下文和取消语义，避免不同入口同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
+各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddPortwiseApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddPortwiseInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddPortwiseHost`。Application 根扩展只负责 FluentValidation、跨 module 的本地化/诊断和 `TimeProvider`，再调用各业务 module 的注册扩展，包括 `AddPortwiseStockDataProvidersModule` 与 `AddPortwiseInferenceModule`；每个 module 自己拥有实现到 Interface 的注册清单，新增用例不会把具体类型重新塞回技术桶。Host 另提供 `HostServiceCollectionExtensions.AddPortwise(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库 migration 统一放在 `WebApplicationExtensions`；手动、每日定时和 Setup 后台同步都通过 `StockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器统一串行化执行、run ID、诊断上下文和取消语义，避免不同入口同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
 
 公共基础能力也遵循相同的组合边界：Swagger/Serilog 注册在 `HostServiceCollectionExtensions`，Swagger UI、Serilog HTTP 请求日志中间件和其他 `WebApplication` 行为在 `WebApplicationExtensions`；Mapperly 映射定义由 `StocksMapper`、`PortfolioMapper` 和 `RecommendationsMapper` 分别归属各自 module，由构建期生成实际映射代码。
 
@@ -252,14 +255,14 @@ Application 的业务实现按业务能力归并到 `Setup`、`Preferences`、`S
 ### 5.1 Contracts 归属
 
 - `Domain/Contracts`：跨层需要依赖的通用持久化抽象，包括 `IRepository<TEntity>` 和 `IUow`。
-- `Application/{Setup,Stocks,Portfolio,Recommendations}/Contracts`：各 module 的用例和外部资料 Interface；只有错误、本地化和诊断等跨 module Interface 位于 `Application/Contracts`。
+- `Application/{Setup,Preferences,StockDataProviders,Inference,Stocks,Portfolio,Recommendations}/Contracts`：各 module 的用例和外部资料 Interface；只有错误、本地化和诊断等跨 module Interface 位于 `Application/Contracts`。
 - `Infrastructure/Contracts`：Infrastructure 内部 Adapter 的可替换抽象，包括 `IFtShareMcpToolInvoker`。
 
 Application 不认识 EF Core、PostgreSQL、HTTP 或 MCP SDK。Host 只依赖 Application 的 AppService Interface 和 Infrastructure 的组合注册扩展，不直接使用数据访问实现。
 
 ### 5.2 DTO
 
-Application 的 DTO 按所属 module 放在 `Application/{Setup,Stocks,Portfolio,Recommendations}/Dtos/`，用于 Controller 与用例之间的输入输出，以及外部资料 Adapter 规范化后的结果；`Application/Dtos/` 只保留跨 module 的共享 DTO。DTO 不承担数据库实体职责，也不包含 Repository、DbContext 或 MCP 客户端。
+Application 的 DTO 按所属 module 放在 `Application/{Setup,Preferences,StockDataProviders,Inference,Stocks,Portfolio,Recommendations}/Dtos/`，用于 Controller 与用例之间的输入输出，以及外部资料 Adapter 规范化后的结果；`Application/Dtos/` 只保留跨 module 的共享 DTO。DTO 不承担数据库实体职责，也不包含 Repository、DbContext 或 MCP 客户端。
 
 一个 DTO 文件只能包含一个 DTO 类型，文件名必须与类型名一致。
 
@@ -701,3 +704,4 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 | 03 托管 FTShare HTTP transport | 已完成，后续由数据库配置管理演进：继续使用命名 `IHttpClientFactory` client 管理连接池和 handler 生命周期；调用级 deadline、有限指数退避和完整 MCP exchange 重试由 invoker 按当前数据库 settings 执行，`FtShareResponseStreamHandler` 继续分类响应流中断，业务错误不重试 | Infrastructure 定向测试、完整 `dotnet test`、`git diff --check`；2026-09-12 配置管理提交同步更新 |
 | 04 深化 FTShare payload 解析 | 已完成：将 800+ 行 `JsonElement` tree walk 拆为 source-generated wire models、统一 envelope reader 和单一 normalizer；保留原有兼容别名、字符串化 JSON、数字/日期/布尔值兼容与身份校验，Application 仍只接收规范化 DTO；增加 profile、market、dividend、financial 四类 fixture 测试 | Infrastructure 定向测试、编译、`git diff --check`；本次提交 |
 | 05 删除 XML→OpenAPI transformer | 已完成：删除手写 reflection/XML cache transformer；保留 `Asp.Versioning.OpenApi` 的版本化文档服务，并通过 direct literal `AddOpenApi()` 激活 ASP.NET Core 原生 XML comment source generation，自动合并 ProjectReference 文档；构建期 contract 检查覆盖 operation、parameter、request body、response 和 schema 描述 | `dotnet build`、OpenAPI 文档检查、`pnpm api:check`、全量 `dotnet test`、`git diff --check`；本次提交 |
+| 07 Provider-first Inference configuration | 已完成：新增 OpenAI-compatible Provider/Chat-Embedding Route 管理 module，Provider API key 使用独立 Data Protection purpose；验证器根据已绑定 Route 发送最小 Chat/Embedding 请求，模型或连接字段变更重置 verification，被 Route 引用的 Provider 拒绝删除 | `dotnet build`、全量 `dotnet test`（197 tests）、`pnpm api:check`、前端 typecheck/lint/test/build、pending-model-changes；2026-09-12 配置管理提交同步更新 |

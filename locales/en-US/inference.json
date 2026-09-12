@@ -1,0 +1,37 @@
+{
+  "inference_provider_validation_failed": {
+    "status_code": 400,
+    "title": "The inference provider is invalid",
+    "detail": "Review the provider name, base URL, and API key action, then try again."
+  },
+  "inference_provider_name_conflict": {
+    "status_code": 409,
+    "title": "This inference provider name is already in use",
+    "detail": "Choose a different provider name and try again."
+  },
+  "inference_provider_not_found": {
+    "status_code": 404,
+    "title": "The inference provider was not found",
+    "detail": "Refresh the settings page and try again."
+  },
+  "inference_provider_revision_conflict": {
+    "status_code": 409,
+    "title": "The inference provider changed",
+    "detail": "Refresh the settings page and apply your changes again."
+  },
+  "inference_provider_in_use": {
+    "status_code": 409,
+    "title": "The inference provider is still in use",
+    "detail": "Rebind or clear every inference route that uses this provider before deleting it."
+  },
+  "inference_route_validation_failed": {
+    "status_code": 400,
+    "title": "The inference routes are invalid",
+    "detail": "Submit Chat and Embedding once each, and bind a provider and model together."
+  },
+  "inference_route_revision_conflict": {
+    "status_code": 409,
+    "title": "The inference routes changed",
+    "detail": "Refresh the settings page and apply the route changes again."
+  }
+}

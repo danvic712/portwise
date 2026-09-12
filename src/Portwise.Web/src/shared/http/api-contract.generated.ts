@@ -87,6 +87,260 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/inference/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns all configured inference providers. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InferenceProvidersResponse"];
+                        "application/json": components["schemas"]["InferenceProvidersResponse"];
+                        "text/json": components["schemas"]["InferenceProvidersResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Creates one OpenAI-compatible inference provider. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Provider name, Base URL, and explicit API key action. */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateInferenceProviderRequest"];
+                    "text/json": components["schemas"]["CreateInferenceProviderRequest"];
+                    "application/*+json": components["schemas"]["CreateInferenceProviderRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InferenceProviderDto"];
+                        "application/json": components["schemas"]["InferenceProviderDto"];
+                        "text/json": components["schemas"]["InferenceProviderDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inference/providers/{providerId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Updates one inference provider. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Inference provider identifier. */
+                    providerId: string;
+                };
+                cookie?: never;
+            };
+            /** @description Provider values, API key action, and expected revision. */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateInferenceProviderRequest"];
+                    "text/json": components["schemas"]["UpdateInferenceProviderRequest"];
+                    "application/*+json": components["schemas"]["UpdateInferenceProviderRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InferenceProviderDto"];
+                        "application/json": components["schemas"]["InferenceProviderDto"];
+                        "text/json": components["schemas"]["InferenceProviderDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Deletes an inference provider that is not bound to a route. */
+        delete: {
+            parameters: {
+                query?: {
+                    /** @description Revision last read by the caller. */
+                    expectedRevision?: number | string;
+                };
+                header?: never;
+                path: {
+                    /** @description Inference provider identifier. */
+                    providerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inference/providers/{providerId}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verifies every complete route bound to one saved provider. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Inference provider identifier. */
+                    providerId: string;
+                };
+                cookie?: never;
+            };
+            /** @description Expected provider revision. */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["VerifyInferenceProviderRequest"];
+                    "text/json": components["schemas"]["VerifyInferenceProviderRequest"];
+                    "application/*+json": components["schemas"]["VerifyInferenceProviderRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["VerifyInferenceProviderResponse"];
+                        "application/json": components["schemas"]["VerifyInferenceProviderResponse"];
+                        "text/json": components["schemas"]["VerifyInferenceProviderResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inference/routes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns the Chat and Embedding inference routes. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InferenceRoutesResponse"];
+                        "application/json": components["schemas"]["InferenceRoutesResponse"];
+                        "text/json": components["schemas"]["InferenceRoutesResponse"];
+                    };
+                };
+            };
+        };
+        /** Atomically updates the Chat and Embedding inference routes. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Both route bindings and their expected revisions. */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateInferenceRoutesRequest"];
+                    "text/json": components["schemas"]["UpdateInferenceRoutesRequest"];
+                    "application/*+json": components["schemas"]["UpdateInferenceRoutesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InferenceRoutesResponse"];
+                        "application/json": components["schemas"]["InferenceRoutesResponse"];
+                        "text/json": components["schemas"]["InferenceRoutesResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/portfolio/trades": {
         parameters: {
             query?: never;
@@ -1020,6 +1274,12 @@ export interface components {
             /** @description Optional source-system record identifier. */
             sourceRecordId: null | string;
         };
+        /** @description Requests creation of one OpenAI-compatible inference provider. */
+        CreateInferenceProviderRequest: {
+            name: string;
+            baseUrl: string;
+            apiKey: components["schemas"]["SecretUpdateRequest"];
+        };
         /** @description Result of persisting a portfolio recommendation snapshot. */
         CreateRecommendationSnapshotResult: {
             /**
@@ -1051,6 +1311,46 @@ export interface components {
             providerDefinitionId: string;
             name: string;
             credentials: components["schemas"]["SecretUpdateRequest"];
+        };
+        /** @description Describes one inference provider without returning its API key. */
+        InferenceProviderDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            providerTypeCode: string;
+            baseUrl: string;
+            secretState: components["schemas"]["SecretStateDto"];
+            runtimeStatusCode: string;
+            verificationStateCode: string;
+            /** Format: date-time */
+            lastVerifiedAtUtc: null | string;
+            lastVerificationErrorCode: null | string;
+            /** Format: int64 */
+            revision: number | string;
+            /** Format: date-time */
+            updatedAtUtc: string;
+        };
+        /** @description Returns all configured inference providers. */
+        InferenceProvidersResponse: {
+            providers: components["schemas"]["InferenceProviderDto"][];
+        };
+        /** @description Describes one inference capability binding and its effective runtime status. */
+        InferenceRouteDto: {
+            /** Format: uuid */
+            id: string;
+            capabilityCode: string;
+            /** Format: uuid */
+            providerId: null | string;
+            modelName: null | string;
+            runtimeStatusCode: string;
+            /** Format: int64 */
+            revision: number | string;
+            /** Format: date-time */
+            updatedAtUtc: string;
+        };
+        /** @description Returns the fixed Chat and Embedding inference routes. */
+        InferenceRoutesResponse: {
+            routes: components["schemas"]["InferenceRouteDto"][];
         };
         /** @description Optional initial holding values supplied during setup. */
         InitialHoldingInput: {
@@ -1891,6 +2191,27 @@ export interface components {
              */
             securityId?: string;
         };
+        /** @description Requests an optimistic-concurrency update to one inference provider. */
+        UpdateInferenceProviderRequest: {
+            name: string;
+            baseUrl: string;
+            apiKey: components["schemas"]["SecretUpdateRequest"];
+            /** Format: int64 */
+            expectedRevision: number | string;
+        };
+        /** @description Requests one inference route binding update. */
+        UpdateInferenceRouteRequest: {
+            capabilityCode: string;
+            /** Format: uuid */
+            providerId: null | string;
+            modelName: null | string;
+            /** Format: int64 */
+            expectedRevision: number | string;
+        };
+        /** @description Requests one atomic update to both inference capability routes. */
+        UpdateInferenceRoutesRequest: {
+            routes: components["schemas"]["UpdateInferenceRouteRequest"][];
+        };
         /** @description Requests an optimistic-concurrency update to application preferences. */
         UpdatePreferencesRequest: {
             /** @description Stable application language code. */
@@ -1921,6 +2242,15 @@ export interface components {
         /** @description Requests one atomic update to all fixed stock data capability routes. */
         UpdateStockDataRoutesRequest: {
             routes: components["schemas"]["UpdateStockDataRouteRequest"][];
+        };
+        /** @description Requests connection verification for the last observed provider revision. */
+        VerifyInferenceProviderRequest: {
+            /** Format: int64 */
+            expectedRevision: number | string;
+        };
+        /** @description Returns the provider state recorded after a connection verification attempt. */
+        VerifyInferenceProviderResponse: {
+            provider: components["schemas"]["InferenceProviderDto"];
         };
         /** @description Requests connection verification for the last observed provider revision. */
         VerifyStockDataProviderRequest: {

@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Portwise.Infrastructure.StockDataProviders.Runtime;
+using Portwise.Application.Inference.Contracts;
+using Portwise.Infrastructure.Inference;
 
 namespace Portwise.Infrastructure;
 
@@ -40,6 +42,13 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IStockDataProviderConnectionVerifier>(serviceProvider =>
             serviceProvider.GetRequiredService<StockDataProviderRuntimeResolver>());
         services.AddScoped<IStockDataProvider, DatabaseRoutedStockDataProvider>();
+
+        services.AddHttpClient(
+            OpenAiCompatibleInferenceProviderConnectionVerifier.HttpClientName,
+            client => client.Timeout = Timeout.InfiniteTimeSpan);
+        services.AddScoped<
+            IInferenceProviderConnectionVerifier,
+            OpenAiCompatibleInferenceProviderConnectionVerifier>();
 
         return services;
     }
