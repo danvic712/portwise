@@ -1,4 +1,25 @@
 {
+  "ui": {
+    "eyebrow": "设置 / 股票数据",
+    "title": "选择股票资料的来源。",
+    "description": "按资料、行情、股息和财务分别绑定 Provider；未来可以加入同花顺等新的来源。",
+    "providerTitle": "Provider 实例",
+    "nameLabel": "显示名称",
+    "namePlaceholder": "例如：FTShare",
+    "keyLabel": "访问 key",
+    "keyPlaceholder": "输入后加密保存",
+    "save": "保存 Provider",
+    "verify": "验证连接",
+    "routesTitle": "能力路由",
+    "routeHint": "未绑定的能力会显示为未配置，不影响进入系统。",
+    "unconfigured": "未配置",
+    "configuredUnverified": "已配置未验证",
+    "recentlyVerified": "最近验证成功",
+    "currentlyUnavailable": "当前不可用",
+    "saved": "股票数据 Provider 已保存。",
+    "verified": "连接验证已完成。",
+    "error": "股票数据设置暂时无法读取或保存。"
+  },
   "stock_data_provider_validation_failed": {
     "status_code": 400,
     "title": "股票数据提供方配置无效",

@@ -56,7 +56,7 @@ const numericKeys = new Set<NumericKey>(parameterGroups.flatMap(({ fields }) => 
 const ratioKeys = new Set<NumericKey>(ratioFields.map(({ key }) => key))
 const skeletonGroups = parameterGroups.map(({ key, fields }) => ({ key, fieldCount: fields.length }))
 
-export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { onNavigate: (path: string) => void; onReplaceQuery: (patch: QueryPatch) => void; initialStockKey: string }) {
+export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey, currentPath = "/strategy" }: { onNavigate: (path: string) => void; onReplaceQuery: (patch: QueryPatch) => void; initialStockKey: string; currentPath?: string }) {
   const { messages } = useLocale()
   const copy = messages.settings.ui
   const readErrorRef = useRef(copy.states.readError)
@@ -201,21 +201,21 @@ export function SettingsPage({ onNavigate, onReplaceQuery, initialStockKey }: { 
   }
 
   if (loading) {
-    return <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="pending" contentClassName="settings-page-wrap"><SettingsPageSkeleton label={copy.states.loading} groups={skeletonGroups} /></PageFrame>
+    return <PageFrame currentPath={currentPath} onNavigate={onNavigate} dataState="pending" contentClassName="settings-page-wrap"><SettingsPageSkeleton label={copy.states.loading} groups={skeletonGroups} /></PageFrame>
   }
 
   if (error && !stocks.length) {
-    return <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="unknown" contentClassName="settings-page-wrap"><ErrorState message={error} onRetry={() => void loadStocks()} /></PageFrame>
+    return <PageFrame currentPath={currentPath} onNavigate={onNavigate} dataState="unknown" contentClassName="settings-page-wrap"><ErrorState message={error} onRetry={() => void loadStocks()} /></PageFrame>
   }
 
   if (!stocks.length) {
-    return <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="unknown" contentClassName="settings-page-wrap"><EmptyState title={copy.states.emptyTitle} description={copy.states.emptyDescription} action={<Button onClick={() => onNavigate("/setup")}>{copy.actions.goSetup}</Button>} /></PageFrame>
+    return <PageFrame currentPath={currentPath} onNavigate={onNavigate} dataState="unknown" contentClassName="settings-page-wrap"><EmptyState title={copy.states.emptyTitle} description={copy.states.emptyDescription} action={<Button onClick={() => onNavigate("/onboarding")}>{copy.actions.goSetup}</Button>} /></PageFrame>
   }
 
   const stockLabel = selectedStock ? `${displayStockName(selectedStock, messages.stocks.ui.identity.pendingName)} · ${selectedStock.securityCode}` : copy.form.stockFallback
 
   return (
-    <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="unknown" contentClassName="settings-page-wrap">
+    <PageFrame currentPath={currentPath} onNavigate={onNavigate} dataState="unknown" contentClassName="settings-page-wrap">
       <PageTitle
         eyebrow={copy.page.eyebrow}
         title={copy.page.title}

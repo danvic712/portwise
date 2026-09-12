@@ -1,5 +1,23 @@
 {
   "ui": {
+    "overview": {
+      "pageTitle": "Portwise · 系统设置",
+      "eyebrow": "设置 / 系统",
+      "title": "把工作台调成你的样子。",
+      "description": "管理系统偏好、股票数据提供方和 AI 能力。未配置的能力会明确显示为受限，不会影响其他页面进入。",
+      "preferencesTitle": "显示与语言",
+      "preferencesDescription": "语言和主题保存在 PostgreSQL，并在浏览器间同步。",
+      "stockTitle": "股票数据提供方",
+      "stockDescription": "管理 FTShare 与未来的数据来源、路由和连接验证。",
+      "inferenceTitle": "AI Provider",
+      "inferenceDescription": "分别设置 Chat 与 Embedding 使用的 Provider 和模型。",
+      "open": "打开设置",
+      "saved": "系统设置已保存",
+      "statusUnconfigured": "未配置",
+      "statusConfigured": "已配置",
+      "statusUnavailable": "当前不可用",
+      "capabilities": { "profile": "股票资料", "market": "行情", "dividend": "股息", "financial": "财务", "chat": "Chat", "embedding": "Embedding" }
+    },
     "page": {
       "eyebrow": "设置 / 每只股票",
       "title": "把每只股票的边界写清楚。",

@@ -1,19 +1,25 @@
-import { createContext, createElement, useContext, useMemo, useState, type ReactNode } from "react"
+import { createContext, createElement, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
 
 import enCommon from "../../../../../locales/en-US/common.json"
 import enBudget from "../../../../../locales/en-US/budget.json"
 import enDividendStrategy from "../../../../../locales/en-US/dividend-strategy.json"
 import enPortfolio from "../../../../../locales/en-US/portfolio.json"
 import enSetup from "../../../../../locales/en-US/setup.json"
+import enOnboarding from "../../../../../locales/en-US/initialization.json"
 import enStocks from "../../../../../locales/en-US/stocks.json"
 import enSettings from "../../../../../locales/en-US/settings.json"
+import enStockDataProviders from "../../../../../locales/en-US/stock-data-providers.json"
+import enInference from "../../../../../locales/en-US/inference.json"
 import zhCommon from "../../../../../locales/zh-CN/common.json"
 import zhBudget from "../../../../../locales/zh-CN/budget.json"
 import zhDividendStrategy from "../../../../../locales/zh-CN/dividend-strategy.json"
 import zhPortfolio from "../../../../../locales/zh-CN/portfolio.json"
 import zhSetup from "../../../../../locales/zh-CN/setup.json"
+import zhOnboarding from "../../../../../locales/zh-CN/initialization.json"
 import zhStocks from "../../../../../locales/zh-CN/stocks.json"
 import zhSettings from "../../../../../locales/zh-CN/settings.json"
+import zhStockDataProviders from "../../../../../locales/zh-CN/stock-data-providers.json"
+import zhInference from "../../../../../locales/zh-CN/inference.json"
 
 export type Locale = "zh-CN" | "en-US"
 
@@ -31,11 +37,20 @@ type LocaleMessages = {
   setup: {
     ui: typeof zhSetup.ui
   }
+  onboarding: {
+    ui: typeof zhOnboarding.ui
+  }
   stocks: {
     ui: typeof zhStocks.ui
   }
   settings: {
     ui: typeof zhSettings.ui
+  }
+  stockDataProviders: {
+    ui: typeof zhStockDataProviders.ui
+  }
+  inference: {
+    ui: typeof zhInference.ui
   }
 }
 
@@ -46,8 +61,11 @@ const catalogs: Record<Locale, LocaleMessages> = {
     dividendStrategy: { ui: zhDividendStrategy.ui },
     portfolio: { ui: zhPortfolio.ui },
     setup: { ui: zhSetup.ui },
+    onboarding: { ui: zhOnboarding.ui },
     stocks: { ui: zhStocks.ui },
     settings: { ui: zhSettings.ui },
+    stockDataProviders: { ui: zhStockDataProviders.ui },
+    inference: { ui: zhInference.ui },
   },
   "en-US": {
     common: enCommon,
@@ -55,8 +73,11 @@ const catalogs: Record<Locale, LocaleMessages> = {
     dividendStrategy: { ui: enDividendStrategy.ui },
     portfolio: { ui: enPortfolio.ui },
     setup: { ui: enSetup.ui },
+    onboarding: { ui: enOnboarding.ui },
     stocks: { ui: enStocks.ui },
     settings: { ui: enSettings.ui },
+    stockDataProviders: { ui: enStockDataProviders.ui },
+    inference: { ui: enInference.ui },
   },
 }
 
@@ -83,12 +104,12 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(getInitialLocale)
   const messages = catalogs[locale]
 
-  function setLocale(nextLocale: Locale) {
+  const setLocale = useCallback((nextLocale: Locale) => {
     window.localStorage.setItem("portwise-locale", nextLocale)
     setLocaleState(nextLocale)
-  }
+  }, [])
 
-  const value = useMemo(() => ({ locale, messages, setLocale }), [locale, messages])
+  const value = useMemo(() => ({ locale, messages, setLocale }), [locale, messages, setLocale])
 
   return createElement(LocaleContext.Provider, { value }, children)
 }

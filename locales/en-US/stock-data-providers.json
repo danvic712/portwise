@@ -1,4 +1,25 @@
 {
+  "ui": {
+    "eyebrow": "SETTINGS / STOCK DATA",
+    "title": "Choose where stock facts come from.",
+    "description": "Bind profile, market, dividend, and financial capabilities independently; future sources such as Tonghuashun can join the same seam.",
+    "providerTitle": "Provider instance",
+    "nameLabel": "Display name",
+    "namePlaceholder": "For example: FTShare",
+    "keyLabel": "Access key",
+    "keyPlaceholder": "Protected after saving",
+    "save": "Save provider",
+    "verify": "Verify connection",
+    "routesTitle": "Capability routes",
+    "routeHint": "Unbound capabilities are marked unconfigured and never block entry.",
+    "unconfigured": "Unconfigured",
+    "configuredUnverified": "Configured, not verified",
+    "recentlyVerified": "Recently verified",
+    "currentlyUnavailable": "Currently unavailable",
+    "saved": "Stock data provider saved.",
+    "verified": "Connection verification completed.",
+    "error": "Stock data settings could not be loaded or saved."
+  },
   "stock_data_provider_validation_failed": {
     "status_code": 400,
     "title": "The stock data provider is invalid",

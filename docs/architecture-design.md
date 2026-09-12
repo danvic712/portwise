@@ -212,8 +212,9 @@ src/
     │   ├── budget/                     # 业务 module 直接位于 src 下
     │   ├── portfolio/
     │   ├── recommendations/
-    │   ├── settings/
-    │   ├── setup/
+    │   ├── onboarding/                  # 首次初始化与一次性配置
+    │   ├── settings/                    # 系统设置与 Provider 管理
+    │   ├── strategy/                    # 单股策略参数
     │   ├── stocks/
     │   └── shared/                     # 稳定的跨业务非视觉能力
     │       ├── display/
@@ -234,11 +235,15 @@ src/
 
 前端命名约定：React 组件及 Provider/Context 模块使用 PascalCase，Hook 文件名与 hook 标识符保持一致的 camelCase（例如 `useLatestRequest.ts`）；API、工具、测试和 CSS 文件保留 lower-case、dotted 或 kebab-case，生成文件不手工改名。
 
+当前前端入口已经按新边界命名为 `onboarding`、`settings` 和 `strategy`；`/onboarding` 负责一次性初始化，`/settings` 负责系统偏好与 Provider 管理，`/strategy` 负责单股策略参数。
+
 Application 的业务实现按业务能力归并到 `Setup`、`Preferences`、`StockDataProviders`、`Stocks`、`Portfolio` 和 `Recommendations` module。每个 module 共置自己拥有的 Interface、DTO、Validator、实现和测试；因此修改一个用例时，主要知识和验证都集中在同一目录。module 内的 public type 使用对应的 `Portwise.Application.<Module>.(Contracts|Dtos|Validators)` namespace，`ModuleNamespaceArchitectureTests` 会阻止新的类型泄漏回技术桶。`Contracts`、`Dtos` 和 `Validators` 根目录只保留真正跨 module 的错误、本地化、诊断、共享持仓 DTO 和通用 A 股规则；`Configuration` 只承载多个配置 module 共用的密钥保护抽象与 secret DTO。目录归并不等于合并 HTTP 契约：价格、股息和财务同步仍然保持独立的 Interface 与 AppService，因为它们具有不同的数据校验、幂等键和结果类型；资料、行情、股息和财务四类事实的共同摄取、Security 解析、运行时 Provider 调用、幂等写入和逐类失败策略由 `IStockFactSyncAppService` / `StockFactSyncAppService` 这个深模块承载，三个 HTTP AppService 只是验证后转发。单股分析、组合分配和建议快照也保持独立的用例边界。前端采用同样的业务边界，但不再增加 `features/` 包装层；每个业务 module 直接位于 `src/`，并只通过版本化 HTTP API 访问后端，不直接引用 Application 或 Infrastructure。
 
 前端公共页面框架由 `components/layout/` 下的 `Header`、`Footer`、`PageFrame`、`PageTitle`、`SectionHeading` 和 `app/routing/site-navigation.ts` 组成；`app/ApplicationShell.tsx` 是负责 Setup gate、路由选择和业务 module 懒加载的应用编排 module，不是公共视觉组件。所有页面通过 `PageFrame` 复用框架，页面专属状态与布局留在对应业务 module。`src/app/routing/navigation.ts` 是页面 shell 的导航 module：它集中路由识别、Setup gate 所需的路径判断、浏览器 history/popstate Adapter、查询参数更新和组合股票选择的 session 持久化；`App.tsx` 只负责提供 LocaleProvider，业务 module 通过 `onNavigate`/`onReplaceQuery` seam 操作导航，不直接写 `window.history` 或 `sessionStorage`。查询参数优先于旧 session 选择，避免从今日决策跳转到组合页面时恢复错误股票。操作建议的代码归类、买卖方向、展示状态、价格区间和未知代码降级统一由 `src/shared/display/recommendation-display.ts` 提供；页面和组件只消费归一化后的展示结果，不自行解析 `recommendation_code` 或 `price_zone_code`。`index.css` 只承载 token、reset 和跨页面共享原子样式；今日决策页的布局、等待态、就绪态、骨架屏、装饰和响应式样式统一位于 `src/recommendations/recommendations.css`。交互控件优先使用 `src/components/ui` 中的 shadcn/ui 原语，业务样式只负责业务变体与布局。
 
 前端使用 Node `24.16.0` 与 pnpm `12.3.4` 构建静态资源，输出到 Host 的 `wwwroot/`；该目录是构建产物并保持本地生成，不提交源代码仓库。根目录 `Dockerfile` 使用 Node Alpine、.NET SDK Alpine 和 ASP.NET Core Alpine 三阶段构建：前两阶段只负责编译，最终镜像只保留 .NET publish 输出，因此不会携带 Node、pnpm、源码或测试依赖。单镜像构建流程必须先完成前端构建，再执行 ASP.NET Core publish；开发预览使用 Vite proxy 将 `/api` 转发到本地 Host。
+
+`ApplicationShell` 先读取 Initialization readiness，再同步服务器偏好到 Locale/Theme Provider；未完成初始化时只放行 `/onboarding`，完成后旧 `/setup` 会替换到 `/overview`。Settings 概览和三个子页面共享 `/settings` 导航入口，策略参数页面固定使用 `/strategy`，不与系统设置混用。
 
 前端 HTTP 类型不再手工复制 Controller DTO。Host 构建通过 `Microsoft.Extensions.ApiDescription.Server` 调用同一组 Controller、版本元数据和 `AddOpenApi` 配置，生成并提交 `src/Portwise.Web/openapi/portwise_v1.json`；前端的 `pnpm api:generate` 使用 `openapi-typescript` 生成 `src/shared/http/api-contract.generated.ts`。`api-contract.ts` 是生成类型与浏览器运行时 JSON 之间唯一的 Adapter，负责把 wire numeric（`number | string`）归一为 UI 使用的 `number`；业务 module 的 Axios module 只引用 `api-types.ts` 的领域友好别名，不直接依赖生成文件。新增或修改 Controller DTO 时，后端构建和前端生成都会暴露合约漂移，避免两套手工类型长期分叉。
 

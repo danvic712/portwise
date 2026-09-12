@@ -35,6 +35,8 @@ type PathsWithMethod<Method extends HttpMethod> = {
 
 export type ApiGetPath = PathsWithMethod<"get">
 export type ApiPostPath = PathsWithMethod<"post">
+export type ApiPutPath = PathsWithMethod<"put">
+export type ApiDeletePath = PathsWithMethod<"delete">
 
 type ApiOperation<P extends ApiPath, Method extends HttpMethod> = paths[P][Method]
 type ApiSuccessBody<Operation> = Operation extends { responses: infer Responses }

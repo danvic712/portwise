@@ -1,5 +1,23 @@
 {
   "ui": {
+    "overview": {
+      "pageTitle": "Portwise · System settings",
+      "eyebrow": "SETTINGS / SYSTEM",
+      "title": "Tune the workspace to fit you.",
+      "description": "Manage system preferences, stock data providers, and AI capabilities. Unconfigured capabilities are marked as limited without blocking the rest of the app.",
+      "preferencesTitle": "Display and language",
+      "preferencesDescription": "Language and theme are persisted in PostgreSQL and shared across browsers.",
+      "stockTitle": "Stock data providers",
+      "stockDescription": "Manage FTShare and future data sources, routes, and connection checks.",
+      "inferenceTitle": "AI providers",
+      "inferenceDescription": "Choose independent providers and models for Chat and Embedding.",
+      "open": "Open settings",
+      "saved": "System settings saved",
+      "statusUnconfigured": "Unconfigured",
+      "statusConfigured": "Configured",
+      "statusUnavailable": "Currently unavailable",
+      "capabilities": { "profile": "Stock profile", "market": "Market", "dividend": "Dividends", "financial": "Financials", "chat": "Chat", "embedding": "Embedding" }
+    },
     "page": {
       "eyebrow": "SETTINGS / PER STOCK",
       "title": "Give every stock a clear boundary.",

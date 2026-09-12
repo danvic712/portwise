@@ -1,11 +1,15 @@
 export const applicationPaths = [
   "/",
   "/overview",
-  "/setup",
+  "/onboarding",
   "/stocks",
   "/budget",
   "/portfolio",
   "/settings",
+  "/settings/preferences",
+  "/settings/stock-data-providers",
+  "/settings/inference",
+  "/strategy",
   "/404",
   "/error",
 ] as const
@@ -34,11 +38,14 @@ export function isApplicationPath(pathname: string): pathname is ApplicationPath
   return applicationPaths.includes(pathname as ApplicationPath)
 }
 
-export function resolveSetupPath(isComplete: boolean, pathname: string): ApplicationPath | null {
-  if (!isComplete) return pathname === "/setup" ? null : "/setup"
-  if (pathname === "/setup" || pathname === "/error") return "/overview"
+export function resolveInitializationPath(isComplete: boolean, pathname: string): ApplicationPath | null {
+  if (!isComplete) return pathname === "/onboarding" ? null : "/onboarding"
+  if (pathname === "/onboarding" || pathname === "/setup" || pathname === "/error") return "/overview"
   return isApplicationPath(pathname) ? null : "/404"
 }
+
+/** @deprecated Use resolveInitializationPath for the onboarding gate. */
+export const resolveSetupPath = resolveInitializationPath
 
 export function readNavigationLocation(href: string): NavigationLocation {
   const url = new URL(href, "http://portwise.local")

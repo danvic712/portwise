@@ -7,14 +7,14 @@ import {
   readPortfolioDirection,
   readPortfolioStockKey,
   readSettingsStockKey,
-  resolveSetupPath,
+  resolveInitializationPath,
 } from "../../../src/app/routing/navigation.ts"
 
-test("resolveSetupPath keeps incomplete users on setup and completed users out", () => {
-  assert.equal(resolveSetupPath(false, "/stocks"), "/setup")
-  assert.equal(resolveSetupPath(false, "/setup"), null)
-  assert.equal(resolveSetupPath(true, "/setup"), "/overview")
-  assert.equal(resolveSetupPath(true, "/unknown"), "/404")
+test("resolveInitializationPath keeps incomplete users on onboarding and completed users out", () => {
+  assert.equal(resolveInitializationPath(false, "/stocks"), "/onboarding")
+  assert.equal(resolveInitializationPath(false, "/onboarding"), null)
+  assert.equal(resolveInitializationPath(true, "/onboarding"), "/overview")
+  assert.equal(resolveInitializationPath(true, "/unknown"), "/404")
 })
 
 test("readNavigationLocation preserves pathname, query and hash", () => {

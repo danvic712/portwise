@@ -5,41 +5,44 @@ import { NotFoundPage } from "@/components/feedback/NotFoundPage"
 import { RouteErrorBoundary } from "@/components/feedback/RouteErrorBoundary"
 import { ScrollToTop } from "@/components/layout/ScrollToTop"
 import { StatusPageSkeleton } from "@/components/feedback/StatusPageShell"
-import { ThemeProvider } from "@/app/providers/ThemeProvider"
+import { useTheme } from "@/app/providers/ThemeContext"
 import { getApiErrorMessage } from "@/shared/http/api-errors"
 import { useLocale } from "@/shared/i18n/i18n"
 import { isRequestAborted, useLatestRequest } from "@/shared/hooks/useLatestRequest"
-import { getSetupStatus } from "@/setup/setup.api"
-import { SetupPageLoading } from "@/setup/SetupPageLoading"
-import type { SetupResult, SetupStatus } from "@/shared/http/api-types"
+import { getInitialization } from "@/onboarding/initialization.api"
+import type { InitializationStatusResponse } from "@/shared/http/api-types"
 import {
   createBrowserNavigation,
   readPortfolioDirection,
   readPortfolioStockKey,
   readSettingsStockKey,
-  resolveSetupPath,
+  resolveInitializationPath,
 } from "@/app/routing/navigation"
 
-const SetupPage = lazy(async () => ({ default: (await import("@/setup/SetupPage")).SetupPage }))
+const OnboardingPage = lazy(async () => ({ default: (await import("@/onboarding/OnboardingPage")).OnboardingPage }))
 const RecommendationsPage = lazy(async () => ({ default: (await import("@/recommendations/RecommendationsPage")).RecommendationsPage }))
 const StocksPage = lazy(async () => ({ default: (await import("@/stocks/StocksPage")).StocksPage }))
 const BudgetPage = lazy(async () => ({ default: (await import("@/budget/BudgetPage")).BudgetPage }))
 const PortfolioPage = lazy(async () => ({ default: (await import("@/portfolio/PortfolioPage")).PortfolioPage }))
-const SettingsPage = lazy(async () => ({ default: (await import("@/settings/SettingsPage")).SettingsPage }))
+const SettingsOverviewPage = lazy(async () => ({ default: (await import("@/settings/SettingsOverviewPage")).SettingsOverviewPage }))
+const PreferencesPage = lazy(async () => ({ default: (await import("@/settings/PreferencesPage")).PreferencesPage }))
+const StockDataProvidersPage = lazy(async () => ({ default: (await import("@/settings/StockDataProvidersPage")).StockDataProvidersPage }))
+const InferencePage = lazy(async () => ({ default: (await import("@/settings/InferencePage")).InferencePage }))
+const StrategyPage = lazy(async () => ({ default: (await import("@/strategy/StrategyPage")).StrategyPage }))
 
 export function ApplicationShell() {
-  const { locale, messages } = useLocale()
+  const { locale, setLocale, messages } = useLocale()
+  const { setTheme } = useTheme()
   const [navigation] = useState(() => createBrowserNavigation())
   const location = useSyncExternalStore(navigation.subscribe, navigation.read, navigation.read)
-  const setupErrorRef = useRef(messages.common.application_error_unknown.detail)
+  const initializationErrorRef = useRef(messages.common.application_error_unknown.detail)
   const [portfolioStockKey, setPortfolioStockKey] = useState(() =>
     readPortfolioStockKey(navigation.read(), navigation.readPersistedPortfolioStock()),
   )
-  const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null)
-  const [setupNotice, setSetupNotice] = useState<string | null>(null)
+  const [initializationStatus, setInitializationStatus] = useState<InitializationStatusResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { begin: beginSetup } = useLatestRequest()
+  const { begin: beginInitialization } = useLatestRequest()
 
   const navigate = useCallback((nextPath: string, replace = false) => {
     navigation.navigate(nextPath, replace)
@@ -55,58 +58,54 @@ export function ApplicationShell() {
   }, [navigation])
 
   useEffect(() => {
-    document.title = location.pathname === "/setup" ? messages.setup.ui.pageTitle : messages.common.ui.pageTitle
+    document.title = location.pathname === "/onboarding" ? messages.onboarding.ui.pageTitle : messages.common.ui.pageTitle
     document.documentElement.lang = locale
-  }, [locale, location.pathname, messages.common.ui.pageTitle, messages.setup.ui.pageTitle])
+  }, [locale, location.pathname, messages.common.ui.pageTitle, messages.onboarding.ui.pageTitle])
 
   useEffect(() => {
-    setupErrorRef.current = messages.common.application_error_unknown.detail
+    initializationErrorRef.current = messages.common.application_error_unknown.detail
   }, [messages.common.application_error_unknown.detail])
 
-  const checkSetup = useCallback(async () => {
-    const request = beginSetup()
+  const checkInitialization = useCallback(async () => {
+    const request = beginInitialization()
     setLoading(true)
     setError(null)
     try {
-      const status = await getSetupStatus(request.signal)
+      const status = await getInitialization(request.signal)
       if (!request.isCurrent()) return
-      setSetupStatus(status)
+      setInitializationStatus(status)
+      if (status.preferences?.languageCode === "zh-CN" || status.preferences?.languageCode === "en-US") setLocale(status.preferences.languageCode)
+      if (status.preferences?.themeCode === "light" || status.preferences?.themeCode === "dark" || status.preferences?.themeCode === "system") setTheme(status.preferences.themeCode)
       const nextPath = navigation.read().pathname
-      const redirectPath = resolveSetupPath(status.isComplete, nextPath)
+      const redirectPath = resolveInitializationPath(status.isComplete, nextPath)
       if (redirectPath) navigate(redirectPath, true)
     } catch (statusError) {
       if (request.isCurrent() && !isRequestAborted(statusError, request.signal)) {
-        setError(getApiErrorMessage(statusError, setupErrorRef.current, messages.common.ui.errors))
+        setError(getApiErrorMessage(statusError, initializationErrorRef.current, messages.common.ui.errors))
         navigate("/error", true)
       }
     } finally {
       if (request.isCurrent()) setLoading(false)
     }
-  }, [beginSetup, messages.common.ui.errors, navigate, navigation])
+  }, [beginInitialization, messages.common.ui.errors, navigate, navigation, setLocale, setTheme])
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => { void checkSetup() }, 0)
+    const timeoutId = window.setTimeout(() => { void checkInitialization() }, 0)
     return () => window.clearTimeout(timeoutId)
-  }, [checkSetup])
+  }, [checkInitialization])
 
   useEffect(() => {
-    if (setupStatus?.isComplete) {
-      const redirectPath = resolveSetupPath(true, location.pathname)
+    if (initializationStatus?.isComplete) {
+      const redirectPath = resolveInitializationPath(true, location.pathname)
       if (redirectPath) navigate(redirectPath, true)
     }
-  }, [location.pathname, navigate, setupStatus?.isComplete])
+  }, [initializationStatus?.isComplete, location.pathname, navigate])
 
   function renderPage() {
-    if (location.pathname === "/setup") {
-      return <SetupPage disableEntryAnimation onComplete={(result: SetupResult) => {
-        setSetupStatus({ isComplete: true, missingRequirements: [] })
-        setSetupNotice(result.stockDataSyncScheduled ? messages.common.ui.states.setupCompleteSync : messages.common.ui.states.setupCompleteDeferred)
-        navigate("/overview")
-      }} />
-    }
-    if (location.pathname === "/" || location.pathname === "/overview") return <RecommendationsPage onNavigate={navigate} notice={setupNotice} />
+    if (location.pathname === "/onboarding") return <OnboardingPage onNavigate={navigate} onComplete={(result) => setInitializationStatus(result.status)} />
+    if (location.pathname === "/" || location.pathname === "/overview") return <RecommendationsPage onNavigate={navigate} />
     if (location.pathname === "/404") return <NotFoundPage onNavigate={navigate} />
-    if (location.pathname === "/error") return <ApplicationErrorPage message={messages.common.application_error_unknown.detail} onRetry={() => void checkSetup()} onNavigate={navigate} />
+    if (location.pathname === "/error") return <ApplicationErrorPage message={messages.common.application_error_unknown.detail} onRetry={() => void checkInitialization()} onNavigate={navigate} />
     if (location.pathname === "/stocks") return <StocksPage onNavigate={navigate} />
     if (location.pathname === "/budget") return <BudgetPage onNavigate={navigate} />
     if (location.pathname === "/portfolio") {
@@ -118,35 +117,39 @@ export function ApplicationShell() {
         onSelectedStockKeyChange={handlePortfolioStockChange}
       />
     }
-    if (location.pathname === "/settings") return <SettingsPage onNavigate={navigate} onReplaceQuery={replaceQuery} initialStockKey={readSettingsStockKey(location)} />
+    if (location.pathname === "/settings") return <SettingsOverviewPage onNavigate={navigate} />
+    if (location.pathname === "/settings/preferences") return <PreferencesPage onNavigate={navigate} />
+    if (location.pathname === "/settings/stock-data-providers") return <StockDataProvidersPage onNavigate={navigate} />
+    if (location.pathname === "/settings/inference") return <InferencePage onNavigate={navigate} />
+    if (location.pathname === "/strategy") return <StrategyPage onNavigate={navigate} onReplaceQuery={replaceQuery} initialStockKey={readSettingsStockKey(location)} />
     return <NotFoundPage onNavigate={navigate} />
   }
 
-  const isSetupRoute = location.pathname === "/setup"
-  const setupLoadingPage = <SetupPageLoading label={messages.common.ui.states.preparingSetup} />
+  const isOnboardingRoute = location.pathname === "/onboarding"
+  const onboardingLoadingPage = <StatusPageSkeleton label={messages.common.ui.states.preparingSetup} onNavigate={navigate} />
   const page = loading
-    ? isSetupRoute
-      ? setupLoadingPage
+    ? isOnboardingRoute
+      ? onboardingLoadingPage
       : <StatusPageSkeleton label={messages.common.ui.states.connecting} onNavigate={navigate} />
     : error
       ? <ApplicationErrorPage
         message={error}
-        onRetry={() => void checkSetup()}
-        onNavigate={(nextPath) => { navigate(nextPath); if (nextPath === "/overview") void checkSetup() }}
+        onRetry={() => void checkInitialization()}
+        onNavigate={(nextPath) => { navigate(nextPath); if (nextPath === "/overview") void checkInitialization() }}
       />
-      : setupStatus?.isComplete || location.pathname === "/setup"
+      : initializationStatus?.isComplete || location.pathname === "/onboarding"
         ? <RouteErrorBoundary
           resetKey={`${location.pathname}${location.search.toString()}${location.hash}`}
           fallback={<ApplicationErrorPage message={messages.common.application_error_unknown.detail} onRetry={() => window.location.reload()} onNavigate={navigate} />}
         >
-          <Suspense fallback={isSetupRoute ? setupLoadingPage : <StatusPageSkeleton label={messages.common.ui.states.preparingSetup} onNavigate={navigate} />}>{renderPage()}</Suspense>
+          <Suspense fallback={isOnboardingRoute ? onboardingLoadingPage : <StatusPageSkeleton label={messages.common.ui.states.preparingSetup} onNavigate={navigate} />}>{renderPage()}</Suspense>
         </RouteErrorBoundary>
         : <StatusPageSkeleton label={messages.common.ui.states.preparingSetup} onNavigate={navigate} />
 
   return (
-    <ThemeProvider>
+    <>
       {page}
       <ScrollToTop />
-    </ThemeProvider>
+    </>
   )
 }
