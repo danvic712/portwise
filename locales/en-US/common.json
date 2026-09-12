@@ -28,7 +28,7 @@
       "label": "Theme",
       "light": "Light",
       "dark": "Dark",
-      "system": "System"
+      "system": "Follow system"
     },
     "preferences": {
       "label": "Display and language",
@@ -58,7 +58,7 @@
       "readingData": "Reading data…",
       "errorTitle": "Could not read the data",
       "connecting": "Connecting to your local portfolio…",
-      "preparingInitialization": "Preparing your initialization workspace…",
+      "preparingInitialization": "Preparing your workspace…",
       "notFound": {
         "eyebrow": "This page wandered off",
         "title": "This notebook page is missing.",

@@ -32,11 +32,14 @@ export function SettingsOverviewPage({ onNavigate }: { onNavigate: (path: string
   if (!status) return <PageFrame currentPath="/settings" onNavigate={onNavigate}><EmptyState title={messages.common.ui.states.readingData} description={copy.description} /></PageFrame>
 
   const statusLabel = (value: string) => value === "currently-unavailable" ? copy.statusUnavailable : value === "unconfigured" ? copy.statusUnconfigured : copy.statusConfigured
+  const preferencesLabel = status.preferences
+    ? `${status.preferences.languageCode === "zh-CN" ? messages.common.ui.language.zhCN : messages.common.ui.language.enUS} · ${status.preferences.themeCode === "light" ? messages.common.ui.theme.light : status.preferences.themeCode === "dark" ? messages.common.ui.theme.dark : status.preferences.themeCode === "system" ? messages.common.ui.theme.system : status.preferences.themeCode}`
+    : copy.statusUnconfigured
   return <PageFrame currentPath="/settings" onNavigate={onNavigate} contentClassName="settings-overview-wrap">
     <PageTitle eyebrow={copy.eyebrow} title={copy.title} description={copy.description} />
     {!status.isComplete && <Alert variant="attention" className="settings-overview-notice"><Sparkles size={17} aria-hidden="true" /><div><AlertTitle>{messages.onboarding.ui.calloutTitle}</AlertTitle><AlertDescription>{messages.onboarding.ui.calloutDescription}</AlertDescription></div></Alert>}
     <div className="settings-overview-grid">
-      <OverviewCard icon={<Languages size={19} />} title={copy.preferencesTitle} description={copy.preferencesDescription} badge={status.preferences ? `${status.preferences.languageCode} · ${status.preferences.themeCode}` : copy.statusUnconfigured} onOpen={() => onNavigate("/settings/preferences")} label={copy.open} />
+      <OverviewCard icon={<Languages size={19} />} title={copy.preferencesTitle} description={copy.preferencesDescription} badge={preferencesLabel} onOpen={() => onNavigate("/settings/preferences")} label={copy.open} />
       <OverviewCard icon={<LineChart size={19} />} title={copy.stockTitle} description={copy.stockDescription} badge={statusLabel(status.limitations.find((item) => item.capabilityCode === "market")?.statusCode ?? "unconfigured")} onOpen={() => onNavigate("/settings/stock-data-providers")} label={copy.open} />
       <OverviewCard icon={<Bot size={19} />} title={copy.inferenceTitle} description={copy.inferenceDescription} badge={statusLabel(status.limitations.find((item) => item.capabilityCode === "chat")?.statusCode ?? "unconfigured")} onOpen={() => onNavigate("/settings/inference")} label={copy.open} />
     </div>

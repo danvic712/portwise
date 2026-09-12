@@ -10,6 +10,7 @@ import { getApiErrorMessage } from "@/shared/http/api-errors"
 import { useLocale } from "@/shared/i18n/i18n"
 import { isRequestAborted, useLatestRequest } from "@/shared/hooks/useLatestRequest"
 import { getInitialization } from "@/onboarding/initialization.api"
+import { OnboardingSkeleton } from "@/onboarding/OnboardingSkeleton"
 import type { InitializationStatusResponse } from "@/shared/http/api-types"
 import {
   createBrowserNavigation,
@@ -19,7 +20,7 @@ import {
   resolveInitializationPath,
 } from "@/app/routing/navigation"
 
-const OnboardingPage = lazy(async () => ({ default: (await import("@/onboarding/OnboardingPage")).OnboardingPage }))
+const Onboarding = lazy(async () => ({ default: (await import("@/onboarding/Onboarding")).Onboarding }))
 const RecommendationsPage = lazy(async () => ({ default: (await import("@/recommendations/RecommendationsPage")).RecommendationsPage }))
 const StocksPage = lazy(async () => ({ default: (await import("@/stocks/StocksPage")).StocksPage }))
 const BudgetPage = lazy(async () => ({ default: (await import("@/budget/BudgetPage")).BudgetPage }))
@@ -36,6 +37,7 @@ export function ApplicationShell() {
   const [navigation] = useState(() => createBrowserNavigation())
   const location = useSyncExternalStore(navigation.subscribe, navigation.read, navigation.read)
   const initializationErrorRef = useRef(messages.common.application_error_unknown.detail)
+  const initializationCompleteRef = useRef<boolean | null>(null)
   const [portfolioStockKey, setPortfolioStockKey] = useState(() =>
     readPortfolioStockKey(navigation.read(), navigation.readPersistedPortfolioStock()),
   )
@@ -45,6 +47,10 @@ export function ApplicationShell() {
   const { begin: beginInitialization } = useLatestRequest()
 
   const navigate = useCallback((nextPath: string, replace = false) => {
+    if (initializationCompleteRef.current === false && nextPath !== "/onboarding") {
+      navigation.navigate("/onboarding", true)
+      return
+    }
     navigation.navigate(nextPath, replace)
   }, [navigation])
 
@@ -73,6 +79,7 @@ export function ApplicationShell() {
     try {
       const status = await getInitialization(request.signal)
       if (!request.isCurrent()) return
+      initializationCompleteRef.current = status.isComplete
       setInitializationStatus(status)
       if (status.preferences?.languageCode === "zh-CN" || status.preferences?.languageCode === "en-US") setLocale(status.preferences.languageCode)
       if (status.preferences?.themeCode === "light" || status.preferences?.themeCode === "dark" || status.preferences?.themeCode === "system") setTheme(status.preferences.themeCode)
@@ -95,14 +102,18 @@ export function ApplicationShell() {
   }, [checkInitialization])
 
   useEffect(() => {
+    if (initializationCompleteRef.current === false && location.pathname !== "/onboarding") {
+      navigation.navigate("/onboarding", true)
+      return
+    }
     if (initializationStatus?.isComplete) {
       const redirectPath = resolveInitializationPath(true, location.pathname)
       if (redirectPath) navigate(redirectPath, true)
     }
-  }, [initializationStatus?.isComplete, location.pathname, navigate])
+  }, [initializationStatus?.isComplete, location.pathname, navigate, navigation])
 
   function renderPage() {
-    if (location.pathname === "/onboarding") return <OnboardingPage onNavigate={navigate} onComplete={(result) => setInitializationStatus(result.status)} />
+    if (location.pathname === "/onboarding") return <Onboarding onNavigate={navigate} onComplete={(result) => { initializationCompleteRef.current = result.status.isComplete; setInitializationStatus(result.status) }} />
     if (location.pathname === "/" || location.pathname === "/overview") return <RecommendationsPage onNavigate={navigate} />
     if (location.pathname === "/404") return <NotFoundPage onNavigate={navigate} />
     if (location.pathname === "/error") return <ApplicationErrorPage message={messages.common.application_error_unknown.detail} onRetry={() => void checkInitialization()} onNavigate={navigate} />
@@ -126,7 +137,7 @@ export function ApplicationShell() {
   }
 
   const isOnboardingRoute = location.pathname === "/onboarding"
-  const onboardingLoadingPage = <StatusPageSkeleton label={messages.common.ui.states.preparingInitialization} onNavigate={navigate} />
+  const onboardingLoadingPage = <OnboardingSkeleton label={messages.common.ui.states.preparingInitialization} onNavigate={navigate} />
   const page = loading
     ? isOnboardingRoute
       ? onboardingLoadingPage

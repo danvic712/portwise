@@ -1,102 +1,102 @@
 {
   "ui": {
-    "pageTitle": "Portwise · 初始化工作台",
-    "eyebrow": "首次初始化 · 私人工作区",
-    "titleLineOne": "先把系统准备好，",
+    "pageTitle": "Portwise · 开始使用",
+    "eyebrow": "欢迎开始 · 个人工作区",
+    "titleLineOne": "先设置好你的工作区，",
     "titleLineTwo": "再开始长期积累。",
-    "description": "完成基础设置并建立你的投资组合。股票数据和 AI 可以稍后配置，不会阻止你进入系统。",
-    "calloutTitle": "可以先进入，稍后再完善",
-    "calloutDescription": "未配置外部服务时，相关功能会受限；系统会始终明确提示可用状态。",
-    "cardEyebrow": "初始化进度",
+    "description": "花一点时间完成基础设置，马上开始记录和管理你的投资。股票数据和 AI 也可以稍后补充。",
+    "calloutTitle": "现在就可以开始",
+    "calloutDescription": "先完成基础设置就能开始使用 Portwise，股票数据和 AI 之后再添加也没关系。",
+    "cardEyebrow": "开始设置",
     "cardTitle": "建立你的 Portwise 工作区",
     "cardDescription": "",
     "steps": {
-      "preferences": "基础偏好",
+      "preferences": "基础设置",
       "portfolio": "投资组合",
-      "stockData": "股票数据提供方",
-      "inference": "AI 推理"
+      "stockData": "股票数据",
+      "inference": "AI 助手"
     },
-    "optional": "可选",
+    "optional": "可稍后设置",
     "activeStep": {
       "format": "{current} / {total}",
       "stickerSuffix": "/ 04",
-      "preferencesEyebrow": "设置默认体验",
-      "preferencesTitle": "选择你的默认体验",
-      "preferencesDescription": "语言和主题会保存到系统，并在不同浏览器之间保持一致。",
-      "preferencesHint": "配置将保存到服务器，本地缓存仅用于避免首屏闪烁。",
-      "portfolioEyebrow": "建立投资组合",
-      "portfolioTitle": "给你的组合一个名字",
-      "portfolioDescription": "先建立唯一的投资组合，股票和持仓可以稍后继续添加。",
-      "stockEyebrow": "连接股票数据",
-      "stockTitle": "选择你的数据提供方",
-      "stockDescription": "FTShare 是可选的股票数据来源，连接验证可以稍后在设置中进行。",
-      "inferenceEyebrow": "连接 AI 推理",
-      "inferenceTitle": "配置 Chat 与 Embedding",
-      "inferenceDescription": "为两类能力选择 Provider 和模型；外部网络故障不会阻止保存。"
+      "preferencesEyebrow": "设置你的偏好",
+      "preferencesTitle": "选择你喜欢的方式",
+      "preferencesDescription": "选择语言和主题，让 Portwise 更符合你的使用习惯。",
+      "preferencesHint": "这些设置会自动保存，之后也可以随时修改。",
+      "portfolioEyebrow": "创建你的投资组合",
+      "portfolioTitle": "给投资组合起个名字",
+      "portfolioDescription": "先为投资组合命名，之后可以随时添加股票和持仓。",
+      "stockEyebrow": "准备股票数据",
+      "stockTitle": "选择股票数据来源",
+      "stockDescription": "选择一个数据来源，帮助 Portwise 获取你需要的股票信息；也可以稍后再设置。",
+      "inferenceEyebrow": "准备 AI 助手",
+      "inferenceTitle": "设置你的 AI 助手",
+      "inferenceDescription": "为对话和智能搜索选择服务与模型，也可以以后再补充。"
     },
     "checklist": {
-      "title": "完成前检查",
+      "title": "设置进度",
       "active": "正在设置",
-      "pending": "待完成",
-      "optional": "可以稍后配置",
-      "complete": "已完成"
+      "pending": "尚未设置",
+      "optional": "之后再设置",
+      "complete": "已准备好"
     },
     "fields": {
-      "portfolioName": "组合名称",
-      "portfolioPlaceholder": "例如：长期股息组合",
-      "portfolioHint": "股票资料和持仓可以稍后从对应页面添加。",
-      "language": "系统语言",
-      "theme": "显示主题"
+      "portfolioName": "投资组合名称",
+      "portfolioPlaceholder": "例如：长期投资组合",
+      "portfolioHint": "股票和持仓之后都可以慢慢添加。",
+      "language": "语言",
+      "theme": "主题"
     },
     "stock": {
-      "title": "股票数据提供方",
-      "description": "可选。先保存 FTShare key，资料能力会在设置页绑定和验证。",
+      "title": "股票数据",
+      "description": "可选。添加数据来源后，就能在 Portwise 中查看股票信息。",
       "providerName": "FTShare",
-      "keyLabel": "FTShare key",
-      "keyPlaceholder": "输入后加密保存",
-      "keyHint": "留空表示稍后配置；网络不可用不会阻止保存。",
-      "loadError": "提供方列表暂时不可用，仍可稍后在设置中配置。"
+      "keyLabel": "访问密钥",
+      "keyPlaceholder": "输入访问密钥",
+      "keyHint": "现在没有也没关系，之后可以在设置中添加。",
+      "loadError": "数据来源暂时没有加载出来，你可以稍后在设置中添加。"
     },
     "inference": {
-      "title": "AI Provider 与模型",
-      "description": "可选。Chat 和 Embedding 可以使用不同 Provider 与模型。",
-      "nameLabel": "Provider 名称",
+      "title": "AI 助手",
+      "description": "可选。你可以为对话和智能搜索分别选择服务与模型。",
+      "nameLabel": "服务名称",
       "namePlaceholder": "例如：OpenAI",
-      "baseUrlLabel": "OpenAI-compatible Base URL",
-      "keyLabel": "API key",
-      "keyPlaceholder": "输入后加密保存",
-      "chatModelLabel": "Chat 模型",
-      "embeddingModelLabel": "Embedding 模型",
+      "baseUrlLabel": "服务地址",
+      "keyLabel": "访问密钥",
+      "keyPlaceholder": "输入访问密钥",
+      "chatModelLabel": "对话模型",
+      "embeddingModelLabel": "智能搜索模型",
       "modelPlaceholder": "例如：gpt-4.1-mini",
-      "hint": "Provider 和模型保存后，可在设置页分别验证连接。",
-      "validation": "如果填写 AI 配置，请同时填写 Provider、API key、Chat 和 Embedding 模型。"
+      "hint": "现在不设置也没关系，之后可以在设置中随时补充。",
+      "validation": "如果要启用 AI，请把服务名称、访问密钥和两个模型填写完整；也可以先全部跳过。"
     },
     "actions": {
       "nextPortfolio": "下一步：建立投资组合",
-      "nextStock": "下一步：连接股票数据",
-      "nextInference": "下一步：配置 AI 推理",
-      "save": "完成设置，进入系统",
+      "nextStock": "下一步：准备股票数据",
+      "nextInference": "下一步：设置 AI 助手",
+      "save": "保存并开始使用",
       "saving": "正在保存…",
-      "back": "上一步",
-      "useDefaults": "使用默认设置"
+      "back": "返回上一步",
+      "useDefaults": "恢复默认设置"
     },
-    "footer": "之后可在设置中管理 Provider、Route、语言和主题。",
-    "validation": { "portfolio": "请先填写组合名称。", "inference": "请完整填写 AI Provider、API key 和两类模型，或全部留空。" },
-    "states": { "errorTitle": "暂时无法保存初始化配置", "saveError": "初始化保存失败，请检查填写内容后重试。" }
+    "footer": "完成后，你可以随时在设置中修改这些选择。",
+    "validation": { "portfolio": "请先给投资组合起个名字。", "inference": "请把 AI 服务、访问密钥和两个模型填写完整，也可以先全部跳过。" },
+    "states": { "errorTitle": "暂时没有保存成功", "saveError": "保存失败，请检查填写内容后再试。" }
   },
   "initialization_validation_failed": {
     "status_code": 400,
-    "title": "初始化配置无效",
-    "detail": "请检查语言、主题、组合名称以及数据服务配置后重试。"
+    "title": "设置内容需要调整",
+    "detail": "请检查语言、主题、投资组合名称和服务信息后再试。"
   },
   "initialization_already_completed": {
     "status_code": 409,
-    "title": "系统已经完成初始化",
-    "detail": "系统已经完成初始化，不能重复保存首次配置。"
+    "title": "已经设置完成",
+    "detail": "这个工作区已经设置好了，不需要重复提交。"
   },
   "initialization_not_completed": {
     "status_code": 409,
-    "title": "系统尚未完成初始化",
-    "detail": "请先完成初始化，再使用需要工作区配置的功能。"
+    "title": "还没有完成基础设置",
+    "detail": "请先完成基础设置，再继续使用 Portwise。"
   }
 }

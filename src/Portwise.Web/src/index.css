@@ -87,6 +87,7 @@
 * { box-sizing: border-box; }
 html { min-width: 320px; background: var(--background); }
 body { margin: 0; min-width: 320px; background: var(--background); color: var(--foreground); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+#root { width: 100%; min-width: 320px; }
 button, input, select { font: inherit; }
 button { cursor: pointer; }
 
@@ -338,6 +339,8 @@ button { cursor: pointer; }
 .topbar, .page-wrap, .app-footer { position: relative; z-index: 1; }
 .d-watchlist { margin-top: 12px; }
 .d-header { display: grid; z-index: 20; grid-template-columns: minmax(220px, 1.05fr) auto minmax(280px, 1.05fr); min-height: 77px; padding-inline: clamp(24px, 4.3vw, 72px); column-gap: clamp(18px, 2vw, 34px); }
+.d-header.d-header-navigation-hidden { grid-template-columns: minmax(220px, 1fr) auto; }
+.d-header.d-header-navigation-hidden .topbar-actions { grid-column: 2; }
 .d-header .brand-lockup { justify-self: start; gap: 13px; }
 .d-header .brand-mark { border-radius: 7px 7px 7px 2px; }
 .d-header .brand-name { color: var(--foreground); font-size: 14px; font-weight: 800; letter-spacing: -0.025em; line-height: 1.15; white-space: nowrap; }

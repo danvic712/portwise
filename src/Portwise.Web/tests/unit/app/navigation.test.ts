@@ -11,7 +11,9 @@ import {
 } from "../../../src/app/routing/navigation.ts"
 
 test("resolveInitializationPath keeps incomplete users on onboarding and completed users out", () => {
-  assert.equal(resolveInitializationPath(false, "/stocks"), "/onboarding")
+  for (const pathname of ["/", "/overview", "/stocks", "/budget", "/portfolio", "/settings", "/strategy", "/unknown"]) {
+    assert.equal(resolveInitializationPath(false, pathname), "/onboarding")
+  }
   assert.equal(resolveInitializationPath(false, "/onboarding"), null)
   assert.equal(resolveInitializationPath(true, "/onboarding"), "/overview")
   assert.equal(resolveInitializationPath(true, "/unknown"), "/404")

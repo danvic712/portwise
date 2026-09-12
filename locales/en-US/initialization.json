@@ -1,102 +1,102 @@
 {
   "ui": {
-    "pageTitle": "Portwise · Initialize your workspace",
-    "eyebrow": "FIRST INITIALIZATION · PRIVATE WORKSPACE",
-    "titleLineOne": "Prepare the system,",
+    "pageTitle": "Portwise · Get started",
+    "eyebrow": "WELCOME · YOUR PRIVATE WORKSPACE",
+    "titleLineOne": "Set up your workspace,",
     "titleLineTwo": "then build for the long run.",
-    "description": "Set your defaults and establish your portfolio. Stock data and AI can be configured later without blocking entry.",
-    "calloutTitle": "Enter now, complete it later",
-    "calloutDescription": "Unconfigured external services limit only their related capabilities, and their status is always shown clearly.",
-    "cardEyebrow": "INITIALIZATION PROGRESS",
+    "description": "Take a moment to choose your basics and start keeping track of your investments. Stock data and AI can be added whenever you are ready.",
+    "calloutTitle": "You can start right away",
+    "calloutDescription": "Finish the basics to start using Portwise. Stock data and AI can be added later whenever you need them.",
+    "cardEyebrow": "GET STARTED",
     "cardTitle": "Build your Portwise workspace",
     "cardDescription": "",
     "steps": {
-      "preferences": "Preferences",
+      "preferences": "Basics",
       "portfolio": "Portfolio",
-      "stockData": "Stock data provider",
-      "inference": "AI inference"
+      "stockData": "Stock data",
+      "inference": "AI assistant"
     },
-    "optional": "Optional",
+    "optional": "Set up later",
     "activeStep": {
       "format": "{current} / {total}",
       "stickerSuffix": "/ 04",
-      "preferencesEyebrow": "SET YOUR DEFAULT EXPERIENCE",
-      "preferencesTitle": "Choose your default experience",
-      "preferencesDescription": "Your language and theme are saved to the system and stay consistent across browsers.",
-      "preferencesHint": "Saved to the server; local storage only prevents a first-screen flash.",
-      "portfolioEyebrow": "BUILD YOUR PORTFOLIO",
-      "portfolioTitle": "Give your portfolio a name",
-      "portfolioDescription": "Create the single portfolio first; stocks and holdings can be added whenever you are ready.",
-      "stockEyebrow": "CONNECT STOCK DATA",
-      "stockTitle": "Choose your data provider",
-      "stockDescription": "FTShare is an optional stock data source; verify its connection later from Settings.",
-      "inferenceEyebrow": "CONNECT AI INFERENCE",
-      "inferenceTitle": "Configure Chat and Embedding",
-      "inferenceDescription": "Choose a provider and model for each capability; network outages never block saving."
+      "preferencesEyebrow": "MAKE IT YOURS",
+      "preferencesTitle": "Choose how Portwise feels",
+      "preferencesDescription": "Pick your language and theme so Portwise feels right every time you use it.",
+      "preferencesHint": "Your choices are saved automatically and can be changed anytime.",
+      "portfolioEyebrow": "CREATE YOUR PORTFOLIO",
+      "portfolioTitle": "Name your portfolio",
+      "portfolioDescription": "Give your portfolio a name first. You can add stocks and holdings whenever you are ready.",
+      "stockEyebrow": "ADD STOCK DATA",
+      "stockTitle": "Choose a stock data source",
+      "stockDescription": "Add a source so Portwise can bring in the stock information you need. You can do this later.",
+      "inferenceEyebrow": "ADD YOUR AI ASSISTANT",
+      "inferenceTitle": "Set up your AI assistant",
+      "inferenceDescription": "Choose services and models for conversations and smart search, or come back to this later."
     },
     "checklist": {
-      "title": "Before you finish",
+      "title": "Your setup so far",
       "active": "In progress",
-      "pending": "Not started",
-      "optional": "Can be configured later",
-      "complete": "Complete"
+      "pending": "Not set up",
+      "optional": "Set up later",
+      "complete": "Ready"
     },
     "fields": {
       "portfolioName": "Portfolio name",
-      "portfolioPlaceholder": "For example: Long-term dividend portfolio",
-      "portfolioHint": "Stocks and holdings can be added later from their dedicated pages.",
-      "language": "System language",
-      "theme": "Display theme"
+      "portfolioPlaceholder": "For example: Long-term portfolio",
+      "portfolioHint": "You can add stocks and holdings gradually whenever you are ready.",
+      "language": "Language",
+      "theme": "Theme"
     },
     "stock": {
-      "title": "Stock data provider",
-      "description": "Optional. Save an FTShare key now; capability routes can be bound and verified in Settings.",
+      "title": "Stock data",
+      "description": "Optional. Add a data source now so you can browse stock information in Portwise.",
       "providerName": "FTShare",
-      "keyLabel": "FTShare key",
-      "keyPlaceholder": "Protected after saving",
-      "keyHint": "Leave blank to configure later; network outages never block saving.",
-      "loadError": "The provider list is temporarily unavailable; configure it later from Settings."
+      "keyLabel": "Access key",
+      "keyPlaceholder": "Enter your access key",
+      "keyHint": "No key yet? That is okay—you can add it later in Settings.",
+      "loadError": "We could not load the available sources right now. You can add one later in Settings."
     },
     "inference": {
-      "title": "AI provider and models",
-      "description": "Optional. Chat and Embedding can use different providers and models.",
-      "nameLabel": "Provider name",
+      "title": "AI assistant",
+      "description": "Optional. Choose separate services and models for conversations and smart search.",
+      "nameLabel": "Service name",
       "namePlaceholder": "For example: OpenAI",
-      "baseUrlLabel": "OpenAI-compatible Base URL",
-      "keyLabel": "API key",
-      "keyPlaceholder": "Protected after saving",
-      "chatModelLabel": "Chat model",
-      "embeddingModelLabel": "Embedding model",
+      "baseUrlLabel": "Service address",
+      "keyLabel": "Access key",
+      "keyPlaceholder": "Enter your access key",
+      "chatModelLabel": "Conversation model",
+      "embeddingModelLabel": "Smart-search model",
       "modelPlaceholder": "For example: gpt-4.1-mini",
-      "hint": "Save the provider and models, then verify each connection separately in Settings.",
-      "validation": "If you enter AI settings, provide a provider, API key, Chat model, and Embedding model together."
+      "hint": "You can skip this for now and add it later in Settings.",
+      "validation": "To turn on AI, fill in the service, access key, and both models—or leave them all for later."
     },
     "actions": {
       "nextPortfolio": "Next: build your portfolio",
-      "nextStock": "Next: connect stock data",
-      "nextInference": "Next: configure AI inference",
-      "save": "Finish and enter the system",
+      "nextStock": "Next: add stock data",
+      "nextInference": "Next: add your AI assistant",
+      "save": "Save and start using Portwise",
       "saving": "Saving…",
       "back": "Back",
-      "useDefaults": "Use default settings"
+      "useDefaults": "Restore defaults"
     },
-    "footer": "You can manage providers, routes, language, and theme later in Settings.",
-    "validation": { "portfolio": "Enter a portfolio name first.", "inference": "Complete the AI provider, API key, and both models, or leave them all blank." },
-    "states": { "errorTitle": "Initialization could not be saved", "saveError": "Initialization failed. Review the fields and try again." }
+    "footer": "You can change these choices anytime in Settings.",
+    "validation": { "portfolio": "Give your portfolio a name first.", "inference": "Fill in the AI service, access key, and both models, or leave them all for later." },
+    "states": { "errorTitle": "We could not save that just yet", "saveError": "Something went wrong while saving. Check the fields and try again." }
   },
   "initialization_validation_failed": {
     "status_code": 400,
-    "title": "The initialization configuration is invalid",
-    "detail": "Review the language, theme, portfolio name, and provider settings, then try again."
+    "title": "A few details need another look",
+    "detail": "Review the language, theme, portfolio name, and service details, then try again."
   },
   "initialization_already_completed": {
     "status_code": 409,
-    "title": "Initialization already completed",
-    "detail": "The system has already completed initialization and cannot save the first-run configuration again."
+    "title": "You are all set",
+    "detail": "This workspace is already set up, so there is nothing else to submit here."
   },
   "initialization_not_completed": {
     "status_code": 409,
-    "title": "Initialization is not complete",
-    "detail": "Complete initialization before using features that require a workspace."
+    "title": "A little setup is still needed",
+    "detail": "Finish the basics before continuing with Portwise."
   }
 }

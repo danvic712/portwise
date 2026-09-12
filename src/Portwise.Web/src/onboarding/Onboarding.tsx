@@ -2,7 +2,6 @@ import { ArrowLeft, ArrowRight, Check, Info } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert"
-import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent, CardHeader } from "@/components/ui/Card"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/Field"
@@ -18,7 +17,7 @@ import { completeInitialization } from "@/onboarding/initialization.api"
 import { getStockDataProviders } from "@/settings/stock-data-providers.api"
 import "./onboarding.css"
 
-type OnboardingPageProps = {
+type OnboardingProps = {
   onNavigate: (path: string) => void
   onComplete?: (response: CompleteInitializationResponse) => void
 }
@@ -39,7 +38,7 @@ const stepDefinitions: StepDefinition[] = [
   { number: 4, key: "inference", optional: true },
 ]
 
-export function OnboardingPage({ onNavigate, onComplete }: OnboardingPageProps) {
+export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
   const { locale, setLocale, messages } = useLocale()
   const { theme, setTheme } = useTheme()
   const copy = messages.onboarding.ui
@@ -201,7 +200,7 @@ export function OnboardingPage({ onNavigate, onComplete }: OnboardingPageProps) 
         : copy.actions.save
 
   return (
-    <PageFrame currentPath="/onboarding" onNavigate={onNavigate} showBreadcrumb={false} contentClassName="onboarding-page-wrap">
+    <PageFrame currentPath="/onboarding" onNavigate={onNavigate} showBreadcrumb={false} showNavigation={false} showSettings={false} contentClassName="onboarding-page-wrap">
       <div className="onboarding-page">
         <section className="onboarding-intro" aria-labelledby="onboarding-title">
           <p className="eyebrow">{copy.eyebrow}</p>
@@ -223,13 +222,15 @@ export function OnboardingPage({ onNavigate, onComplete }: OnboardingPageProps) 
                 {stepDefinitions.map((item, index) => {
                   const isActive = item.number === step
                   const isComplete = isStepComplete(item)
+                  const status = checklistStatus(item)
+                  const statusTone = isActive ? "active" : isComplete ? "complete" : "pending"
                   return (
                     <div className="onboarding-progress-item" key={item.key}>
-                      <Button type="button" variant="ghost" size="icon" className={`onboarding-progress-marker${isActive ? " onboarding-progress-marker-active" : ""}${isComplete ? " onboarding-progress-marker-complete" : ""}`} onClick={() => item.number <= step && setStep(item.number)} aria-current={isActive ? "step" : undefined} aria-label={copy.steps[item.key]}>
+                      <Button type="button" variant="ghost" size="icon" className={`onboarding-progress-marker${isActive ? " onboarding-progress-marker-active" : ""}${isComplete ? " onboarding-progress-marker-complete" : ""}`} onClick={() => item.number <= step && setStep(item.number)} aria-current={isActive ? "step" : undefined} aria-label={`${copy.steps[item.key]}，${status}`}>
                         {isComplete ? <Check size={14} aria-hidden="true" /> : <span>{String(item.number).padStart(2, "0")}</span>}
                       </Button>
                       <span className={`onboarding-progress-label${isActive ? " onboarding-progress-label-active" : ""}`}>{copy.steps[item.key]}</span>
-                      {item.optional && <small>{copy.optional}</small>}
+                      <span className={`onboarding-progress-status onboarding-progress-status-${statusTone}`}>{status}</span>
                       {index < stepDefinitions.length - 1 && <span className={`onboarding-progress-line${isComplete ? " onboarding-progress-line-complete" : ""}`} aria-hidden="true" />}
                     </div>
                   )
@@ -301,19 +302,6 @@ export function OnboardingPage({ onNavigate, onComplete }: OnboardingPageProps) 
                 </form>
             </CardContent>
 
-            <div className="onboarding-checklist">
-                <h3>{copy.checklist.title}</h3>
-                {stepDefinitions.map((item) => {
-                  const status = checklistStatus(item)
-                  const isCurrent = item.number === step
-                  const statusTone = isCurrent ? "active" : status === copy.checklist.complete ? "complete" : "muted"
-                  return <div className={`onboarding-checklist-row${isCurrent ? " onboarding-checklist-row-active" : ""}`} key={item.key}>
-                    <span className="onboarding-checklist-index">{String(item.number).padStart(2, "0")}</span>
-                    <strong>{copy.steps[item.key]}</strong>
-                    <Badge variant="outline" className={`onboarding-checklist-status onboarding-checklist-status-${statusTone}`}><i aria-hidden="true" />{status}</Badge>
-                  </div>
-                })}
-            </div>
           </Card>
         </section>
       </div>

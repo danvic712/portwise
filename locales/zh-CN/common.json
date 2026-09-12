@@ -28,7 +28,7 @@
       "label": "主题设置",
       "light": "日间",
       "dark": "夜间",
-      "system": "系统"
+      "system": "跟随系统"
     },
     "preferences": {
       "label": "显示与语言",
@@ -58,7 +58,7 @@
       "readingData": "正在读取数据…",
       "errorTitle": "数据读取失败",
       "connecting": "正在连接本地组合…",
-      "preparingInitialization": "正在准备初始化工作台…",
+      "preparingInitialization": "正在准备你的工作区…",
       "notFound": {
         "eyebrow": "这页暂时找不到",
         "title": "这张手帐页走丢了。",

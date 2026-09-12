@@ -14,9 +14,11 @@ import { BrandMark } from "@/components/brand/BrandMark"
 type HeaderProps = {
   currentPath: string
   onNavigate: (path: string) => void
+  showNavigation?: boolean
+  showSettings?: boolean
 }
 
-export function Header({ currentPath, onNavigate }: HeaderProps) {
+export function Header({ currentPath, onNavigate, showNavigation = true, showSettings = true }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const { locale, setLocale, messages } = useLocale()
   const [preferencesOpen, setPreferencesOpen] = useState(false)
@@ -40,7 +42,7 @@ export function Header({ currentPath, onNavigate }: HeaderProps) {
 
   return (
     <>
-      <header className="topbar d-header">
+      <header className={cn("topbar d-header", !showNavigation && "d-header-navigation-hidden")}>
         <a href="/overview" className={cn(buttonVariants({ variant: "ghost" }), "brand-lockup")} onClick={(event) => handleNavigation(event, "/overview")} aria-label={messages.common.ui.backToOverview}>
           <BrandMark />
           <span className="brand-copy">
@@ -49,7 +51,7 @@ export function Header({ currentPath, onNavigate }: HeaderProps) {
           </span>
         </a>
 
-        <nav className="main-nav" aria-label={messages.common.ui.mainNavigation}>
+        {showNavigation && <nav className="main-nav" aria-label={messages.common.ui.mainNavigation}>
           {siteNavigation.map(({ path, key, icon: Icon }) => (
             <a
               key={path}
@@ -62,7 +64,7 @@ export function Header({ currentPath, onNavigate }: HeaderProps) {
               {messages.common.ui.nav[key]}
             </a>
           ))}
-        </nav>
+        </nav>}
 
         <div className="topbar-actions d-header-actions">
           <div className="theme-control" role="group" aria-label={messages.common.ui.theme.label}>
@@ -123,20 +125,20 @@ export function Header({ currentPath, onNavigate }: HeaderProps) {
               </PopoverContent>
             </Popover>
           </div>
-          <a href="/settings" className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "header-settings-button")} aria-label={messages.common.ui.settings} onClick={(event) => handleNavigation(event, "/settings")}>
+          {showSettings && <a href="/settings" className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "header-settings-button")} aria-label={messages.common.ui.settings} onClick={(event) => handleNavigation(event, "/settings")}>
             <Settings2 data-icon="inline-start" />
-          </a>
+          </a>}
         </div>
       </header>
 
-      <nav className="mobile-nav" aria-label={messages.common.ui.mobileNavigation}>
+      {showNavigation && <nav className="mobile-nav" aria-label={messages.common.ui.mobileNavigation}>
         {siteNavigation.map(({ path, key, icon: Icon }) => (
           <a key={path} href={path} className={cn(buttonVariants({ variant: "ghost" }), "mobile-nav-item", currentPath === path && "mobile-nav-item-active")} onClick={(event) => handleNavigation(event, path)} aria-current={currentPath === path ? "page" : undefined}>
             <Icon />
             <span>{messages.common.ui.nav[key]}</span>
           </a>
         ))}
-      </nav>
+      </nav>}
     </>
   )
 }
