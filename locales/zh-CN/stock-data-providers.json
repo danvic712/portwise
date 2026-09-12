@@ -1,0 +1,42 @@
+{
+  "stock_data_provider_validation_failed": {
+    "status_code": 400,
+    "title": "股票数据提供方配置无效",
+    "detail": "请检查提供方名称和密钥操作后重试。"
+  },
+  "stock_data_provider_definition_unavailable": {
+    "status_code": 409,
+    "title": "股票数据提供方类型不可用",
+    "detail": "请选择当前已启用的股票数据提供方类型后重试。"
+  },
+  "stock_data_provider_already_exists": {
+    "status_code": 409,
+    "title": "该股票数据提供方已经配置",
+    "detail": "每种股票数据提供方类型只允许配置一个实例。"
+  },
+  "stock_data_provider_not_found": {
+    "status_code": 404,
+    "title": "找不到股票数据提供方",
+    "detail": "请刷新设置页面后重试。"
+  },
+  "stock_data_provider_revision_conflict": {
+    "status_code": 409,
+    "title": "股票数据提供方已发生变化",
+    "detail": "请刷新设置页面，然后重新提交修改。"
+  },
+  "stock_data_provider_in_use": {
+    "status_code": 409,
+    "title": "股票数据提供方仍在使用",
+    "detail": "请先重新绑定或清除所有使用该提供方的股票数据路由，再执行删除。"
+  },
+  "stock_data_route_validation_failed": {
+    "status_code": 400,
+    "title": "股票数据路由配置无效",
+    "detail": "请为每种股票数据能力各提交一次，并且只选择已有的提供方。"
+  },
+  "stock_data_route_revision_conflict": {
+    "status_code": 409,
+    "title": "股票数据路由已发生变化",
+    "detail": "请刷新设置页面，然后重新提交路由修改。"
+  }
+}

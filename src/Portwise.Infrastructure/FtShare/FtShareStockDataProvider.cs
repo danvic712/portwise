@@ -7,13 +7,12 @@ using Portwise.Domain.Codes;
 using Portwise.Domain.Securities;
 using Portwise.Infrastructure.Contracts;
 using Portwise.Infrastructure.Exceptions;
-using Microsoft.Extensions.Options;
 
 namespace Portwise.Infrastructure.FtShare;
 
 public sealed class FtShareStockDataProvider(
     IFtShareMcpToolInvoker toolInvoker,
-    IOptions<FtShareOptions> options,
+    FtShareOptions options,
     IDiagnosticContext diagnosticContext,
     TimeProvider timeProvider) : IStockDataProvider
 {
@@ -23,11 +22,10 @@ public sealed class FtShareStockDataProvider(
     {
         ArgumentNullException.ThrowIfNull(reference);
 
-        var currentOptions = options.Value;
         var payload = await InvokeStockToolAsync(
             reference,
-            currentOptions,
-            currentOptions.StockProfileToolName,
+            options,
+            options.StockProfileToolName,
             cancellationToken,
             "profile",
             "FTShare MCP profile request timed out.");
@@ -45,11 +43,10 @@ public sealed class FtShareStockDataProvider(
     {
         ArgumentNullException.ThrowIfNull(reference);
 
-        var currentOptions = options.Value;
         var payload = await InvokeStockToolAsync(
             reference,
-            currentOptions,
-            currentOptions.StockMarketDataToolName,
+            options,
+            options.StockMarketDataToolName,
             cancellationToken,
             "market",
             "FTShare MCP market-data request timed out.");
@@ -67,11 +64,10 @@ public sealed class FtShareStockDataProvider(
     {
         ArgumentNullException.ThrowIfNull(reference);
 
-        var currentOptions = options.Value;
         var payload = await InvokeStockToolAsync(
             reference,
-            currentOptions,
-            currentOptions.StockDividendEventsToolName,
+            options,
+            options.StockDividendEventsToolName,
             cancellationToken,
             "dividend",
             "FTShare MCP dividend request timed out.");
@@ -89,11 +85,10 @@ public sealed class FtShareStockDataProvider(
     {
         ArgumentNullException.ThrowIfNull(reference);
 
-        var currentOptions = options.Value;
         var payload = await InvokeStockToolAsync(
             reference,
-            currentOptions,
-            currentOptions.StockFinancialSnapshotsToolName,
+            options,
+            options.StockFinancialSnapshotsToolName,
             cancellationToken,
             "financial",
             "FTShare MCP financial-data request timed out.");
@@ -145,6 +140,7 @@ public sealed class FtShareStockDataProvider(
         try
         {
             return await toolInvoker.InvokeAsync(
+                options,
                 toolName,
                 arguments,
                 cancellationToken);

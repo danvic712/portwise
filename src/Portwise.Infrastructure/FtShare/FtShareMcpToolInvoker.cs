@@ -1,36 +1,25 @@
 using System.Text.Json;
 using Portwise.Infrastructure.Contracts;
-using Microsoft.Extensions.Options;
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
-using Polly.Registry;
-using Polly.Timeout;
 
 namespace Portwise.Infrastructure.FtShare;
 
 public sealed class FtShareMcpToolInvoker(
-    IOptions<FtShareOptions> options,
     IHttpClientFactory httpClientFactory,
-    ResiliencePipelineProvider<string> exchangePipelineProvider,
     TimeProvider timeProvider) : IFtShareMcpToolInvoker
 {
     internal const string HttpClientName = "FTShareMcp";
 
-    internal const string ExchangePipelineName = "FTShareMcpExchange";
-
-    public async Task<JsonElement?> InvokeAsync(
-        string toolName,
-        IReadOnlyDictionary<string, object?> arguments,
+    public async Task VerifyAsync(
+        FtShareOptions options,
         CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(toolName);
-        ArgumentNullException.ThrowIfNull(arguments);
-
-        var currentOptions = options.Value;
-        var endpoint = new Uri(currentOptions.McpEndpoint, UriKind.Absolute);
+        ArgumentNullException.ThrowIfNull(options);
+        var endpoint = new Uri(options.McpEndpoint, UriKind.Absolute);
         using var timeoutCancellation = new CancellationTokenSource(
-            currentOptions.OperationTimeout,
+            options.OperationTimeout,
             timeProvider);
         using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
             cancellationToken,
@@ -38,29 +27,80 @@ public sealed class FtShareMcpToolInvoker(
 
         try
         {
-            var pipeline = exchangePipelineProvider.GetPipeline(ExchangePipelineName);
-            return await pipeline.ExecuteAsync(
-                static (state, token) => new ValueTask<JsonElement?>(
-                    state.Invoker.InvokeOnceAsync(
-                        state.Endpoint,
-                        state.Options,
-                        state.ToolName,
-                        state.Arguments,
-                        token)),
-                (Invoker: this,
-                    Endpoint: endpoint,
-                    Options: currentOptions,
-                    ToolName: toolName,
-                    Arguments: arguments),
-                linkedCancellation.Token);
+            await using var transport = CreateTransport(endpoint, options);
+            await using var client = await McpClient.CreateAsync(
+                transport,
+                cancellationToken: linkedCancellation.Token);
+            await client.PingAsync(options: null, linkedCancellation.Token);
         }
-        catch (TimeoutRejectedException) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            throw new TimeoutException("FTShare MCP tool call timed out.");
+            throw new TimeoutException("FTShare MCP verification timed out.");
+        }
+    }
+
+    public async Task<JsonElement?> InvokeAsync(
+        FtShareOptions options,
+        string toolName,
+        IReadOnlyDictionary<string, object?> arguments,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(toolName);
+        ArgumentNullException.ThrowIfNull(arguments);
+        ArgumentNullException.ThrowIfNull(options);
+
+        var endpoint = new Uri(options.McpEndpoint, UriKind.Absolute);
+        using var timeoutCancellation = new CancellationTokenSource(
+            options.OperationTimeout,
+            timeProvider);
+        using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            timeoutCancellation.Token);
+
+        try
+        {
+            return await InvokeWithRetryAsync(
+                endpoint,
+                options,
+                toolName,
+                arguments,
+                linkedCancellation.Token);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             throw new TimeoutException("FTShare MCP tool call timed out.");
+        }
+    }
+
+    private async Task<JsonElement?> InvokeWithRetryAsync(
+        Uri endpoint,
+        FtShareOptions options,
+        string toolName,
+        IReadOnlyDictionary<string, object?> arguments,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                return await InvokeOnceAsync(
+                    endpoint,
+                    options,
+                    toolName,
+                    arguments,
+                    cancellationToken);
+            }
+            catch (Exception exception) when (
+                attempt < options.MaxRetryCount
+                && exception is HttpRequestException or IOException
+                    or ClientTransportClosedException
+                    or FtShareResponseStreamException)
+            {
+                var multiplier = 1L << Math.Min(attempt, 20);
+                var delay = TimeSpan.FromMilliseconds(
+                    checked(options.RetryDelayMilliseconds * multiplier));
+                await Task.Delay(delay, timeProvider, cancellationToken);
+            }
         }
     }
 
@@ -71,15 +111,7 @@ public sealed class FtShareMcpToolInvoker(
         IReadOnlyDictionary<string, object?> arguments,
         CancellationToken cancellationToken)
     {
-        await using var transport = new HttpClientTransport(
-            new HttpClientTransportOptions
-            {
-                Endpoint = endpoint,
-                TransportMode = HttpTransportMode.StreamableHttp,
-                ConnectionTimeout = options.RequestTimeout
-            },
-            httpClientFactory.CreateClient(HttpClientName),
-            ownsHttpClient: false);
+        await using var transport = CreateTransport(endpoint, options);
 
         await using var client = await McpClient.CreateAsync(
             transport,
@@ -123,4 +155,18 @@ public sealed class FtShareMcpToolInvoker(
 
         return null;
     }
+
+    private HttpClientTransport CreateTransport(Uri endpoint, FtShareOptions options) => new(
+        new HttpClientTransportOptions
+        {
+            Endpoint = endpoint,
+            TransportMode = HttpTransportMode.StreamableHttp,
+            ConnectionTimeout = options.RequestTimeout,
+            AdditionalHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Authorization"] = $"Bearer {options.ApiKey}"
+            }
+        },
+        httpClientFactory.CreateClient(HttpClientName),
+        ownsHttpClient: false);
 }

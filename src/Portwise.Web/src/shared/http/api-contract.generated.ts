@@ -358,6 +358,260 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/stock-data-providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns available and configured stock data providers. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockDataProvidersResponse"];
+                        "application/json": components["schemas"]["StockDataProvidersResponse"];
+                        "text/json": components["schemas"]["StockDataProvidersResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Creates one stock data provider instance. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Provider definition, name, and explicit credential action. */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateStockDataProviderRequest"];
+                    "text/json": components["schemas"]["CreateStockDataProviderRequest"];
+                    "application/*+json": components["schemas"]["CreateStockDataProviderRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockDataProviderDto"];
+                        "application/json": components["schemas"]["StockDataProviderDto"];
+                        "text/json": components["schemas"]["StockDataProviderDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock-data-providers/{providerId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Updates one stock data provider instance. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Stock data provider identifier. */
+                    providerId: string;
+                };
+                cookie?: never;
+            };
+            /** @description Provider values, credential action, and expected revision. */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateStockDataProviderRequest"];
+                    "text/json": components["schemas"]["UpdateStockDataProviderRequest"];
+                    "application/*+json": components["schemas"]["UpdateStockDataProviderRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockDataProviderDto"];
+                        "application/json": components["schemas"]["StockDataProviderDto"];
+                        "text/json": components["schemas"]["StockDataProviderDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Deletes an unbound stock data provider instance. */
+        delete: {
+            parameters: {
+                query?: {
+                    /** @description Revision last read by the caller. */
+                    expectedRevision?: number | string;
+                };
+                header?: never;
+                path: {
+                    /** @description Stock data provider identifier. */
+                    providerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock-data-providers/{providerId}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verifies the saved connection without changing its configuration. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Stock data provider identifier. */
+                    providerId: string;
+                };
+                cookie?: never;
+            };
+            /** @description Expected provider revision. */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["VerifyStockDataProviderRequest"];
+                    "text/json": components["schemas"]["VerifyStockDataProviderRequest"];
+                    "application/*+json": components["schemas"]["VerifyStockDataProviderRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["VerifyStockDataProviderResponse"];
+                        "application/json": components["schemas"]["VerifyStockDataProviderResponse"];
+                        "text/json": components["schemas"]["VerifyStockDataProviderResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock-data-providers/routes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns all fixed stock data capability routes. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockDataRoutesResponse"];
+                        "application/json": components["schemas"]["StockDataRoutesResponse"];
+                        "text/json": components["schemas"]["StockDataRoutesResponse"];
+                    };
+                };
+            };
+        };
+        /** Atomically updates all fixed stock data capability routes. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description All route bindings and their expected revisions. */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateStockDataRoutesRequest"];
+                    "text/json": components["schemas"]["UpdateStockDataRoutesRequest"];
+                    "application/*+json": components["schemas"]["UpdateStockDataRoutesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockDataRoutesResponse"];
+                        "application/json": components["schemas"]["StockDataRoutesResponse"];
+                        "text/json": components["schemas"]["StockDataRoutesResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/stocks": {
         parameters: {
             query?: never;
@@ -791,6 +1045,13 @@ export interface components {
             /** @description Persisted stock recommendation snapshots. */
             stocks: components["schemas"]["StockRecommendationResult"][];
         };
+        /** @description Requests creation of one stock data provider instance. */
+        CreateStockDataProviderRequest: {
+            /** Format: uuid */
+            providerDefinitionId: string;
+            name: string;
+            credentials: components["schemas"]["SecretUpdateRequest"];
+        };
         /** @description Optional initial holding values supplied during setup. */
         InitialHoldingInput: {
             /**
@@ -1078,6 +1339,18 @@ export interface components {
              */
             effectiveFromDate: string;
         };
+        /** @description Describes whether a saved secret is missing, configured, or unreadable. */
+        SecretStateDto: {
+            /** @description Stable secret state code. */
+            stateCode: string;
+        };
+        /** @description Requests an explicit keep, replace, or clear operation for a secret. */
+        SecretUpdateRequest: {
+            /** @description Stable secret update action code. */
+            action: string;
+            /** @description New plaintext only when the action is replace. */
+            value: null | string;
+        };
         /** @description Request to initialize the local portfolio workspace. */
         SetupRequest: {
             /** @description Display name of the portfolio. */
@@ -1217,6 +1490,55 @@ export interface components {
              * @description Persistent identifier of the security.
              */
             securityId: string;
+        };
+        /** @description Describes an available migration-managed stock data provider kind. */
+        StockDataProviderDefinitionDto: {
+            /** Format: uuid */
+            id: string;
+            providerKindCode: string;
+            displayName: string;
+            isEnabled: boolean;
+        };
+        /** @description Describes one configured stock data provider without returning its credentials. */
+        StockDataProviderDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            providerDefinitionId: string;
+            providerKindCode: string;
+            name: string;
+            secretState: components["schemas"]["SecretStateDto"];
+            runtimeStatusCode: string;
+            verificationStateCode: string;
+            /** Format: date-time */
+            lastVerifiedAtUtc: null | string;
+            lastVerificationErrorCode: null | string;
+            /** Format: int64 */
+            revision: number | string;
+            /** Format: date-time */
+            updatedAtUtc: string;
+        };
+        /** @description Returns available provider definitions and configured provider instances. */
+        StockDataProvidersResponse: {
+            definitions: components["schemas"]["StockDataProviderDefinitionDto"][];
+            providers: components["schemas"]["StockDataProviderDto"][];
+        };
+        /** @description Describes the provider binding and effective status for one stock data capability. */
+        StockDataRouteDto: {
+            /** Format: uuid */
+            id: string;
+            capabilityCode: string;
+            /** Format: uuid */
+            providerId: null | string;
+            runtimeStatusCode: string;
+            /** Format: int64 */
+            revision: number | string;
+            /** Format: date-time */
+            updatedAtUtc: string;
+        };
+        /** @description Returns all fixed stock data capability routes. */
+        StockDataRoutesResponse: {
+            routes: components["schemas"]["StockDataRouteDto"][];
         };
         /** @description Describes one stock data synchronization failure. */
         StockDataSyncFailure: {
@@ -1580,6 +1902,34 @@ export interface components {
              * @description Revision last read by the caller.
              */
             expectedRevision: number | string;
+        };
+        /** @description Requests an optimistic-concurrency update to a stock data provider. */
+        UpdateStockDataProviderRequest: {
+            name: string;
+            credentials: components["schemas"]["SecretUpdateRequest"];
+            /** Format: int64 */
+            expectedRevision: number | string;
+        };
+        /** @description Requests one optimistic-concurrency stock data route binding update. */
+        UpdateStockDataRouteRequest: {
+            capabilityCode: string;
+            /** Format: uuid */
+            providerId: null | string;
+            /** Format: int64 */
+            expectedRevision: number | string;
+        };
+        /** @description Requests one atomic update to all fixed stock data capability routes. */
+        UpdateStockDataRoutesRequest: {
+            routes: components["schemas"]["UpdateStockDataRouteRequest"][];
+        };
+        /** @description Requests connection verification for the last observed provider revision. */
+        VerifyStockDataProviderRequest: {
+            /** Format: int64 */
+            expectedRevision: number | string;
+        };
+        /** @description Returns the provider state recorded after a connection verification attempt. */
+        VerifyStockDataProviderResponse: {
+            provider: components["schemas"]["StockDataProviderDto"];
         };
     };
     responses: never;

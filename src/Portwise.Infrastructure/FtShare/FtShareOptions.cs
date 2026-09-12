@@ -4,9 +4,9 @@ public sealed class FtShareOptions
 {
     private const int MaxHttpRequestsPerExchange = 4;
 
-    public const string SectionName = "FtShare";
-
     public string McpEndpoint { get; set; } = string.Empty;
+
+    public string ApiKey { get; set; } = string.Empty;
 
     public string StockProfileToolName { get; set; } = "get_stock_profile";
 

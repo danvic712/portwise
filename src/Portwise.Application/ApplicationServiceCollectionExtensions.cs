@@ -5,6 +5,7 @@ using Portwise.Application.Preferences;
 using Portwise.Application.Recommendations;
 using Portwise.Application.Setup;
 using Portwise.Application.Stocks;
+using Portwise.Application.StockDataProviders;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,6 +19,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddValidatorsFromAssemblyContaining<SetupAppService>();
         services.AddPortwiseSetupModule();
         services.AddPortwiseStocksModule();
+        services.AddPortwiseStockDataProvidersModule();
         services.AddPortwisePortfolioModule();
         services.AddPortwisePreferencesModule();
         services.AddPortwiseRecommendationsModule();

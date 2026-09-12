@@ -1,0 +1,42 @@
+{
+  "stock_data_provider_validation_failed": {
+    "status_code": 400,
+    "title": "The stock data provider is invalid",
+    "detail": "Review the provider name and credential action, then try again."
+  },
+  "stock_data_provider_definition_unavailable": {
+    "status_code": 409,
+    "title": "The stock data provider type is unavailable",
+    "detail": "Choose an enabled stock data provider type and try again."
+  },
+  "stock_data_provider_already_exists": {
+    "status_code": 409,
+    "title": "This stock data provider is already configured",
+    "detail": "Only one instance of each stock data provider type can be configured."
+  },
+  "stock_data_provider_not_found": {
+    "status_code": 404,
+    "title": "The stock data provider was not found",
+    "detail": "Refresh the settings page and try again."
+  },
+  "stock_data_provider_revision_conflict": {
+    "status_code": 409,
+    "title": "The stock data provider changed",
+    "detail": "Refresh the settings page and apply your changes again."
+  },
+  "stock_data_provider_in_use": {
+    "status_code": 409,
+    "title": "The stock data provider is still in use",
+    "detail": "Rebind or clear every stock data route that uses this provider before deleting it."
+  },
+  "stock_data_route_validation_failed": {
+    "status_code": 400,
+    "title": "The stock data routes are invalid",
+    "detail": "Submit each stock data capability once and choose only existing providers."
+  },
+  "stock_data_route_revision_conflict": {
+    "status_code": 409,
+    "title": "The stock data routes changed",
+    "detail": "Refresh the settings page and apply the route changes again."
+  }
+}

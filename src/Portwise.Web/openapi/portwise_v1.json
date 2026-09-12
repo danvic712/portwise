@@ -358,6 +358,326 @@
         }
       }
     },
+    "/api/v1/stock-data-providers": {
+      "get": {
+        "tags": [
+          "StockDataProviders"
+        ],
+        "summary": "Returns available and configured stock data providers.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataProvidersResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataProvidersResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataProvidersResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "StockDataProviders"
+        ],
+        "summary": "Creates one stock data provider instance.",
+        "requestBody": {
+          "description": "Provider definition, name, and explicit credential action.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStockDataProviderRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStockDataProviderRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStockDataProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataProviderDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataProviderDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataProviderDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stock-data-providers/{providerId}": {
+      "put": {
+        "tags": [
+          "StockDataProviders"
+        ],
+        "summary": "Updates one stock data provider instance.",
+        "parameters": [
+          {
+            "name": "providerId",
+            "in": "path",
+            "description": "Stock data provider identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Provider values, credential action, and expected revision.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStockDataProviderRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStockDataProviderRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStockDataProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataProviderDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataProviderDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataProviderDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "StockDataProviders"
+        ],
+        "summary": "Deletes an unbound stock data provider instance.",
+        "parameters": [
+          {
+            "name": "providerId",
+            "in": "path",
+            "description": "Stock data provider identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "expectedRevision",
+            "in": "query",
+            "description": "Revision last read by the caller.",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/stock-data-providers/{providerId}/verify": {
+      "post": {
+        "tags": [
+          "StockDataProviders"
+        ],
+        "summary": "Verifies the saved connection without changing its configuration.",
+        "parameters": [
+          {
+            "name": "providerId",
+            "in": "path",
+            "description": "Stock data provider identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Expected provider revision.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyStockDataProviderRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyStockDataProviderRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyStockDataProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyStockDataProviderResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyStockDataProviderResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyStockDataProviderResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stock-data-providers/routes": {
+      "get": {
+        "tags": [
+          "StockDataProviders"
+        ],
+        "summary": "Returns all fixed stock data capability routes.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataRoutesResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataRoutesResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataRoutesResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "StockDataProviders"
+        ],
+        "summary": "Atomically updates all fixed stock data capability routes.",
+        "requestBody": {
+          "description": "All route bindings and their expected revisions.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStockDataRoutesRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStockDataRoutesRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStockDataRoutesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataRoutesResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataRoutesResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataRoutesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/stocks": {
       "get": {
         "tags": [
@@ -927,6 +1247,27 @@
           }
         },
         "description": "Result of persisting a portfolio recommendation snapshot."
+      },
+      "CreateStockDataProviderRequest": {
+        "required": [
+          "providerDefinitionId",
+          "name",
+          "credentials"
+        ],
+        "type": "object",
+        "properties": {
+          "providerDefinitionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "credentials": {
+            "$ref": "#/components/schemas/SecretUpdateRequest"
+          }
+        },
+        "description": "Requests creation of one stock data provider instance."
       },
       "InitialHoldingInput": {
         "required": [
@@ -1513,6 +1854,40 @@
         },
         "description": "Request to create a versioned model-parameter set for one stock."
       },
+      "SecretStateDto": {
+        "required": [
+          "stateCode"
+        ],
+        "type": "object",
+        "properties": {
+          "stateCode": {
+            "type": "string",
+            "description": "Stable secret state code."
+          }
+        },
+        "description": "Describes whether a saved secret is missing, configured, or unreadable."
+      },
+      "SecretUpdateRequest": {
+        "required": [
+          "action",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "Stable secret update action code."
+          },
+          "value": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "New plaintext only when the action is replace."
+          }
+        },
+        "description": "Requests an explicit keep, replace, or clear operation for a secret."
+      },
       "SetupRequest": {
         "required": [
           "portfolioName",
@@ -1851,6 +2226,178 @@
           }
         },
         "description": "Current market, dividend, position and recommendation analysis for one stock."
+      },
+      "StockDataProviderDefinitionDto": {
+        "required": [
+          "id",
+          "providerKindCode",
+          "displayName",
+          "isEnabled"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "providerKindCode": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "isEnabled": {
+            "type": "boolean"
+          }
+        },
+        "description": "Describes an available migration-managed stock data provider kind."
+      },
+      "StockDataProviderDto": {
+        "required": [
+          "id",
+          "providerDefinitionId",
+          "providerKindCode",
+          "name",
+          "secretState",
+          "runtimeStatusCode",
+          "verificationStateCode",
+          "lastVerifiedAtUtc",
+          "lastVerificationErrorCode",
+          "revision",
+          "updatedAtUtc"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "providerDefinitionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "providerKindCode": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "secretState": {
+            "$ref": "#/components/schemas/SecretStateDto"
+          },
+          "runtimeStatusCode": {
+            "type": "string"
+          },
+          "verificationStateCode": {
+            "type": "string"
+          },
+          "lastVerifiedAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "lastVerificationErrorCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "updatedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Describes one configured stock data provider without returning its credentials."
+      },
+      "StockDataProvidersResponse": {
+        "required": [
+          "definitions",
+          "providers"
+        ],
+        "type": "object",
+        "properties": {
+          "definitions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockDataProviderDefinitionDto"
+            }
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockDataProviderDto"
+            }
+          }
+        },
+        "description": "Returns available provider definitions and configured provider instances."
+      },
+      "StockDataRouteDto": {
+        "required": [
+          "id",
+          "capabilityCode",
+          "providerId",
+          "runtimeStatusCode",
+          "revision",
+          "updatedAtUtc"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "capabilityCode": {
+            "type": "string"
+          },
+          "providerId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "runtimeStatusCode": {
+            "type": "string"
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "updatedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Describes the provider binding and effective status for one stock data capability."
+      },
+      "StockDataRoutesResponse": {
+        "required": [
+          "routes"
+        ],
+        "type": "object",
+        "properties": {
+          "routes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockDataRouteDto"
+            }
+          }
+        },
+        "description": "Returns all fixed stock data capability routes."
       },
       "StockDataSyncFailure": {
         "required": [
@@ -2599,6 +3146,104 @@
           }
         },
         "description": "Requests an optimistic-concurrency update to application preferences."
+      },
+      "UpdateStockDataProviderRequest": {
+        "required": [
+          "name",
+          "credentials",
+          "expectedRevision"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "credentials": {
+            "$ref": "#/components/schemas/SecretUpdateRequest"
+          },
+          "expectedRevision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          }
+        },
+        "description": "Requests an optimistic-concurrency update to a stock data provider."
+      },
+      "UpdateStockDataRouteRequest": {
+        "required": [
+          "capabilityCode",
+          "providerId",
+          "expectedRevision"
+        ],
+        "type": "object",
+        "properties": {
+          "capabilityCode": {
+            "type": "string"
+          },
+          "providerId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "expectedRevision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          }
+        },
+        "description": "Requests one optimistic-concurrency stock data route binding update."
+      },
+      "UpdateStockDataRoutesRequest": {
+        "required": [
+          "routes"
+        ],
+        "type": "object",
+        "properties": {
+          "routes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateStockDataRouteRequest"
+            }
+          }
+        },
+        "description": "Requests one atomic update to all fixed stock data capability routes."
+      },
+      "VerifyStockDataProviderRequest": {
+        "required": [
+          "expectedRevision"
+        ],
+        "type": "object",
+        "properties": {
+          "expectedRevision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          }
+        },
+        "description": "Requests connection verification for the last observed provider revision."
+      },
+      "VerifyStockDataProviderResponse": {
+        "required": [
+          "provider"
+        ],
+        "type": "object",
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/StockDataProviderDto"
+          }
+        },
+        "description": "Returns the provider state recorded after a connection verification attempt."
       }
     }
   },
@@ -2617,6 +3262,9 @@
     },
     {
       "name": "Setup"
+    },
+    {
+      "name": "StockDataProviders"
     },
     {
       "name": "Stocks"

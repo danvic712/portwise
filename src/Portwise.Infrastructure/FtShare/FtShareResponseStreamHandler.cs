@@ -3,8 +3,7 @@ using System.Net;
 namespace Portwise.Infrastructure.FtShare;
 
 /// <summary>
-/// Preserves the standard HTTP resilience boundary when an MCP response stream
-/// fails after the response headers have been received.
+/// Classifies MCP response stream failures so the complete MCP exchange can be retried.
 /// </summary>
 internal sealed class FtShareResponseStreamHandler : DelegatingHandler
 {

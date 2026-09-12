@@ -8,6 +8,14 @@ public static class ApplicationErrorCodes
     public const string PreferencesNotConfigured = "preferences_not_configured";
     public const string PreferencesValidationFailed = "preferences_validation_failed";
     public const string PreferencesRevisionConflict = "preferences_revision_conflict";
+    public const string StockDataProviderValidationFailed = "stock_data_provider_validation_failed";
+    public const string StockDataProviderDefinitionUnavailable = "stock_data_provider_definition_unavailable";
+    public const string StockDataProviderAlreadyExists = "stock_data_provider_already_exists";
+    public const string StockDataProviderNotFound = "stock_data_provider_not_found";
+    public const string StockDataProviderRevisionConflict = "stock_data_provider_revision_conflict";
+    public const string StockDataProviderInUse = "stock_data_provider_in_use";
+    public const string StockDataRouteValidationFailed = "stock_data_route_validation_failed";
+    public const string StockDataRouteRevisionConflict = "stock_data_route_revision_conflict";
     public const string ModelParameterValidationFailed = "model_parameter_validation_failed";
     public const string ModelParameterVersionAlreadyExists = "model_parameter_version_already_exists";
     public const string StockAnalysisValidationFailed = "stock_analysis_validation_failed";
@@ -33,6 +41,14 @@ public static class ApplicationErrorCodes
         PreferencesNotConfigured,
         PreferencesValidationFailed,
         PreferencesRevisionConflict,
+        StockDataProviderValidationFailed,
+        StockDataProviderDefinitionUnavailable,
+        StockDataProviderAlreadyExists,
+        StockDataProviderNotFound,
+        StockDataProviderRevisionConflict,
+        StockDataProviderInUse,
+        StockDataRouteValidationFailed,
+        StockDataRouteRevisionConflict,
         ModelParameterValidationFailed,
         ModelParameterVersionAlreadyExists,
         StockAnalysisValidationFailed,

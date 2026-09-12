@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Microsoft.Extensions.Options;
 using Portwise.Application.Contracts;
 using Portwise.Application.Diagnostics;
 using Portwise.Infrastructure.Contracts;
@@ -237,14 +236,19 @@ public sealed class FtShareStockDataProviderTests
 
         return new FtShareStockDataProvider(
             new StubInvoker(payload),
-            Options.Create(new FtShareOptions()),
+            new FtShareOptions(),
             new StubDiagnosticContext(),
             TimeProvider.System);
     }
 
     private sealed class StubInvoker(JsonElement payload) : IFtShareMcpToolInvoker
     {
+        public Task VerifyAsync(
+            FtShareOptions options,
+            CancellationToken cancellationToken) => Task.CompletedTask;
+
         public Task<JsonElement?> InvokeAsync(
+            FtShareOptions options,
             string toolName,
             IReadOnlyDictionary<string, object?> arguments,
             CancellationToken cancellationToken)

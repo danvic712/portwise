@@ -19,51 +19,29 @@ internal static class ConfigurationCodeConverters
             ? theme
             : throw new ArgumentOutOfRangeException(nameof(value), value, null);
 
-    public static string ToCode(ProviderVerificationState value) => value switch
-    {
-        ProviderVerificationState.Unverified => "unverified",
-        ProviderVerificationState.Succeeded => "succeeded",
-        ProviderVerificationState.Failed => "failed",
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
+    public static string ToCode(ProviderVerificationState value) =>
+        ProviderVerificationStateCodes.From(value);
 
-    public static ProviderVerificationState ToProviderVerificationState(string value) => value switch
-    {
-        "unverified" => ProviderVerificationState.Unverified,
-        "succeeded" => ProviderVerificationState.Succeeded,
-        "failed" => ProviderVerificationState.Failed,
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
+    public static ProviderVerificationState ToProviderVerificationState(string value) =>
+        ProviderVerificationStateCodes.TryParse(value, out var state)
+            ? state
+            : throw new ArgumentOutOfRangeException(nameof(value), value, null);
 
-    public static string ToCode(StockDataProviderKind value) => value switch
-    {
-        StockDataProviderKind.FtShare => "ftshare",
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
+    public static string ToCode(StockDataProviderKind value) =>
+        StockDataProviderKindCodes.From(value);
 
-    public static StockDataProviderKind ToStockDataProviderKind(string value) => value switch
-    {
-        "ftshare" => StockDataProviderKind.FtShare,
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
+    public static StockDataProviderKind ToStockDataProviderKind(string value) =>
+        StockDataProviderKindCodes.TryParse(value, out var kind)
+            ? kind
+            : throw new ArgumentOutOfRangeException(nameof(value), value, null);
 
-    public static string ToCode(StockDataCapability value) => value switch
-    {
-        StockDataCapability.Profile => "profile",
-        StockDataCapability.Market => "market",
-        StockDataCapability.Dividend => "dividend",
-        StockDataCapability.Financial => "financial",
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
+    public static string ToCode(StockDataCapability value) =>
+        StockDataCapabilityCodes.From(value);
 
-    public static StockDataCapability ToStockDataCapability(string value) => value switch
-    {
-        "profile" => StockDataCapability.Profile,
-        "market" => StockDataCapability.Market,
-        "dividend" => StockDataCapability.Dividend,
-        "financial" => StockDataCapability.Financial,
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
+    public static StockDataCapability ToStockDataCapability(string value) =>
+        StockDataCapabilityCodes.TryParse(value, out var capability)
+            ? capability
+            : throw new ArgumentOutOfRangeException(nameof(value), value, null);
 
     public static string ToCode(InferenceProviderType value) => value switch
     {

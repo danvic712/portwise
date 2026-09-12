@@ -16,4 +16,11 @@ public sealed class StockDataRoute
     public long Revision { get; set; } = 1;
 
     public DateTimeOffset UpdatedAtUtc { get; set; }
+
+    public void Bind(Guid? providerId, DateTimeOffset updatedAtUtc)
+    {
+        ProviderId = providerId;
+        Revision = checked(Revision + 1);
+        UpdatedAtUtc = updatedAtUtc.ToUniversalTime();
+    }
 }

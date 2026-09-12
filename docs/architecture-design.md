@@ -38,7 +38,7 @@ Host 项目的配置文件位于 `src/Portwise/`：
 - `appsettings.json`：本地开发默认配置，提供 PostgreSQL 连接字符串示例。
 - `appsettings.Production.json`：生产环境非敏感默认配置；实际 PostgreSQL 连接通过 `ConnectionStrings__Default` 环境变量注入。
 
-ASP.NET Core 默认环境名为 `Production`（大小写不敏感）时，会自动加载 `appsettings.Production.json`。环境变量仍作为后置覆盖层，可用于部署时覆盖连接字符串、FTShare MCP 地址和工具参数。两个文件只保存非敏感默认值，FTShare key 不进入源代码、镜像或 Git。
+ASP.NET Core 默认环境名为 `Production`（大小写不敏感）时，会自动加载 `appsettings.Production.json`。环境变量仍作为后置覆盖层提供部署级连接字符串；FTShare MCP 地址、工具参数与重试参数由 migration seed 到 PostgreSQL，运行时不再从 Options 读取。配置文件只保存非敏感部署默认值，FTShare key 只能由用户录入并加密保存，不进入源代码、镜像或 Git。
 
 ## 3.1 多语言资源
 
@@ -109,9 +109,12 @@ src/
 │   ├── ApplicationServiceCollectionExtensions.cs
 │   ├── Setup/                          # Setup module：contract、DTO、validation、实现
 │   │   ├── Contracts/ISetupAppService.cs
-│   │   ├── Dtos/{InitialHoldingInput,SetupRequest,SetupResult,SetupStatus,SetupStockRequest,SetupStockResult}.cs
+│   │   ├── Dtos/{InitialHoldingInput,SetupRequest,SetupResult,SetupStatusDto,SetupStockRequest,SetupStockResult}.cs
 │   │   ├── Validators/{InitialHoldingInput,SetupRequest,SetupStockRequest}Validator.cs
 │   │   └── SetupAppService.cs
+│   ├── Preferences/                    # PostgreSQL 中的系统语言与主题偏好
+│   ├── StockDataProviders/             # Provider 实例、密钥状态、验证和四类能力 Route
+│   ├── Configuration/                  # 跨配置 module 的密钥保护 contract/DTO
 │   ├── Stocks/                         # Market Data module：股票事实、关注列表和同步
 │   │   ├── Contracts/                   # 股票资料与同步 Interface
 │   │   ├── Dtos/                        # 股票资料、行情、股息、财务和同步结果
@@ -151,6 +154,8 @@ src/
 │   │   ├── EFRepository.cs
 │   │   └── EFUow.cs
 │   ├── InfrastructureServiceCollectionExtensions.cs
+│   ├── DataProtection/                 # ASP.NET Core Data Protection 密钥保护 Adapter
+│   ├── StockDataProviders/Runtime/      # 数据库路由解析与 provider-kind Adapter
 │   ├── Migrations/                     # EF Core 可追踪数据库迁移
 │   ├── DatabaseLifecycle.cs            # 数据库迁移和连接检查
 │   ├── PortwiseDbContext.cs     # EF Core DbContext
@@ -219,7 +224,7 @@ src/
 
 前端命名约定：React 组件及 Provider/Context 模块使用 PascalCase，Hook 文件名与 hook 标识符保持一致的 camelCase（例如 `useLatestRequest.ts`）；API、工具、测试和 CSS 文件保留 lower-case、dotted 或 kebab-case，生成文件不手工改名。
 
-Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfolio` 和 `Recommendations` 四个 module。每个 module 共置自己拥有的 Interface、DTO、Validator、实现和测试；因此修改一个用例时，主要知识和验证都集中在同一目录。module 内的 public type 使用对应的 `Portwise.Application.<Module>.(Contracts|Dtos|Validators)` namespace，`ModuleNamespaceArchitectureTests` 会阻止新的类型泄漏回技术桶。`Contracts`、`Dtos` 和 `Validators` 根目录只保留真正跨 module 的错误、本地化、诊断、共享持仓 DTO 和通用 A 股规则，避免技术桶重新变成所有业务的汇聚点。目录归并不等于合并 HTTP 契约：价格、股息和财务同步仍然保持独立的 Interface 与 AppService，因为它们具有不同的数据校验、幂等键和结果类型；资料、行情、股息和财务四类事实的共同摄取、Security 解析、FTShare 调用、幂等写入和逐类失败策略由 `IStockFactSyncAppService` / `StockFactSyncAppService` 这个深模块承载，三个 HTTP AppService 只是验证后转发。单股分析、组合分配和建议快照也保持独立的用例边界。前端采用同样的业务边界，但不再增加 `features/` 包装层；每个业务 module 直接位于 `src/`，并只通过版本化 HTTP API 访问后端，不直接引用 Application 或 Infrastructure。
+Application 的业务实现按业务能力归并到 `Setup`、`Preferences`、`StockDataProviders`、`Stocks`、`Portfolio` 和 `Recommendations` module。每个 module 共置自己拥有的 Interface、DTO、Validator、实现和测试；因此修改一个用例时，主要知识和验证都集中在同一目录。module 内的 public type 使用对应的 `Portwise.Application.<Module>.(Contracts|Dtos|Validators)` namespace，`ModuleNamespaceArchitectureTests` 会阻止新的类型泄漏回技术桶。`Contracts`、`Dtos` 和 `Validators` 根目录只保留真正跨 module 的错误、本地化、诊断、共享持仓 DTO 和通用 A 股规则；`Configuration` 只承载多个配置 module 共用的密钥保护抽象与 secret DTO。目录归并不等于合并 HTTP 契约：价格、股息和财务同步仍然保持独立的 Interface 与 AppService，因为它们具有不同的数据校验、幂等键和结果类型；资料、行情、股息和财务四类事实的共同摄取、Security 解析、运行时 Provider 调用、幂等写入和逐类失败策略由 `IStockFactSyncAppService` / `StockFactSyncAppService` 这个深模块承载，三个 HTTP AppService 只是验证后转发。单股分析、组合分配和建议快照也保持独立的用例边界。前端采用同样的业务边界，但不再增加 `features/` 包装层；每个业务 module 直接位于 `src/`，并只通过版本化 HTTP API 访问后端，不直接引用 Application 或 Infrastructure。
 
 前端公共页面框架由 `components/layout/` 下的 `Header`、`Footer`、`PageFrame`、`PageTitle`、`SectionHeading` 和 `app/routing/site-navigation.ts` 组成；`app/ApplicationShell.tsx` 是负责 Setup gate、路由选择和业务 module 懒加载的应用编排 module，不是公共视觉组件。所有页面通过 `PageFrame` 复用框架，页面专属状态与布局留在对应业务 module。`src/app/routing/navigation.ts` 是页面 shell 的导航 module：它集中路由识别、Setup gate 所需的路径判断、浏览器 history/popstate Adapter、查询参数更新和组合股票选择的 session 持久化；`App.tsx` 只负责提供 LocaleProvider，业务 module 通过 `onNavigate`/`onReplaceQuery` seam 操作导航，不直接写 `window.history` 或 `sessionStorage`。查询参数优先于旧 session 选择，避免从今日决策跳转到组合页面时恢复错误股票。操作建议的代码归类、买卖方向、展示状态、价格区间和未知代码降级统一由 `src/shared/display/recommendation-display.ts` 提供；页面和组件只消费归一化后的展示结果，不自行解析 `recommendation_code` 或 `price_zone_code`。`index.css` 只承载 token、reset 和跨页面共享原子样式；今日决策页的布局、等待态、就绪态、骨架屏、装饰和响应式样式统一位于 `src/recommendations/recommendations.css`。交互控件优先使用 `src/components/ui` 中的 shadcn/ui 原语，业务样式只负责业务变体与布局。
 
@@ -229,7 +234,7 @@ Application 的业务实现按业务能力归并到 `Setup`、`Stocks`、`Portfo
 
 `Stocks` 同时承载交易日同步编排，因为该编排只围绕关注股票的外部事实更新；交易日同步通过 `IStockFactSyncAppService.SyncAsync` 一次传递单只股票的规范化引用，并消费包含资料、行情、股息、财务结果和逐类失败的 `StockFactSyncResult`。如果未来出现多个互不相关的调度任务，再单独引入 `Operations` 模块。`StockModelParameterAppService` 与单股分析、组合分配、建议快照同属 `Recommendations` module，因为模型参数是建议规则的输入；Portfolio module 只拥有现金流水、交易和持仓不变量。
 
-各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddPortwiseApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddPortwiseInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddPortwiseHost`。Application 根扩展只负责 FluentValidation、跨 module 的本地化/诊断和 `TimeProvider`，再调用 `AddPortwiseSetupModule`、`AddPortwiseStocksModule`、`AddPortwisePortfolioModule`、`AddPortwiseRecommendationsModule`；每个 module 自己拥有实现到 Interface 的注册清单，新增用例不会把具体类型重新塞回技术桶。Host 另提供 `HostServiceCollectionExtensions.AddPortwise(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库 migration 统一放在 `WebApplicationExtensions`；手动、每日定时和 Setup 后台同步都通过 `StockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器统一串行化执行、run ID、诊断上下文和取消语义，避免不同入口同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
+各层的依赖注入通过对应的扩展类集中注册：Application 使用 `ApplicationServiceCollectionExtensions.AddPortwiseApplication`，Infrastructure 使用 `InfrastructureServiceCollectionExtensions.AddPortwiseInfrastructure`，Host 使用 `HostServiceCollectionExtensions.AddPortwiseHost`。Application 根扩展只负责 FluentValidation、跨 module 的本地化/诊断和 `TimeProvider`，再调用各业务 module 的注册扩展，包括 `AddPortwiseStockDataProvidersModule`；每个 module 自己拥有实现到 Interface 的注册清单，新增用例不会把具体类型重新塞回技术桶。Host 另提供 `HostServiceCollectionExtensions.AddPortwise(WebApplicationBuilder)` 作为启动组合入口，按固定顺序组合三层注册。Host 对 `WebApplication` 的异常处理中间件、Controller/健康检查路由和数据库 migration 统一放在 `WebApplicationExtensions`；手动、每日定时和 Setup 后台同步都通过 `StockDataSyncRunner` 集中创建 scoped 生命周期并解析应用服务，运行器统一串行化执行、run ID、诊断上下文和取消语义，避免不同入口同时写库；`Program.cs` 只保留配置构建、组合扩展调用、应用构建和启动顺序。
 
 公共基础能力也遵循相同的组合边界：Swagger/Serilog 注册在 `HostServiceCollectionExtensions`，Swagger UI、Serilog HTTP 请求日志中间件和其他 `WebApplication` 行为在 `WebApplicationExtensions`；Mapperly 映射定义由 `StocksMapper`、`PortfolioMapper` 和 `RecommendationsMapper` 分别归属各自 module，由构建期生成实际映射代码。
 
@@ -516,24 +521,34 @@ Host 的 `DailyStockDataSyncHostedService` 按 `DailySync:LocalTime` 和 `DailyS
 
 `POST /api/v1/portfolio/trades` 通过 `IPortfolioTradeAppService` 记录已发生的买入或卖出。买入会按成交价、数量和手续费重算加权平均成本；实际卖出只不能超过当前持股，允许真实历史交易使当前持仓低于核心仓。核心仓保护只用于系统生成普通减仓建议，不阻止用户补录已经发生的交易。提供 `source_record_id` 时，按组合范围幂等处理重复提交；同一来源标识如果对应不同股票、日期、方向、股数、价格或手续费，返回 409 冲突而不是静默复用。交易响应中的 `TradePrincipalAmount` 只表示成交本金，手续费单独由 `TransactionFeeAmount` 表示。`PortfolioTradeCashLedger` 是交易现金影响的唯一 Domain 策略：买入本金是 outflow，卖出本金是 inflow，手续费始终是独立的 fee/outflow。每次新交易与策略生成的现金流水在同一个 UoW 中提交，自动流水来源标识使用 `portfolio_trade:{trade_id}:principal` 或 `portfolio_trade:{trade_id}:fee`；`BudgetAppService` 只负责用户实际现金事实的录入和摘要查询，不能再次推导交易现金影响。
 
-## 9. FTShare MCP Adapter
+## 9. 股票数据 Provider 与 FTShare MCP Adapter
 
 ```text
-IStockDataProvider
-        ▲
-        │ satisfies
-FtShareStockDataProvider
-        │
-        ▼
-IFtShareMcpToolInvoker
-        ▲
-        │ satisfies
-FtShareMcpToolInvoker ──> official MCP Client ──> FTShare MCP
+股票事实调用方 ──> DatabaseRoutedStockDataProvider
+                            │ 每次按 capability 读取 Route
+                            ▼
+                 StockDataProviderRuntimeResolver
+                            │ 按 ProviderKind 选择
+                            ▼
+          IStockDataProviderRuntimeAdapter
+                            ▲
+                            │ satisfies
+          FtShareStockDataProviderRuntimeAdapter
+                  │                    │
+                  ▼                    ▼
+       FtShareStockDataProvider   FTShare settings + protected key
+                  │
+                  ▼
+       IFtShareMcpToolInvoker ──> official MCP Client ──> FTShare MCP
 ```
 
-`IFtShareMcpToolInvoker` 是 Infrastructure 内部 seam，位于 `Infrastructure/Contracts/`。`FtShareMcpToolInvoker` 使用命名的 `IHttpClientFactory` client 创建 Streamable HTTP transport；连接池、handler 生命周期、HTTP 状态码分类、`Retry-After`、jitter、指数退避和每次 HTTP attempt 的超时由 `Microsoft.Extensions.Http.Resilience` 标准管线负责。由于一个 MCP exchange 可能包含 session 初始化、工具调用和流结束等多次 HTTP 往返，adapter 另外通过 DI 注册的 exchange resilience pipeline 保留一个覆盖完整 exchange（包括 response stream 读取）的有限 operation deadline，并把调用方取消与 operation timeout 分开处理。`FtShareResponseStreamHandler` 将响应流读取阶段的 `IOException`/`HttpRequestException` 转换为专用的 transport failure，使其只按明确的网络失败分类重试；MCP 工具业务错误不会进入任何 resilience 重试。FTShare 工具只读，因此 MCP 的 POST 请求可安全按暂态 HTTP 失败重试；如果未来接入有副作用的工具，必须使用独立 client 并重新声明幂等性契约。`FtShareStockDataProvider` 只负责调用和编排，`FtShareWireModels` 通过 `System.Text.Json` source-generated context 反序列化协议 payload，`FtSharePayloadReader` 统一处理字符串化 JSON 与兼容 envelope，`FtSharePayloadNormalizer` 集中处理别名、日期/数字兼容、身份校验和数据质量默认值，再输出 `StockData`、`StockMarketData`、`StockDividendData` 和 `StockFinancialData`。这样协议噪声不会泄漏到 Application DTO，且四类数据都有 fixture 覆盖。它只接受 A 股和 CNY 股票资料，并拒绝缺少关键字段或股票身份不匹配的结果。
+`StockDataProviderConfigurationAppService` 通过 `/api/v1/stock-data-providers` 管理 migration 提供的 definition、每类至多一个用户实例、显式 Keep/Replace/Clear 密钥动作、独立连接验证，以及 Profile、Market、Dividend、Financial 四条固定能力 Route。响应只返回 Missing、Configured、Unreadable 密钥状态；密文和明文都不会进入 DTO。Provider 与 Route 使用显式 revision 做乐观并发；四条 Route 一次提交，被任一 Route 引用的 Provider 使用预检查和数据库 restrict 双重拒绝删除。
 
-MCP 地址、工具名、股票代码参数名、交易所参数名、每次 HTTP attempt 超时、最大重试次数和重试间隔通过运行时配置注入。当前默认最多重试 2 次，使用 250ms 起步的指数退避并启用 jitter；标准 HTTP resilience 管线同时尊重上游 `Retry-After`，而 exchange pipeline 只处理被 `FtShareResponseStreamHandler` 明确分类的响应流中断。完整 MCP exchange 的 operation deadline 按每次 attempt 超时和重试次数计算，退避时间消耗同一 hard cap，不会无限延长调用。FTShare key 不进入代码、DTO、日志、镜像前端资源或 Git。
+PostgreSQL 是运行时配置事实源。`DatabaseRoutedStockDataProvider` 在每次股票事实调用时按 capability 解析当前 Route；`StockDataProviderRuntimeResolver` 只负责加载 Provider/definition 并按 `ProviderKind` 选择 `IStockDataProviderRuntimeAdapter`。FTShare 专属的 settings、密钥解密、运行时 options 组装和连接验证均封装在 `FtShareStockDataProviderRuntimeAdapter`。以后增加同花顺时新增 definition、专用 settings 和 adapter 注册即可，不需要修改现有 FTShare 表或股票事实调用方。
+
+`IFtShareMcpToolInvoker` 是 Infrastructure 内部 seam，位于 `Infrastructure/Contracts/`。`FtShareMcpToolInvoker` 使用命名的 `IHttpClientFactory` client 创建 Streamable HTTP transport；连接池和 handler 生命周期由工厂管理，调用级 operation deadline、重试次数和退避间隔来自当前数据库配置。`FtShareResponseStreamHandler` 将响应流读取阶段的 `IOException`/`HttpRequestException` 转换为专用 transport failure，invoker 只对明确的网络/transport failure 重试完整 MCP exchange；MCP 工具业务错误不重试。`FtShareStockDataProvider` 只负责调用和编排，`FtShareWireModels` 通过 `System.Text.Json` source-generated context 反序列化协议 payload，`FtSharePayloadReader` 统一处理字符串化 JSON 与兼容 envelope，`FtSharePayloadNormalizer` 集中处理别名、日期/数字兼容、身份校验和数据质量默认值，再输出 `StockData`、`StockMarketData`、`StockDividendData` 和 `StockFinancialData`。这样协议噪声不会泄漏到 Application DTO，且四类数据都有 fixture 覆盖。它只接受 A 股和 CNY 股票资料，并拒绝缺少关键字段或股票身份不匹配的结果。
+
+MCP 地址、工具名、股票代码参数名、交易所参数名、请求超时、最大重试次数和重试间隔由 migration seed 到 `ftshare_provider_settings`；FTShare key 只能由用户录入，并由 ASP.NET Core Data Protection 加密后保存到 Provider 实例。当前默认最多重试 2 次，使用 250ms 起步的指数退避；退避时间消耗同一 operation deadline，不会无限延长调用。调用时通过 transport 的 Authorization header 注入 key，key 不进入响应、日志、镜像前端资源或 Git。
 
 FTShare 连接、协议、配置和超时失败先由 Adapter 转换为 Infrastructure 的 `FtShareProviderException`，该异常实现 Application Contracts 中的 `IStockDataProviderFailure` 标记接口；Application 再把它转换为 `stock_data_provider_unavailable` 或具体数据类型的业务错误。这样 Infrastructure 不直接依赖 Application 的业务异常，Application 也不依赖具体 Adapter 类型。
 
@@ -620,7 +635,7 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 - Domain 测试领域不变量。
 - Application 测试通过 `IRepository<TEntity>`、`IUow` 和数据提供 Adapter 的 Interface mock 验证用例行为。
 - Application 测试不创建真实 DbContext，也不依赖真实 PostgreSQL 或 FTShare 网络连接。
-- Infrastructure 测试只验证 FTShare Options 等非数据库行为；数据库 migration 通过生成 SQL、pending-model-changes 检查和 Compose smoke 验证。
+- Infrastructure 测试验证 FTShare transport、payload 规范化和数据库运行时 adapter 的非数据库行为；数据库 migration 通过生成 SQL、pending-model-changes 检查和 Compose smoke 验证。
 - Host 测试验证同步执行器的并发边界、Controller 入口、Options 校验和调度时间。
 - Infrastructure 的 EF Fluent 配置和 Adapter 通过编译、依赖检查及后续专门测试验证；不把 EF Core 细节泄漏到 Application 单元测试。
 
@@ -683,6 +698,6 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 
 | 复审候选项 | 处理结果 | 验证 |
 | --- | --- | --- |
-| 03 托管 FTShare HTTP transport | 已完成：使用命名 `IHttpClientFactory` client 创建 MCP transport，连接池和 handler 生命周期由工厂管理；`Microsoft.Extensions.Http.Resilience` 负责 HTTP 状态码重试、`Retry-After`、jitter、指数退避和每次 attempt 超时；DI 注册的 exchange pipeline 只重试明确分类的响应流中断，adapter 保留覆盖完整 MCP exchange（含流读取）的 hard deadline，删除手写重试循环；增加命名 client 的 POST 暂态响应重试、非暂态响应不重试、响应流异常分类和 exchange pipeline 重试测试 | Infrastructure 定向测试、完整 `dotnet test`、`git diff --check`；本次提交 |
+| 03 托管 FTShare HTTP transport | 已完成，后续由数据库配置管理演进：继续使用命名 `IHttpClientFactory` client 管理连接池和 handler 生命周期；调用级 deadline、有限指数退避和完整 MCP exchange 重试由 invoker 按当前数据库 settings 执行，`FtShareResponseStreamHandler` 继续分类响应流中断，业务错误不重试 | Infrastructure 定向测试、完整 `dotnet test`、`git diff --check`；2026-09-12 配置管理提交同步更新 |
 | 04 深化 FTShare payload 解析 | 已完成：将 800+ 行 `JsonElement` tree walk 拆为 source-generated wire models、统一 envelope reader 和单一 normalizer；保留原有兼容别名、字符串化 JSON、数字/日期/布尔值兼容与身份校验，Application 仍只接收规范化 DTO；增加 profile、market、dividend、financial 四类 fixture 测试 | Infrastructure 定向测试、编译、`git diff --check`；本次提交 |
 | 05 删除 XML→OpenAPI transformer | 已完成：删除手写 reflection/XML cache transformer；保留 `Asp.Versioning.OpenApi` 的版本化文档服务，并通过 direct literal `AddOpenApi()` 激活 ASP.NET Core 原生 XML comment source generation，自动合并 ProjectReference 文档；构建期 contract 检查覆盖 operation、parameter、request body、response 和 schema 描述 | `dotnet build`、OpenAPI 文档检查、`pnpm api:check`、全量 `dotnet test`、`git diff --check`；本次提交 |

@@ -42,7 +42,8 @@ internal sealed class EFUow(PortwiseDbContext dbContext) : IUow
         {
             throw new UnitOfWorkCommitException(
                 exception,
-                IsUniqueConstraintViolation(exception));
+                IsUniqueConstraintViolation(exception),
+                isForeignKeyConstraintViolation: IsForeignKeyConstraintViolation(exception));
         }
     }
 
@@ -50,6 +51,12 @@ internal sealed class EFUow(PortwiseDbContext dbContext) : IUow
         => exception.GetBaseException() is PostgresException
         {
             SqlState: PostgresErrorCodes.UniqueViolation
+        };
+
+    private static bool IsForeignKeyConstraintViolation(DbUpdateException exception)
+        => exception.GetBaseException() is PostgresException
+        {
+            SqlState: PostgresErrorCodes.ForeignKeyViolation
         };
 
 }
