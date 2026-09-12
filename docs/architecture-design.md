@@ -444,6 +444,8 @@ InitializationAppService
 
 Initialization 不执行外部连接验证，也不创建股票、关注列表或期初持仓；外部网络故障不会阻止保存或进入系统。股票资料由独立的 Stocks 页面维护，Provider 的显式连接验证由 Stock Data Providers 和 Inference module 提供。
 
+Onboarding Web 按原型实现为四步渐进式工作区向导：基础偏好、投资组合、股票数据提供方和 AI 推理。首屏只展开语言与主题，后续步骤在同一 draft 中保留输入并在最后一次提交时调用上述 Initialization 事务；股票数据与 AI 步骤标记为可选，完成前检查持续显示每项状态。初始化页沿用共享 Header 的品牌与偏好控件，但隐藏业务中央导航，避免首次进入时出现与向导无关的菜单。
+
 ### 8.1 Controller 与请求验证
 
 Controller 只负责 HTTP 绑定、调用 `I*AppService` 和返回响应，不包含业务计算、数据库访问、外部调用或手写输入判断。来自 HTTP、MCP 和定时任务的请求参数在 Application 边界通过 FluentValidation 验证；验证器位于所属 module 的 `Validators/`（跨 module 的通用规则位于 `Application/Validators/`），并通过 Application 程序集扫描注册。

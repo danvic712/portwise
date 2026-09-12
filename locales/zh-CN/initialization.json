@@ -1,29 +1,61 @@
 {
   "ui": {
     "pageTitle": "Portwise · 初始化工作台",
-    "stamp": "开始",
     "eyebrow": "首次初始化 · 私人工作区",
-    "titleLineOne": "先把你的",
-    "titleLineTwo": "工作台准备好。",
-    "description": "保存语言、主题和组合基础资料。数据服务与 AI 可以现在配置，也可以稍后在设置中完成。",
-    "calloutTitle": "没有配置也可以进入系统",
-    "calloutDescription": "未配置或暂时不可用的能力会明确标记为受限，不会阻止你继续使用其他功能。",
-    "cardEyebrow": "建立工作台",
-    "cardTitle": "保存基础配置",
-    "cardDescription": "密钥只会加密保存，不会回填到页面；连接验证可以稍后单独进行。",
+    "titleLineOne": "先把系统准备好，",
+    "titleLineTwo": "再开始长期积累。",
+    "description": "完成基础设置并建立你的投资组合。股票数据和 AI 可以稍后配置，不会阻止你进入系统。",
+    "calloutTitle": "可以先进入，稍后再完善",
+    "calloutDescription": "未配置外部服务时，相关功能会受限；系统会始终明确提示可用状态。",
+    "cardEyebrow": "初始化进度",
+    "cardTitle": "建立你的 Portwise 工作区",
+    "cardDescription": "",
+    "steps": {
+      "preferences": "基础偏好",
+      "portfolio": "投资组合",
+      "stockData": "股票数据提供方",
+      "inference": "AI 推理"
+    },
+    "optional": "可选",
+    "activeStep": {
+      "format": "{current} / {total}",
+      "stickerSuffix": "/ 04",
+      "preferencesEyebrow": "设置默认体验",
+      "preferencesTitle": "选择你的默认体验",
+      "preferencesDescription": "语言和主题会保存到系统，并在不同浏览器之间保持一致。",
+      "preferencesHint": "配置将保存到服务器，本地缓存仅用于避免首屏闪烁。",
+      "portfolioEyebrow": "建立投资组合",
+      "portfolioTitle": "给你的组合一个名字",
+      "portfolioDescription": "先建立唯一的投资组合，股票和持仓可以稍后继续添加。",
+      "stockEyebrow": "连接股票数据",
+      "stockTitle": "选择你的数据提供方",
+      "stockDescription": "FTShare 是可选的股票数据来源，连接验证可以稍后在设置中进行。",
+      "inferenceEyebrow": "连接 AI 推理",
+      "inferenceTitle": "配置 Chat 与 Embedding",
+      "inferenceDescription": "为两类能力选择 Provider 和模型；外部网络故障不会阻止保存。"
+    },
+    "checklist": {
+      "title": "完成前检查",
+      "active": "正在设置",
+      "pending": "待完成",
+      "optional": "可以稍后配置",
+      "complete": "已完成"
+    },
     "fields": {
       "portfolioName": "组合名称",
       "portfolioPlaceholder": "例如：长期股息组合",
       "portfolioHint": "股票资料和持仓可以稍后从对应页面添加。",
       "language": "系统语言",
-      "theme": "系统主题"
+      "theme": "显示主题"
     },
     "stock": {
       "title": "股票数据提供方",
       "description": "可选。先保存 FTShare key，资料能力会在设置页绑定和验证。",
+      "providerName": "FTShare",
       "keyLabel": "FTShare key",
       "keyPlaceholder": "输入后加密保存",
-      "keyHint": "留空表示稍后配置；网络不可用不会阻止保存。"
+      "keyHint": "留空表示稍后配置；网络不可用不会阻止保存。",
+      "loadError": "提供方列表暂时不可用，仍可稍后在设置中配置。"
     },
     "inference": {
       "title": "AI Provider 与模型",
@@ -39,7 +71,15 @@
       "hint": "Provider 和模型保存后，可在设置页分别验证连接。",
       "validation": "如果填写 AI 配置，请同时填写 Provider、API key、Chat 和 Embedding 模型。"
     },
-    "actions": { "save": "进入系统", "saving": "正在保存…" },
+    "actions": {
+      "nextPortfolio": "下一步：建立投资组合",
+      "nextStock": "下一步：连接股票数据",
+      "nextInference": "下一步：配置 AI 推理",
+      "save": "完成设置，进入系统",
+      "saving": "正在保存…",
+      "back": "上一步",
+      "useDefaults": "使用默认设置"
+    },
     "footer": "之后可在设置中管理 Provider、Route、语言和主题。",
     "validation": { "portfolio": "请先填写组合名称。", "inference": "请完整填写 AI Provider、API key 和两类模型，或全部留空。" },
     "states": { "errorTitle": "暂时无法保存初始化配置", "saveError": "初始化保存失败，请检查填写内容后重试。" }

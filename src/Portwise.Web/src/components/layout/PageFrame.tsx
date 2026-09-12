@@ -22,7 +22,7 @@ export function PageFrame({ children, currentPath, onNavigate, lastUpdated, data
   const usesWideFrame = currentPath === "/overview" || currentPath === "/status"
 
   return (
-    <div className={cn("app-frame", usesWideFrame && "app-frame-wide", currentPath === "/overview" && "app-frame-overview", currentPath === "/status" && "app-frame-status")}>
+    <div className={cn("app-frame", usesWideFrame && "app-frame-wide", currentPath === "/overview" && "app-frame-overview", currentPath === "/status" && "app-frame-status", currentPath === "/onboarding" && "app-frame-onboarding")}>
       <Header currentPath={currentPath} onNavigate={onNavigate} />
       <main className={cn("page-wrap", contentClassName)}>
         {showBreadcrumb && currentPath !== "/overview" && <div className="page-crumb"><span>{messages.common.ui.appName}</span><ChevronRight size={13} /><span className="page-crumb-current">{pageLabel ? messages.common.ui.nav[pageLabel.key] : messages.common.ui.nav.settings}</span></div>}

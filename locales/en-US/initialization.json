@@ -1,29 +1,61 @@
 {
   "ui": {
     "pageTitle": "Portwise · Initialize your workspace",
-    "stamp": "START",
     "eyebrow": "FIRST INITIALIZATION · PRIVATE WORKSPACE",
-    "titleLineOne": "Prepare your",
-    "titleLineTwo": "workspace first.",
-    "description": "Save your language, theme, and portfolio basics. Stock data and AI providers can be configured now or later in Settings.",
-    "calloutTitle": "You can enter without every provider",
-    "calloutDescription": "Unconfigured or unavailable capabilities are clearly marked as limited and never block the rest of the system.",
-    "cardEyebrow": "BUILD YOUR WORKSPACE",
-    "cardTitle": "Save the basics",
-    "cardDescription": "Keys are protected at rest and never returned to the UI; connection checks can happen separately later.",
+    "titleLineOne": "Prepare the system,",
+    "titleLineTwo": "then build for the long run.",
+    "description": "Set your defaults and establish your portfolio. Stock data and AI can be configured later without blocking entry.",
+    "calloutTitle": "Enter now, complete it later",
+    "calloutDescription": "Unconfigured external services limit only their related capabilities, and their status is always shown clearly.",
+    "cardEyebrow": "INITIALIZATION PROGRESS",
+    "cardTitle": "Build your Portwise workspace",
+    "cardDescription": "",
+    "steps": {
+      "preferences": "Preferences",
+      "portfolio": "Portfolio",
+      "stockData": "Stock data provider",
+      "inference": "AI inference"
+    },
+    "optional": "Optional",
+    "activeStep": {
+      "format": "{current} / {total}",
+      "stickerSuffix": "/ 04",
+      "preferencesEyebrow": "SET YOUR DEFAULT EXPERIENCE",
+      "preferencesTitle": "Choose your default experience",
+      "preferencesDescription": "Your language and theme are saved to the system and stay consistent across browsers.",
+      "preferencesHint": "Saved to the server; local storage only prevents a first-screen flash.",
+      "portfolioEyebrow": "BUILD YOUR PORTFOLIO",
+      "portfolioTitle": "Give your portfolio a name",
+      "portfolioDescription": "Create the single portfolio first; stocks and holdings can be added whenever you are ready.",
+      "stockEyebrow": "CONNECT STOCK DATA",
+      "stockTitle": "Choose your data provider",
+      "stockDescription": "FTShare is an optional stock data source; verify its connection later from Settings.",
+      "inferenceEyebrow": "CONNECT AI INFERENCE",
+      "inferenceTitle": "Configure Chat and Embedding",
+      "inferenceDescription": "Choose a provider and model for each capability; network outages never block saving."
+    },
+    "checklist": {
+      "title": "Before you finish",
+      "active": "In progress",
+      "pending": "Not started",
+      "optional": "Can be configured later",
+      "complete": "Complete"
+    },
     "fields": {
       "portfolioName": "Portfolio name",
       "portfolioPlaceholder": "For example: Long-term dividend portfolio",
       "portfolioHint": "Stocks and holdings can be added later from their dedicated pages.",
       "language": "System language",
-      "theme": "System theme"
+      "theme": "Display theme"
     },
     "stock": {
       "title": "Stock data provider",
       "description": "Optional. Save an FTShare key now; capability routes can be bound and verified in Settings.",
+      "providerName": "FTShare",
       "keyLabel": "FTShare key",
       "keyPlaceholder": "Protected after saving",
-      "keyHint": "Leave blank to configure later; network outages never block saving."
+      "keyHint": "Leave blank to configure later; network outages never block saving.",
+      "loadError": "The provider list is temporarily unavailable; configure it later from Settings."
     },
     "inference": {
       "title": "AI provider and models",
@@ -39,7 +71,15 @@
       "hint": "Save the provider and models, then verify each connection separately in Settings.",
       "validation": "If you enter AI settings, provide a provider, API key, Chat model, and Embedding model together."
     },
-    "actions": { "save": "Enter the system", "saving": "Saving…" },
+    "actions": {
+      "nextPortfolio": "Next: build your portfolio",
+      "nextStock": "Next: connect stock data",
+      "nextInference": "Next: configure AI inference",
+      "save": "Finish and enter the system",
+      "saving": "Saving…",
+      "back": "Back",
+      "useDefaults": "Use default settings"
+    },
     "footer": "You can manage providers, routes, language, and theme later in Settings.",
     "validation": { "portfolio": "Enter a portfolio name first.", "inference": "Complete the AI provider, API key, and both models, or leave them all blank." },
     "states": { "errorTitle": "Initialization could not be saved", "saveError": "Initialization failed. Review the fields and try again." }
