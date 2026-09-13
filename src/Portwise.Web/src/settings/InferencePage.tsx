@@ -15,6 +15,7 @@ import { isRequestAborted, useLatestRequest } from "@/shared/hooks/useLatestRequ
 import { useLocale } from "@/shared/i18n/i18n"
 import type { InferenceProvidersResponse, InferenceRoutesResponse } from "@/shared/http/api-types"
 import { getInferenceProviders, getInferenceRoutes, updateInferenceProvider, updateInferenceRoutes, verifyInferenceProvider } from "@/settings/inference.api"
+import { getInferenceProviderBaseUrlDraft } from "@/shared/inference/provider-base-url"
 
 export function InferencePage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { messages } = useLocale()
@@ -44,7 +45,7 @@ export function InferencePage({ onNavigate }: { onNavigate: (path: string) => vo
         const firstProvider = providers.providers[0]
         setSelectedProviderId(firstProvider?.id ?? null)
         setName(firstProvider?.name ?? "")
-        setBaseUrl(firstProvider?.baseUrl ?? "")
+        setBaseUrl(firstProvider ? getInferenceProviderBaseUrlDraft(firstProvider) : "")
         setKey("")
         setModels(Object.fromEntries(routeResponse.routes.map((route) => [route.capabilityCode, route.modelName ?? ""])))
         setRouteProviders(Object.fromEntries(routeResponse.routes.map((route) => [route.capabilityCode, route.providerId ?? ""])))
@@ -141,9 +142,9 @@ export function InferencePage({ onNavigate }: { onNavigate: (path: string) => vo
             type="button"
             className={`settings-inference-provider-item${item.id === selectedProviderId ? " settings-inference-provider-item-active" : ""}`}
             key={item.id}
-            onClick={() => { setSelectedProviderId(item.id); setName(item.name); setBaseUrl(item.baseUrl); setKey("") }}
+            onClick={() => { setSelectedProviderId(item.id); setName(item.name); setBaseUrl(getInferenceProviderBaseUrlDraft(item)); setKey("") }}
           >
-            <span className="settings-inference-provider-item-copy"><strong>{item.name}</strong><small>{item.baseUrl}</small></span>
+            <span className="settings-inference-provider-item-copy"><strong>{item.name}</strong><small>{getInferenceProviderBaseUrlDraft(item) || copy.baseUrlRequired}</small></span>
             <Badge variant={item.runtimeStatusCode === "unconfigured" ? "outline" : "accent"}>{statusLabel(item.runtimeStatusCode)}</Badge>
           </button>)}
         </div>

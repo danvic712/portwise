@@ -11,6 +11,7 @@
     "namePlaceholder": "例如：OpenAI",
     "baseUrlLabel": "服务地址",
     "baseUrlPlaceholder": "例如：https://api.example.com/v1",
+    "baseUrlRequired": "需要填写服务地址",
     "baseUrlHint": "Azure OpenAI 或自定义服务需要使用你自己的服务地址。",
     "keyLabel": "访问密钥",
     "keyPlaceholder": "输入后加密保存",

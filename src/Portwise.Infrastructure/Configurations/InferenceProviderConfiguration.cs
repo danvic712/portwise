@@ -79,7 +79,7 @@ public sealed class InferenceProviderConfiguration : IEntityTypeConfiguration<In
             CreateSeed(
                 KnownConfigurationIds.InferenceOpenAiCompatibleProvider,
                 "OpenAI Compatible",
-                "https://api.openai.com/v1",
+                "https://api.example.com/v1",
                 isBaseUrlEditable: true));
     }
 

@@ -18,6 +18,7 @@ import type { CompleteInitializationRequest, CompleteInitializationResponse, Inf
 import { completeInitialization } from "@/onboarding/initialization.api"
 import { getStockDataProviders } from "@/settings/stock-data-providers.api"
 import { getInferenceProviders } from "@/settings/inference.api"
+import { getInferenceProviderBaseUrlDraft } from "@/shared/inference/provider-base-url"
 import "./onboarding.css"
 
 type OnboardingProps = {
@@ -115,7 +116,7 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
       .then((response) => {
         if (request.isCurrent()) {
           setInferenceProviders(response.providers)
-          setInferenceProviderBaseUrls(Object.fromEntries(response.providers.map((provider) => [provider.id, provider.baseUrl])))
+          setInferenceProviderBaseUrls(Object.fromEntries(response.providers.map((provider) => [provider.id, getInferenceProviderBaseUrlDraft(provider)])))
           setInferenceProvidersLoading(false)
           setInferenceProvidersError(false)
         }
@@ -658,7 +659,7 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
                             <div className="onboarding-provider-list">
                               {selectedInferenceProviders.map((provider) => {
                                 const providerKey = inferenceProviderKeys[provider.id] ?? ""
-                                const providerBaseUrl = inferenceProviderBaseUrls[provider.id] ?? provider.baseUrl
+                                const providerBaseUrl = inferenceProviderBaseUrls[provider.id] ?? getInferenceProviderBaseUrlDraft(provider)
                                 const hasProviderKey = Boolean(providerKey.trim()) || provider.secretState.stateCode === "configured"
                                 return <article className="onboarding-provider-card" key={provider.id}>
                                   <div className="onboarding-provider-card-header">
