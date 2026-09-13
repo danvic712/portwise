@@ -1,10 +1,14 @@
 import axios from "axios"
 
 import { apiGet, apiPost } from "@/shared/http/api-client"
-import type { SaveStockModelParametersRequest } from "@/shared/http/api-types"
+import type { AddStockRequest, SaveStockModelParametersRequest } from "@/shared/http/api-types"
 
 export async function getWatchedStocks(signal?: AbortSignal) {
   return apiGet("/api/v1/stocks", {}, { signal })
+}
+
+export async function addWatchedStock(request: AddStockRequest, signal?: AbortSignal) {
+  return apiPost("/api/v1/stocks", request, {}, { signal })
 }
 
 export async function getStockAnalysis(securityCode: string, exchangeCode: string, signal?: AbortSignal) {

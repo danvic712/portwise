@@ -13,7 +13,7 @@
         "saveSnapshot": "保存快照",
         "savingSnapshot": "保存中…",
         "checkUpdates": "检查更新",
-        "onboardingPortfolio": "去完成初始化",
+        "addStock": "添加股票",
         "viewStockData": "查看股票资料",
         "fillHolding": "填写持仓",
         "recordCash": "记录可用现金"
@@ -33,7 +33,7 @@
         "saveSuccess": "已保存本次组合建议快照。",
         "saveFailed": "快照保存失败，请稍后重试。",
         "emptyTitle": "还没有股票资料",
-        "emptyDescription": "先完成组合初始化，系统才能生成每只股票的价格区间和交易参考。",
+        "emptyDescription": "添加一只股票后，系统会在这里生成价格区间和交易参考。",
         "emptyStockTitle": "这只股票还没有建议",
         "emptyStockDescription": "可能是股票资料尚未同步完成，先到股票资料页执行同步。",
         "noticeTitle": "资料同步状态",

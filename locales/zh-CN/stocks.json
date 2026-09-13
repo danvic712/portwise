@@ -30,6 +30,17 @@
     "title": "股票财务数据暂时不可用",
     "detail": "股票 {securityCode} 的财务数据暂时不可用。"
   },
+  "stock_watchlist_validation_failed": {
+    "status_code": 400,
+    "title": "股票信息需要调整",
+    "detail": "{message}",
+    "validation_message": "请检查股票代码、交易所和持股数后重试。"
+  },
+  "stock_already_configured": {
+    "status_code": 409,
+    "title": "股票已经添加",
+    "detail": "股票 {securityCode}（{exchangeCode}）已经在关注列表中。"
+  },
   "stock_not_configured": {
     "status_code": 404,
     "title": "股票尚未配置",
@@ -50,11 +61,19 @@
       "description": "每个价格、股息和财务快照都来自后端同步结果。缺失资料会明确显示，不会用前端默认值掩盖。",
       "watchlistLabel": "WATCHLIST",
       "watchlistTitle": "{count} 只 A 股",
-      "watchlistDescription": "按股票单独查看模型输入和结果。"
+      "watchlistDescription": "按股票单独查看模型输入和结果。",
+      "stockCodeLabel": "股票代码",
+      "stockCodePlaceholder": "例如 000001",
+      "exchangeLabel": "交易所",
+      "heldSharesLabel": "当前持股数",
+      "heldSharesPlaceholder": "例如 100"
     },
     "actions": {
       "syncAll": "同步全部资料",
       "syncing": "同步中…",
+      "add": "添加股票",
+      "adding": "保存中…",
+      "cancel": "取消",
       "resync": "重新同步",
       "configure": "去配置参数",
       "goOnboarding": "去完成初始化"
@@ -67,6 +86,12 @@
       "syncError": "资料同步失败，请稍后重试。",
       "emptyTitle": "还没有股票资料",
       "emptyDescription": "完成初始化后，这里会展示每只股票的资料、持仓和模型参数。",
+      "addTitle": "添加股票",
+      "addDescription": "填写股票代码、交易所和当前持股数，之后可以随时调整。",
+      "addError": "暂时没有保存成功，请检查填写内容后再试。",
+      "stockCodeRequired": "请填写股票代码。",
+      "stockCode": "股票代码需要是 6 位数字。",
+      "heldShares": "持股数需要是 0 或更大的整数。",
       "dataWarningTitle": "读取提醒",
       "syncComplete": "资料同步完成",
       "pendingTitle": "资料还在路上。",

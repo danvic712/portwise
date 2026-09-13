@@ -26,6 +26,7 @@ export type UpdateInferenceRoutesRequest = ApiSchema<"UpdateInferenceRoutesReque
 export type VerifyInferenceProviderRequest = ApiSchema<"VerifyInferenceProviderRequest">
 export type StockHoldingSnapshot = ApiSchema<"StockHoldingSnapshot">
 export type StockWatchlistItem = ApiSchema<"StockWatchlistItem">
+export type AddStockRequest = ApiSchema<"AddStockRequest">
 export type StockAnalysisResult = ApiSchema<"StockAnalysisResult">
 export type StockRecommendationResult = ApiSchema<"StockRecommendationResult">
 export type PortfolioRecommendationResult = ApiSchema<"PortfolioRecommendationResult">

@@ -32,6 +32,8 @@ public static class ApplicationErrorCodes
     public const string StockMarketDataUnavailable = "stock_market_data_unavailable";
     public const string StockDividendDataUnavailable = "stock_dividend_data_unavailable";
     public const string StockFinancialDataUnavailable = "stock_financial_data_unavailable";
+    public const string StockWatchlistValidationFailed = "stock_watchlist_validation_failed";
+    public const string StockAlreadyConfigured = "stock_already_configured";
     public const string StockNotConfigured = "stock_not_configured";
     public const string BudgetValidationFailed = "budget_validation_failed";
     public const string CashLedgerEntryConflict = "cash_ledger_entry_conflict";
@@ -72,6 +74,8 @@ public static class ApplicationErrorCodes
         StockMarketDataUnavailable,
         StockDividendDataUnavailable,
         StockFinancialDataUnavailable,
+        StockWatchlistValidationFailed,
+        StockAlreadyConfigured,
         StockNotConfigured,
         BudgetValidationFailed,
         CashLedgerEntryConflict,

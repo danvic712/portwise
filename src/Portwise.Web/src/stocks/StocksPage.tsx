@@ -1,4 +1,4 @@
-import { Database, RefreshCw } from "lucide-react"
+import { Database, Plus, RefreshCw } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/feedback/AsyncState"
@@ -11,6 +11,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert"
 import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent, CardHeader } from "@/components/ui/Card"
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/Field"
+import { Input } from "@/components/ui/Input"
+import { NumberInput } from "@/components/ui/NumberInput"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
 import { Separator } from "@/components/ui/Separator"
 import { getApiErrorMessage } from "@/shared/http/api-errors"
 import { interpolate, useLocale } from "@/shared/i18n/i18n"
@@ -19,7 +23,7 @@ import { hasAnalysisData, localizeRecommendationExplanation } from "@/shared/dis
 import { formatDate, formatDateTime, formatMoney, formatPercent, stockKey } from "@/shared/utils/utils"
 import type { StockAnalysisResult, StockDataSyncRunResult, StockModelParameterSet, StockWatchlistItem } from "@/shared/http/api-types"
 import { isRequestAborted, useLatestRequest } from "@/shared/hooks/useLatestRequest"
-import { getStockModelParameters, getStockAnalysis, getWatchedStocks, syncStocks } from "@/stocks/stocks.api"
+import { addWatchedStock, getStockModelParameters, getStockAnalysis, getWatchedStocks, syncStocks } from "@/stocks/stocks.api"
 import { StockDetailSkeleton } from "@/stocks/StockDetailSkeleton"
 import "./stocks.css"
 
@@ -36,10 +40,15 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
   const [detailError, setDetailError] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<StockDataSyncRunResult | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
+  const [addDraft, setAddDraft] = useState({ securityCode: "", exchangeCode: "SSE", heldShares: "0" })
+  const [addError, setAddError] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
   const [detailRefreshVersion, setDetailRefreshVersion] = useState(0)
   const { begin: beginStocks } = useLatestRequest()
   const { begin: beginDetail } = useLatestRequest()
   const { begin: beginSync } = useLatestRequest()
+  const { begin: beginAdd } = useLatestRequest()
   const stocksRef = useRef<StockWatchlistItem[]>([])
   const readErrorRef = useRef(copy.states.readError)
   const analysisErrorRef = useRef(copy.states.analysisError)
@@ -142,6 +151,57 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
     }
   }
 
+  function openAddForm() {
+    setAddOpen(true)
+    setAddError(null)
+  }
+
+  function closeAddForm() {
+    if (adding) return
+    setAddOpen(false)
+    setAddError(null)
+  }
+
+  async function saveNewStock() {
+    setAddError(null)
+    const securityCode = addDraft.securityCode.trim()
+    if (!securityCode) {
+      setAddError(copy.states.stockCodeRequired)
+      return
+    }
+    if (!/^\d{6}$/.test(securityCode)) {
+      setAddError(copy.states.stockCode)
+      return
+    }
+
+    const heldShares = Number(addDraft.heldShares)
+    if (addDraft.heldShares.trim() === "" || !Number.isInteger(heldShares) || heldShares < 0) {
+      setAddError(copy.states.heldShares)
+      return
+    }
+
+    const request = beginAdd()
+    setAdding(true)
+    try {
+      const stock = await addWatchedStock({ securityCode, exchangeCode: addDraft.exchangeCode, heldShares }, request.signal)
+      if (!request.isCurrent()) return
+      const nextStocks = [...stocksRef.current, stock].sort((left, right) => {
+        const codeOrder = left.securityCode.localeCompare(right.securityCode)
+        return codeOrder || left.exchangeCode.localeCompare(right.exchangeCode)
+      })
+      applyStocks(nextStocks)
+      setSelectedKey(stockKey(stock))
+      setAddDraft({ securityCode: "", exchangeCode: "SSE", heldShares: "0" })
+      setAddOpen(false)
+    } catch (saveError) {
+      if (request.isCurrent() && !isRequestAborted(saveError, request.signal)) {
+        setAddError(getApiErrorMessage(saveError, copy.states.addError, messages.common.ui.errors))
+      }
+    } finally {
+      if (request.isCurrent()) setAdding(false)
+    }
+  }
+
   function selectStock(stock: StockWatchlistItem) {
     const nextKey = stockKey(stock)
     if (nextKey === selectedKey) return
@@ -163,7 +223,15 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
   }
 
   if (!stocks.length) {
-    return <PageFrame currentPath="/stocks" onNavigate={onNavigate} dataState="unknown" contentClassName="stocks-page-wrap"><EmptyState title={copy.states.emptyTitle} description={copy.states.emptyDescription} action={<Button onClick={() => onNavigate("/onboarding")}>{copy.actions.goOnboarding}</Button>} /></PageFrame>
+    return <PageFrame currentPath="/stocks" onNavigate={onNavigate} dataState="unknown" contentClassName="stocks-page-wrap">
+      <PageTitle
+        eyebrow={copy.page.eyebrow}
+        title={copy.page.title}
+        description={copy.page.description}
+        actions={<Button variant="outline" onClick={openAddForm}><Plus data-icon="inline-start" />{copy.actions.add}</Button>}
+      />
+      {addOpen ? renderAddStockForm() : <EmptyState title={copy.states.emptyTitle} description={copy.states.emptyDescription} action={<Button onClick={openAddForm}><Plus data-icon="inline-start" />{copy.actions.add}</Button>} />}
+    </PageFrame>
   }
 
   const selectedStock = stocks.find((stock) => stockKey(stock) === selectedKey) ?? stocks[0]
@@ -179,8 +247,10 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
         eyebrow={copy.page.eyebrow}
         title={copy.page.title}
         description={copy.page.description}
-        actions={<Button onClick={() => void syncAll()} disabled={syncing}>{syncing ? <><RefreshCw className="spin" data-icon="inline-start" />{copy.actions.syncing}</> : <><RefreshCw data-icon="inline-start" />{copy.actions.syncAll}</>}</Button>}
+        actions={<div className="stocks-page-actions"><Button variant="outline" onClick={openAddForm}><Plus data-icon="inline-start" />{copy.actions.add}</Button><Button onClick={() => void syncAll()} disabled={syncing}>{syncing ? <><RefreshCw className="spin" data-icon="inline-start" />{copy.actions.syncing}</> : <><RefreshCw data-icon="inline-start" />{copy.actions.syncAll}</>}</Button></div>}
       />
+
+      {addOpen && renderAddStockForm()}
 
       {error && <Alert variant="destructive" className="d-inline-alert"><AlertTitle>{copy.states.dataWarningTitle}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
 
@@ -224,6 +294,37 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
       {syncResult && <section className="sync-results"><Alert variant={syncResult.partiallyFailedStockCount ? "attention" : "default"}><AlertTitle><Database className="sync-results-icon" />{copy.states.syncComplete}</AlertTitle><AlertDescription><span>{interpolate(copy.sync.attempted, { count: syncResult.attemptedStockCount, complete: syncResult.fullyCompletedStockCount, failed: syncResult.partiallyFailedStockCount })}</span>{syncResult.failures.length > 0 && <span> {interpolate(copy.sync.failures, { items: syncResult.failures.map((failure) => `${failure.securityCode} ${failure.dataKind}`).join(", ") })}</span>}</AlertDescription></Alert></section>}
     </PageFrame>
   )
+
+  function renderAddStockForm() {
+    return <Card className="stocks-add-card">
+      <CardHeader>
+        <SectionHeading label={copy.actions.add} title={copy.states.addTitle} description={copy.states.addDescription} />
+      </CardHeader>
+      <CardContent>
+        <form className="stocks-add-form" onSubmit={(event) => { event.preventDefault(); void saveNewStock() }}>
+          <FieldGroup className="stocks-add-fields">
+            <Field>
+              <FieldLabel htmlFor="stocks-add-code">{copy.page.stockCodeLabel}</FieldLabel>
+              <Input id="stocks-add-code" value={addDraft.securityCode} placeholder={copy.page.stockCodePlaceholder} onChange={(event) => setAddDraft((current) => ({ ...current, securityCode: event.target.value }))} inputMode="numeric" maxLength={6} autoComplete="off" />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="stocks-add-exchange">{copy.page.exchangeLabel}</FieldLabel>
+              <Select value={addDraft.exchangeCode} onValueChange={(value) => { if (value) setAddDraft((current) => ({ ...current, exchangeCode: value })) }}>
+                <SelectTrigger id="stocks-add-exchange"><SelectValue>{copy.identity.exchange[addDraft.exchangeCode as keyof typeof copy.identity.exchange] ?? addDraft.exchangeCode}</SelectValue></SelectTrigger>
+                <SelectContent><SelectGroup><SelectItem value="SSE">{copy.identity.exchange.SSE}</SelectItem><SelectItem value="SZSE">{copy.identity.exchange.SZSE}</SelectItem><SelectItem value="BSE">{copy.identity.exchange.BSE}</SelectItem></SelectGroup></SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="stocks-add-held">{copy.page.heldSharesLabel}</FieldLabel>
+              <NumberInput id="stocks-add-held" min="0" step="1" value={addDraft.heldShares} onChange={(event) => setAddDraft((current) => ({ ...current, heldShares: event.target.value }))} placeholder={copy.page.heldSharesPlaceholder} />
+            </Field>
+          </FieldGroup>
+          {addError && <Alert variant="destructive" className="stocks-add-error"><AlertTitle>{copy.states.addError}</AlertTitle><AlertDescription>{addError}</AlertDescription></Alert>}
+          <div className="stocks-add-actions"><Button type="button" variant="ghost" onClick={closeAddForm} disabled={adding}>{copy.actions.cancel}</Button><Button type="submit" disabled={adding}>{adding ? copy.actions.adding : copy.actions.add}</Button></div>
+        </form>
+      </CardContent>
+    </Card>
+  }
 }
 
 function StockDetail({ analysis, parameters, onNavigate }: { analysis: StockAnalysisResult; parameters: StockModelParameterSet | null; onNavigate: (path: string) => void }) {

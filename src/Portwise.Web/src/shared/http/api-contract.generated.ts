@@ -897,7 +897,36 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /** Adds one stock to the portfolio watchlist. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description The stock code, exchange and current holding. */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AddStockRequest"];
+                    "text/json": components["schemas"]["AddStockRequest"];
+                    "application/*+json": components["schemas"]["AddStockRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockWatchlistItem"];
+                        "application/json": components["schemas"]["StockWatchlistItem"];
+                        "text/json": components["schemas"]["StockWatchlistItem"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -1206,6 +1235,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Adds one A-share security to the current portfolio watchlist. */
+        AddStockRequest: {
+            /** @description The six-digit security code. */
+            securityCode: string;
+            /** @description The exchange code. */
+            exchangeCode: string;
+            /**
+             * Format: int32
+             * @description The current number of held shares.
+             */
+            heldShares: number | string;
+        };
         /** @description Returns the persisted application language and theme codes. */
         ApplicationPreferenceDto: {
             languageCode: string;

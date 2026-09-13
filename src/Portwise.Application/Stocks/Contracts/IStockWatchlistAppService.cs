@@ -5,4 +5,8 @@ namespace Portwise.Application.Stocks.Contracts;
 public interface IStockWatchlistAppService
 {
     Task<IReadOnlyList<StockWatchlistItem>> GetAsync(CancellationToken cancellationToken);
+
+    Task<StockWatchlistItem> AddAsync(
+        AddStockRequest request,
+        CancellationToken cancellationToken);
 }

@@ -1035,6 +1035,55 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Adds one stock to the portfolio watchlist.",
+        "requestBody": {
+          "description": "The stock code, exchange and current holding.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddStockRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddStockRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddStockRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockWatchlistItem"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockWatchlistItem"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockWatchlistItem"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/stocks/sync": {
@@ -1389,6 +1438,34 @@
   },
   "components": {
     "schemas": {
+      "AddStockRequest": {
+        "required": [
+          "securityCode",
+          "exchangeCode",
+          "heldShares"
+        ],
+        "type": "object",
+        "properties": {
+          "securityCode": {
+            "type": "string",
+            "description": "The six-digit security code."
+          },
+          "exchangeCode": {
+            "type": "string",
+            "description": "The exchange code."
+          },
+          "heldShares": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The current number of held shares.",
+            "format": "int32"
+          }
+        },
+        "description": "Adds one A-share security to the current portfolio watchlist."
+      },
       "ApplicationPreferenceDto": {
         "required": [
           "languageCode",

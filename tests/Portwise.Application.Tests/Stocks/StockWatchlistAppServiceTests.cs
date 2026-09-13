@@ -1,4 +1,5 @@
 using Portwise.Application.Contracts;
+using Portwise.Application.Stocks.Validators;
 using Portwise.Application.Stocks;
 using Portwise.Application.Stocks.Contracts;
 using Portwise.Application.Stocks.Dtos;
@@ -6,6 +7,7 @@ using Portwise.Domain.Contracts;
 using Portwise.Domain.Models;
 using Moq;
 using Xunit;
+using PortfolioEntity = Portwise.Domain.Models.Portfolio;
 
 namespace Portwise.Application.Tests;
 
@@ -54,7 +56,9 @@ public sealed class StockWatchlistAppServiceTests
         unitOfWork
             .Setup(x => x.Get<PortfolioPosition>())
             .Returns(positionRepository.Object);
-        IStockWatchlistAppService service = new StockWatchlistAppService(unitOfWork.Object);
+        IStockWatchlistAppService service = new StockWatchlistAppService(
+            unitOfWork.Object,
+            new AddStockRequestValidator());
 
         var result = await service.GetAsync(CancellationToken.None);
 
@@ -100,7 +104,9 @@ public sealed class StockWatchlistAppServiceTests
             .Setup(x => x.Get<PortfolioPosition>())
             .Returns(positionRepository.Object);
 
-        var result = await new StockWatchlistAppService(unitOfWork.Object)
+        var result = await new StockWatchlistAppService(
+                unitOfWork.Object,
+                new AddStockRequestValidator())
             .GetAsync(CancellationToken.None);
 
         Assert.Equal(["SSE", "SZSE"], result.Select(item => item.ExchangeCode));
@@ -127,11 +133,55 @@ public sealed class StockWatchlistAppServiceTests
             .Setup(x => x.Get<PortfolioPosition>())
             .Returns(positionRepository.Object);
 
-        var result = await new StockWatchlistAppService(unitOfWork.Object)
+        var result = await new StockWatchlistAppService(
+                unitOfWork.Object,
+                new AddStockRequestValidator())
             .GetAsync(CancellationToken.None);
 
         var stock = Assert.Single(result);
         Assert.Equal(string.Empty, stock.SecurityName);
+    }
+
+    [Fact]
+    public async Task AddAsync_creates_security_and_initial_position_in_one_commit()
+    {
+        var portfolio = new PortfolioEntity { Id = Guid.CreateVersion7(), Name = "长期组合" };
+        var securityRepository = CreateRepository<Security>([]);
+        var positionRepository = CreateRepository<PortfolioPosition>([]);
+        var portfolioRepository = CreateRepository<PortfolioEntity>([portfolio]);
+        var unitOfWork = new Mock<IUow>();
+        unitOfWork.Setup(x => x.Get<Security>()).Returns(securityRepository.Object);
+        unitOfWork.Setup(x => x.Get<PortfolioPosition>()).Returns(positionRepository.Object);
+        unitOfWork.Setup(x => x.Get<PortfolioEntity>()).Returns(portfolioRepository.Object);
+        unitOfWork.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await new StockWatchlistAppService(
+                unitOfWork.Object,
+                new AddStockRequestValidator())
+            .AddAsync(
+                new AddStockRequest(" 000001 ", " szse ", 100),
+                CancellationToken.None);
+
+        Assert.Equal("000001", result.SecurityCode);
+        Assert.Equal("SZSE", result.ExchangeCode);
+        Assert.Equal(100, result.Holding?.HeldShares);
+        var security = Assert.Single(
+            securityRepository.Invocations
+                .Where(invocation => invocation.Method.Name == nameof(IRepository<Security>.AddAsync))
+                .Select(invocation => invocation.Arguments[0])
+                .OfType<Security>());
+        Assert.NotEqual(Guid.Empty, security.Id);
+        var position = Assert.Single(
+            positionRepository.Invocations
+                .Where(invocation => invocation.Method.Name == nameof(IRepository<PortfolioPosition>.AddAsync))
+                .Select(invocation => invocation.Arguments[0])
+                .OfType<PortfolioPosition>());
+        Assert.Equal(portfolio.Id, position.PortfolioId);
+        Assert.Equal(security.Id, position.SecurityId);
+        Assert.Equal(100, position.HeldShares);
+        Assert.Equal(100, position.CoreShares);
+        Assert.Equal(100, position.TargetShares);
+        unitOfWork.Verify(item => item.CommitAsync(CancellationToken.None), Times.Once);
     }
 
     private static Mock<IRepository<TEntity>> CreateRepository<TEntity>(IEnumerable<TEntity> entities)

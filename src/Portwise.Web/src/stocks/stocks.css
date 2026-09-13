@@ -1,4 +1,10 @@
 .page-wrap.stocks-page-wrap { width: min(100% - clamp(48px, 6vw, 96px), 1780px); padding-inline: 0; }
+.stocks-page-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.stocks-add-card { margin-bottom: 18px; border-width: 2px; border-radius: 22px; background: color-mix(in srgb, var(--card) 94%, var(--accent-soft)); box-shadow: var(--shadow); }
+.stocks-add-form { display: grid; gap: 18px; }
+.stocks-add-fields { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr) minmax(150px, .75fr); gap: 16px 20px; }
+.stocks-add-actions { display: flex; justify-content: flex-end; gap: 9px; }
+.stocks-add-error { margin: 0; }
 .stocks-layout { display: grid; grid-template-columns: minmax(280px, .58fr) minmax(0, 1.42fr); gap: 18px; align-items: start; }
 .stock-directory, .stock-detail { min-width: 0; border-width: 2px; border-radius: 26px; box-shadow: var(--shadow); }
 .stock-directory { padding: 23px 24px 24px; background: color-mix(in srgb, var(--card) 85%, transparent); }
@@ -157,6 +163,10 @@
   .stock-ladder-card { padding-inline: 18px; overflow-x: auto; }
   .stock-ladder-card .price-ladder { min-width: 580px; }
   .stock-detail-pending { min-height: 360px; padding-inline: 4px; }
+  .stocks-add-card { padding: 17px 15px 18px; border-radius: 20px; }
+  .stocks-add-fields { grid-template-columns: 1fr; }
+  .stocks-add-actions { justify-content: stretch; }
+  .stocks-add-actions [data-slot="button"] { flex: 1; }
 }
 
 @media (max-width: 760px) {

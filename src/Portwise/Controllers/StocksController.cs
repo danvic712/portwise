@@ -33,6 +33,20 @@ public sealed class StocksController(
         return Ok(stocks);
     }
 
+    /// <summary>Adds one stock to the portfolio watchlist.</summary>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
+    /// <param name="request">The stock code, exchange and current holding.</param>
+    [HttpPost]
+    public async Task<ActionResult<StockWatchlistItem>> AddStock(
+        [FromBody] AddStockRequest request,
+        CancellationToken cancellationToken)
+    {
+        var stock = await stockWatchlistAppService.AddAsync(
+            request,
+            cancellationToken);
+        return Ok(stock);
+    }
+
     /// <summary>Runs a manual synchronization for all configured stocks.</summary>
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpPost("sync")]
