@@ -31,7 +31,15 @@ export function SettingsOverviewPage({ onNavigate }: { onNavigate: (path: string
   if (error) return <PageFrame currentPath="/settings" onNavigate={onNavigate}><ErrorState message={error} onRetry={() => window.location.reload()} /></PageFrame>
   if (!status) return <PageFrame currentPath="/settings" onNavigate={onNavigate}><EmptyState title={messages.common.ui.states.readingData} description={copy.description} /></PageFrame>
 
-  const statusLabel = (value: string) => value === "currently-unavailable" ? copy.statusUnavailable : value === "unconfigured" ? copy.statusUnconfigured : copy.statusConfigured
+  const statusLabel = (value: string) => value === "currently-unavailable"
+    ? copy.statusUnavailable
+    : value === "unconfigured"
+      ? copy.statusUnconfigured
+      : value === "configured-unverified"
+        ? copy.statusConfiguredUnverified
+        : value === "recently-verified"
+          ? copy.statusRecentlyVerified
+          : copy.statusConfigured
   const preferencesLabel = status.preferences
     ? `${status.preferences.languageCode === "zh-CN" ? messages.common.ui.language.zhCN : messages.common.ui.language.enUS} · ${status.preferences.themeCode === "light" ? messages.common.ui.theme.light : status.preferences.themeCode === "dark" ? messages.common.ui.theme.dark : status.preferences.themeCode === "system" ? messages.common.ui.theme.system : status.preferences.themeCode}`
     : copy.statusUnconfigured
@@ -43,7 +51,7 @@ export function SettingsOverviewPage({ onNavigate }: { onNavigate: (path: string
       <OverviewCard icon={<LineChart size={19} />} title={copy.stockTitle} description={copy.stockDescription} badge={statusLabel(status.limitations.find((item) => item.capabilityCode === "market")?.statusCode ?? "unconfigured")} onOpen={() => onNavigate("/settings/stock-data-providers")} label={copy.open} />
       <OverviewCard icon={<Bot size={19} />} title={copy.inferenceTitle} description={copy.inferenceDescription} badge={statusLabel(status.limitations.find((item) => item.capabilityCode === "chat")?.statusCode ?? "unconfigured")} onOpen={() => onNavigate("/settings/inference")} label={copy.open} />
     </div>
-    <Card className="settings-limitations-card"><CardHeader><h2>{copy.statusUnconfigured}</h2></CardHeader><CardContent className="settings-limitations-list">{status.limitations.map((limitation) => <div className="settings-limitation" key={limitation.capabilityCode}><span>{copy.capabilities[limitation.capabilityCode as keyof typeof copy.capabilities] ?? limitation.capabilityCode}</span><Badge variant={limitation.statusCode === "currently-unavailable" ? "destructive" : limitation.statusCode === "unconfigured" ? "outline" : "accent"}>{statusLabel(limitation.statusCode)}</Badge></div>)}</CardContent></Card>
+    <Card className="settings-limitations-card"><CardHeader><h2>{copy.statusTitle}</h2></CardHeader><CardContent className="settings-limitations-list">{status.limitations.map((limitation) => <div className="settings-limitation" key={limitation.capabilityCode}><span>{copy.capabilities[limitation.capabilityCode as keyof typeof copy.capabilities] ?? limitation.capabilityCode}</span><Badge variant={limitation.statusCode === "currently-unavailable" ? "destructive" : limitation.statusCode === "unconfigured" ? "outline" : "accent"}>{statusLabel(limitation.statusCode)}</Badge></div>)}</CardContent></Card>
   </PageFrame>
 }
 

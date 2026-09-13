@@ -15,7 +15,10 @@
       "saved": "系统设置已保存",
       "statusUnconfigured": "未配置",
       "statusConfigured": "已配置",
+      "statusConfiguredUnverified": "已配置未验证",
+      "statusRecentlyVerified": "最近验证成功",
       "statusUnavailable": "当前不可用",
+      "statusTitle": "能力状态",
       "capabilities": { "profile": "股票资料", "market": "行情", "dividend": "股息", "financial": "财务", "chat": "Chat", "embedding": "Embedding" }
     },
     "page": {

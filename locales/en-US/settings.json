@@ -15,7 +15,10 @@
       "saved": "System settings saved",
       "statusUnconfigured": "Unconfigured",
       "statusConfigured": "Configured",
+      "statusConfiguredUnverified": "Configured, not verified",
+      "statusRecentlyVerified": "Recently verified",
       "statusUnavailable": "Currently unavailable",
+      "statusTitle": "Capability status",
       "capabilities": { "profile": "Stock profile", "market": "Market", "dividend": "Dividends", "financial": "Financials", "chat": "Chat", "embedding": "Embedding" }
     },
     "page": {
