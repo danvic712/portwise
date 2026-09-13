@@ -14,6 +14,7 @@ import { currentPriceZoneLabel, hasAnalysisData, recommendationPresentation } fr
 import { analysisDisplayName, displayStockName } from "@/shared/display/stock-display"
 import { formatDateTime, formatMoney, formatNumber, stockKey } from "@/shared/utils/utils"
 import type { BudgetSummary, PortfolioRecommendationResult, StockRecommendationResult, StockWatchlistItem } from "@/shared/http/api-types"
+import type { InitializationStatusResponse } from "@/shared/http/api-types"
 import { getBudgetSummary } from "@/budget/budget.api"
 import { getWatchedStocks } from "@/stocks/stocks.api"
 import { isRequestAborted, useLatestRequest } from "@/shared/hooks/useLatestRequest"
@@ -25,9 +26,10 @@ import "./recommendations.css"
 type RecommendationsPageProps = {
   onNavigate: (path: string) => void
   notice?: string | null
+  initializationStatus?: InitializationStatusResponse | null
 }
 
-export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageProps) {
+export function RecommendationsPage({ onNavigate, notice, initializationStatus }: RecommendationsPageProps) {
   const { messages } = useLocale()
   const copy = messages.dividendStrategy.ui.overview
   const readUnavailableRef = useRef(copy.messages.readUnavailable)
@@ -91,6 +93,10 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
   const selectedRecommendationReady = hasAnalysisData(selectedRecommendation?.analysis)
   const selectedStock = stocks.find((stock) => stockKey(stock) === selectedKey)
   const lastUpdated = portfolioRecommendation?.computedAt ?? budget?.computedAt
+  const hasSetupLimitations = Boolean(
+    initializationStatus?.isComplete
+      && initializationStatus.limitations.some((limitation) => limitation.statusCode !== "recently-verified"),
+  )
 
   async function saveSnapshot() {
     const request = beginSnapshot()
@@ -108,11 +114,12 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
 
   if (loading) return <PageFrame currentPath="/overview" onNavigate={onNavigate} dataState="pending"><div className="overview-page"><RecommendationsSkeleton label={copy.messages.loadingOverview} /></div></PageFrame>
   if (error && !stocks.length) return <PageFrame currentPath="/overview" onNavigate={onNavigate} dataState="pending"><div className="overview-page overview-state-page"><ErrorState message={error} onRetry={() => void load()} /></div></PageFrame>
-  if (!stocks.length) return <PageFrame currentPath="/overview" onNavigate={onNavigate} dataState="unknown"><div className="overview-page overview-state-page"><EmptyState title={copy.messages.emptyTitle} description={copy.messages.emptyDescription} action={<Button onClick={() => onNavigate("/stocks")}>{copy.actions.addStock}</Button>} /></div></PageFrame>
+  if (!stocks.length) return <PageFrame currentPath="/overview" onNavigate={onNavigate} dataState="unknown"><div className="overview-page overview-state-page">{hasSetupLimitations && <SetupLimitationsNotice onNavigate={onNavigate} copy={copy} />}{notice && <Alert><AlertDescription>{notice}</AlertDescription></Alert>}<EmptyState title={copy.messages.emptyTitle} description={copy.messages.emptyDescription} action={<Button onClick={() => onNavigate("/stocks")}>{copy.actions.addStock}</Button>} /></div></PageFrame>
 
   return (
     <PageFrame currentPath="/overview" onNavigate={onNavigate} lastUpdated={lastUpdated ? formatDateTime(lastUpdated) : null} dataState={hasCompleteRecommendation ? "synced" : "pending"}>
       <div className="overview-page">
+        {hasSetupLimitations && <SetupLimitationsNotice onNavigate={onNavigate} copy={copy} />}
         <div className="d-breadcrumb"><span>{copy.breadcrumb.myStocks}</span><ChevronRight size={13} /><strong>{selectedStock ? displayStockName(selectedStock, messages.stocks.ui.identity.pendingName) : copy.breadcrumb.todayDecision}</strong><span>{selectedStock ? `${selectedStock.securityCode}.${selectedStock.exchangeCode} · ${copy.breadcrumb.aShareReference}` : copy.breadcrumb.aShareReference}</span></div>
         {notice && <Alert variant="attention" className="d-inline-alert"><AlertTitle>{copy.messages.noticeTitle}</AlertTitle><AlertDescription>{notice}</AlertDescription></Alert>}
         {error && <Alert variant="destructive" className="d-inline-alert"><AlertTitle>{copy.messages.errorTitle}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
@@ -138,6 +145,17 @@ export function RecommendationsPage({ onNavigate, notice }: RecommendationsPageP
       </div>
     </PageFrame>
   )
+}
+
+function SetupLimitationsNotice({ onNavigate, copy }: { onNavigate: (path: string) => void; copy: OverviewCopy }) {
+  return <Alert variant="attention" className="overview-limitations-notice">
+    <AlertCircle size={18} aria-hidden="true" />
+    <div>
+      <AlertTitle>{copy.messages.limitationsTitle}</AlertTitle>
+      <AlertDescription>{copy.messages.limitationsDescription}</AlertDescription>
+      <Button variant="outline" size="sm" onClick={() => onNavigate("/settings")}>{copy.actions.openSettings}</Button>
+    </div>
+  </Alert>
 }
 
 function DailyNotebookHeader({ dataState, labels, lastUpdated, actions }: { dataState: "synced" | "pending"; labels: OverviewCopy; lastUpdated: string | null; actions?: React.ReactNode }) {

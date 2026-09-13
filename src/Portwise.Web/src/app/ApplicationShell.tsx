@@ -119,7 +119,7 @@ export function ApplicationShell() {
 
   function renderPage() {
     if (location.pathname === "/onboarding") return <Onboarding onNavigate={navigate} onComplete={(result) => { initializationCompleteRef.current = result.status.isComplete; setInitializationStatus(result.status) }} />
-    if (location.pathname === "/" || location.pathname === "/overview") return <RecommendationsPage onNavigate={navigate} />
+    if (location.pathname === "/" || location.pathname === "/overview") return <RecommendationsPage onNavigate={navigate} initializationStatus={initializationStatus} />
     if (location.pathname === "/404") return <NotFoundPage onNavigate={navigate} />
     if (location.pathname === "/error") return <ApplicationErrorPage message={messages.common.application_error_unknown.detail} onRetry={() => void checkInitialization()} onNavigate={navigate} />
     if (location.pathname === "/stocks") return <StocksPage onNavigate={navigate} />

@@ -994,3 +994,5 @@
   .d-story-title { font-size: 65px; }
   .d-signal-card { padding-inline: 20px; }
 }
+.overview-limitations-notice { grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 10px; margin-bottom: 18px; }
+.overview-limitations-notice [data-slot="button"] { margin-top: 10px; }

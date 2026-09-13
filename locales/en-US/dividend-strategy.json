@@ -14,6 +14,7 @@
         "savingSnapshot": "Saving…",
         "checkUpdates": "Check for updates",
         "addStock": "Add a stock",
+        "openSettings": "Open settings",
         "viewStockData": "View stock data",
         "fillHolding": "Add holdings",
         "recordCash": "Record cash"
@@ -37,6 +38,8 @@
         "emptyStockTitle": "No reference for this stock yet",
         "emptyStockDescription": "The stock data may still be syncing. Try the stock data page first.",
         "noticeTitle": "Data sync status",
+        "limitationsTitle": "A few features can be added later",
+        "limitationsDescription": "Your portfolio is ready. Stock data or AI features may be unavailable until their service is connected and verified. You can finish this anytime in Settings.",
         "errorTitle": "Readout notice",
         "loadingOverview": "Organizing today’s reference…"
       },

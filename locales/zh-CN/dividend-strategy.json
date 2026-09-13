@@ -14,6 +14,7 @@
         "savingSnapshot": "保存中…",
         "checkUpdates": "检查更新",
         "addStock": "添加股票",
+        "openSettings": "打开设置",
         "viewStockData": "查看股票资料",
         "fillHolding": "填写持仓",
         "recordCash": "记录可用现金"
@@ -37,6 +38,8 @@
         "emptyStockTitle": "这只股票还没有建议",
         "emptyStockDescription": "可能是股票资料尚未同步完成，先到股票资料页执行同步。",
         "noticeTitle": "资料同步状态",
+        "limitationsTitle": "还有一些功能可以稍后开启",
+        "limitationsDescription": "投资组合已经准备好。股票资料或 AI 服务尚未连接或验证时，对应功能会暂时不可用，你可以随时到设置中补充。",
         "errorTitle": "读取提醒",
         "loadingOverview": "正在整理今日决策…"
       },
