@@ -37,6 +37,7 @@ export function ApplicationShell() {
   const [navigation] = useState(() => createBrowserNavigation())
   const location = useSyncExternalStore(navigation.subscribe, navigation.read, navigation.read)
   const initializationErrorRef = useRef(messages.common.application_error_unknown.detail)
+  const initializationApiErrorsRef = useRef(messages.common.ui.errors)
   const initializationCompleteRef = useRef<boolean | null>(null)
   const [portfolioStockKey, setPortfolioStockKey] = useState(() =>
     readPortfolioStockKey(navigation.read(), navigation.readPersistedPortfolioStock()),
@@ -72,6 +73,10 @@ export function ApplicationShell() {
     initializationErrorRef.current = messages.common.application_error_unknown.detail
   }, [messages.common.application_error_unknown.detail])
 
+  useEffect(() => {
+    initializationApiErrorsRef.current = messages.common.ui.errors
+  }, [messages.common.ui.errors])
+
   const checkInitialization = useCallback(async () => {
     const request = beginInitialization()
     setLoading(true)
@@ -88,13 +93,13 @@ export function ApplicationShell() {
       if (redirectPath) navigate(redirectPath, true)
     } catch (statusError) {
       if (request.isCurrent() && !isRequestAborted(statusError, request.signal)) {
-        setError(getApiErrorMessage(statusError, initializationErrorRef.current, messages.common.ui.errors))
+        setError(getApiErrorMessage(statusError, initializationErrorRef.current, initializationApiErrorsRef.current))
         navigate("/error", true)
       }
     } finally {
       if (request.isCurrent()) setLoading(false)
     }
-  }, [beginInitialization, messages.common.ui.errors, navigate, navigation, setLocale, setTheme])
+  }, [beginInitialization, navigate, navigation, setLocale, setTheme])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => { void checkInitialization() }, 0)
