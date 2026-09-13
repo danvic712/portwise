@@ -18,6 +18,8 @@
     "currentlyUnavailable": "Currently unavailable",
     "saved": "Stock data provider saved.",
     "verified": "Connection verification completed.",
+    "verificationNeedsConfiguration": "Add an access key before verifying the connection.",
+    "verificationUnavailable": "The service is currently unavailable. Check the access key.",
     "error": "Stock data settings could not be loaded or saved."
   },
   "stock_data_provider_validation_failed": {

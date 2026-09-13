@@ -17,6 +17,11 @@ import type { InferenceProvidersResponse, InferenceRoutesResponse } from "@/shar
 import { getInferenceProviders, getInferenceRoutes, updateInferenceProvider, updateInferenceRoutes, verifyInferenceProvider } from "@/settings/inference.api"
 import { getInferenceProviderBaseUrlDraft } from "@/shared/inference/provider-base-url"
 
+type Notice = {
+  message: string
+  variant: "default" | "attention"
+}
+
 export function InferencePage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { messages } = useLocale()
   const copy = messages.inference.ui
@@ -29,7 +34,7 @@ export function InferencePage({ onNavigate }: { onNavigate: (path: string) => vo
   const [models, setModels] = useState<Record<string, string>>({})
   const [routeProviders, setRouteProviders] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [notice, setNotice] = useState<Notice | null>(null)
   const [error, setError] = useState<string | null>(null)
   const { begin } = useLatestRequest()
 
@@ -71,7 +76,7 @@ export function InferencePage({ onNavigate }: { onNavigate: (path: string) => vo
       })
       setData((current) => current ? { ...current, providers: current.providers.map((item) => item.id === result.id ? result : item) } : current)
       setKey("")
-      setNotice(copy.saved)
+      setNotice({ message: copy.saved, variant: "default" })
     } catch (saveError) {
       setError(getApiErrorMessage(saveError, copy.error, messages.common.ui.errors))
     } finally {
@@ -94,7 +99,7 @@ export function InferencePage({ onNavigate }: { onNavigate: (path: string) => vo
         })),
       })
       setRoutes(result)
-      setNotice(copy.saved)
+      setNotice({ message: copy.saved, variant: "default" })
     } catch (saveError) {
       setError(getApiErrorMessage(saveError, copy.error, messages.common.ui.errors))
     } finally {
@@ -110,7 +115,17 @@ export function InferencePage({ onNavigate }: { onNavigate: (path: string) => vo
     try {
       const result = await verifyInferenceProvider(provider.id, { expectedRevision: provider.revision })
       setData((current) => current ? { ...current, providers: current.providers.map((item) => item.id === result.provider.id ? result.provider : item) } : current)
-      setNotice(copy.verified)
+      const statusCode = result.provider.runtimeStatusCode
+      setNotice({
+        message: statusCode === "recently-verified"
+          ? copy.verified
+          : statusCode === "unconfigured"
+            ? copy.verificationNeedsConfiguration
+            : statusCode === "currently-unavailable"
+              ? copy.verificationUnavailable
+              : copy.verificationNeedsRoute,
+        variant: statusCode === "recently-verified" ? "default" : "attention",
+      })
     } catch (verifyError) {
       setError(getApiErrorMessage(verifyError, copy.error, messages.common.ui.errors))
     } finally {
@@ -129,7 +144,7 @@ export function InferencePage({ onNavigate }: { onNavigate: (path: string) => vo
   return <PageFrame currentPath="/settings" onNavigate={onNavigate} contentClassName="settings-subpage-wrap">
     <PageTitle eyebrow={copy.eyebrow} title={copy.title} description={copy.description} />
     {error && <Alert variant="destructive"><AlertTitle>{messages.common.ui.states.applicationError.title}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
-    {notice && <Alert><Check size={16} aria-hidden="true" /><AlertDescription>{notice}</AlertDescription></Alert>}
+    {notice && <Alert variant={notice.variant}>{notice.variant === "default" && <Check size={16} aria-hidden="true" />}<AlertDescription>{notice.message}</AlertDescription></Alert>}
 
     <Card className="settings-subpage-card settings-inference-provider-card">
       <CardHeader>

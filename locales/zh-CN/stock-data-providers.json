@@ -18,6 +18,8 @@
     "currentlyUnavailable": "当前不可用",
     "saved": "股票数据 Provider 已保存。",
     "verified": "连接验证已完成。",
+    "verificationNeedsConfiguration": "请先填写访问密钥，再验证连接。",
+    "verificationUnavailable": "暂时无法连接，请检查访问密钥。",
     "error": "股票数据设置暂时无法读取或保存。"
   },
   "stock_data_provider_validation_failed": {
