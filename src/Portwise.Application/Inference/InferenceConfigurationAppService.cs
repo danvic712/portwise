@@ -107,8 +107,13 @@ public sealed class InferenceConfigurationAppService(
             throw InvalidProvider();
         }
 
-        var connectionChanged = secretChanged
-            || !string.Equals(provider.BaseUrl, baseUrl, StringComparison.Ordinal);
+        var baseUrlChanged = !string.Equals(provider.BaseUrl, baseUrl, StringComparison.Ordinal);
+        if (baseUrlChanged && !provider.IsBaseUrlEditable)
+        {
+            throw InvalidProvider();
+        }
+
+        var connectionChanged = secretChanged || baseUrlChanged;
         provider.Update(
             name,
             baseUrl,
@@ -377,6 +382,7 @@ public sealed class InferenceConfigurationAppService(
             provider.Name,
             InferenceProviderTypeCodes.From(provider.ProviderType),
             provider.BaseUrl,
+            provider.IsBaseUrlEditable,
             new SecretStateDto(secretStateCode),
             GetProviderRuntimeStatusCode(secretStateCode, provider.VerificationState),
             ProviderVerificationStateCodes.From(provider.VerificationState),
@@ -464,9 +470,17 @@ public sealed class InferenceConfigurationAppService(
         out string baseUrl)
     {
         name = requestedName?.Trim() ?? string.Empty;
-        baseUrl = requestedBaseUrl?.Trim().TrimEnd('/') ?? string.Empty;
+        baseUrl = string.Empty;
         return name.Length is > 0 and <= 100
-            && baseUrl.Length is > 0 and <= 500
+            && TryNormalizeBaseUrl(requestedBaseUrl, out baseUrl);
+    }
+
+    private static bool TryNormalizeBaseUrl(
+        string? requestedBaseUrl,
+        out string baseUrl)
+    {
+        baseUrl = requestedBaseUrl?.Trim().TrimEnd('/') ?? string.Empty;
+        return baseUrl.Length is > 0 and <= 500
             && Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri)
             && uri.Scheme is "http" or "https";
     }

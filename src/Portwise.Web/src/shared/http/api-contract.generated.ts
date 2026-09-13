@@ -1288,16 +1288,28 @@ export interface components {
             /** @description Optional source-system record identifier. */
             sourceRecordId: null | string;
         };
-        /** @description Describes an optional inference provider to save during onboarding. */
+        /** @description Describes an existing inference provider connection to save during onboarding. */
         CompleteInferenceProviderRequest: {
-            name: string;
-            baseUrl: string;
+            /**
+             * Format: uuid
+             * @description The existing inference provider identifier.
+             */
+            providerId: string;
+            /** @description The explicit encrypted-key operation. */
             apiKey: components["schemas"]["SecretUpdateRequest"];
+            /** @description The optional service address for providers that allow customization. */
+            baseUrl?: null | string;
         };
-        /** @description Describes an optional Chat or Embedding binding by provider name and model. */
+        /** @description Describes an optional Chat or Embedding binding by provider identifier and model. */
         CompleteInferenceRouteRequest: {
+            /** @description The stable Chat or Embedding capability code. */
             capabilityCode: string;
-            providerName: null | string;
+            /**
+             * Format: uuid
+             * @description The existing provider identifier, or null to leave this capability unconfigured.
+             */
+            providerId: null | string;
+            /** @description The provider model name, or null to leave this capability unconfigured. */
             modelName: null | string;
         };
         /** @description Supplies preferences, the unique portfolio, its optional initial stocks, and external capabilities. */
@@ -1312,9 +1324,9 @@ export interface components {
             stockDataProviders: null | components["schemas"]["CompleteStockDataProviderRequest"][];
             /** @description Optional stock data capability routes. */
             stockDataRoutes: null | components["schemas"]["CompleteStockDataRouteRequest"][];
-            /** @description Optional inference provider configurations. */
+            /** @description Optional keys for existing inference providers. */
             inferenceProviders: null | components["schemas"]["CompleteInferenceProviderRequest"][];
-            /** @description Optional chat and embedding model routes. */
+            /** @description Optional Chat and Embedding routes, which may use different providers. */
             inferenceRoutes: null | components["schemas"]["CompleteInferenceRouteRequest"][];
             /** @description Optional initial stocks saved with the portfolio. */
             initialStocks?: null | components["schemas"]["InitialStockRequest"][];
@@ -1375,20 +1387,41 @@ export interface components {
         };
         /** @description Describes one inference provider without returning its API key. */
         InferenceProviderDto: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description The provider identifier.
+             */
             id: string;
+            /** @description The user-facing provider name. */
             name: string;
+            /** @description The stable provider protocol code. */
             providerTypeCode: string;
+            /** @description The current provider service address. */
             baseUrl: string;
+            /** @description Whether the service address can be changed by the user. */
+            isBaseUrlEditable: boolean;
+            /** @description The state of the protected API key. */
             secretState: components["schemas"]["SecretStateDto"];
+            /** @description The effective runtime readiness state. */
             runtimeStatusCode: string;
+            /** @description The last connection verification state. */
             verificationStateCode: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description The time of the last verification attempt.
+             */
             lastVerifiedAtUtc: null | string;
+            /** @description The stable error code from the last failed verification. */
             lastVerificationErrorCode: null | string;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description The optimistic concurrency revision.
+             */
             revision: number | string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description The time the provider was last changed.
+             */
             updatedAtUtc: string;
         };
         /** @description Returns all configured inference providers. */

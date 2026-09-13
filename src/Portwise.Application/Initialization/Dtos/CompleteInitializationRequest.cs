@@ -8,8 +8,8 @@ namespace Portwise.Application.Initialization.Dtos;
 /// <param name="PortfolioName">The name of the initial portfolio.</param>
 /// <param name="StockDataProviders">Optional stock data provider configurations.</param>
 /// <param name="StockDataRoutes">Optional stock data capability routes.</param>
-/// <param name="InferenceProviders">Optional inference provider configurations.</param>
-/// <param name="InferenceRoutes">Optional chat and embedding model routes.</param>
+/// <param name="InferenceProviders">Optional keys for existing inference providers.</param>
+/// <param name="InferenceRoutes">Optional Chat and Embedding routes, which may use different providers.</param>
 /// <param name="InitialStocks">Optional initial stocks saved with the portfolio.</param>
 public sealed record CompleteInitializationRequest(
     string LanguageCode,

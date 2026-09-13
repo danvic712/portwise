@@ -90,7 +90,18 @@ public sealed class ConfigurationPersistenceModelTests
         Assert.Equal(4, stockRouteSeeds.Count());
         Assert.Equal(2, inferenceRouteSeeds.Count());
         Assert.Empty(stockProviderSeeds);
-        Assert.Empty(inferenceProviderSeeds);
+        Assert.Equal(4, inferenceProviderSeeds.Count());
+        Assert.All(inferenceProviderSeeds, seed => Assert.Null(seed["ProtectedApiKey"]));
+        Assert.Contains(inferenceProviderSeeds, seed => Assert.IsType<Guid>(seed["Id"]) == KnownConfigurationIds.InferenceOpenAiProvider);
+        Assert.Contains(inferenceProviderSeeds, seed => Assert.IsType<Guid>(seed["Id"]) == KnownConfigurationIds.InferenceDeepSeekProvider);
+        Assert.Contains(inferenceProviderSeeds, seed => Assert.IsType<Guid>(seed["Id"]) == KnownConfigurationIds.InferenceAzureOpenAiProvider);
+        Assert.Contains(inferenceProviderSeeds, seed => Assert.IsType<Guid>(seed["Id"]) == KnownConfigurationIds.InferenceOpenAiCompatibleProvider);
+        Assert.Contains(inferenceProviderSeeds, seed =>
+            Assert.IsType<Guid>(seed["Id"]) == KnownConfigurationIds.InferenceAzureOpenAiProvider
+            && Assert.IsType<bool>(seed["IsBaseUrlEditable"]));
+        Assert.Contains(inferenceProviderSeeds, seed =>
+            Assert.IsType<Guid>(seed["Id"]) == KnownConfigurationIds.InferenceOpenAiCompatibleProvider
+            && Assert.IsType<bool>(seed["IsBaseUrlEditable"]));
 
         AssertUuidV7(KnownConfigurationIds.FtShareProviderDefinition);
         AssertUuidV7(KnownConfigurationIds.FtShareProviderSettings);
@@ -100,6 +111,10 @@ public sealed class ConfigurationPersistenceModelTests
         AssertUuidV7(KnownConfigurationIds.StockFinancialRoute);
         AssertUuidV7(KnownConfigurationIds.InferenceChatRoute);
         AssertUuidV7(KnownConfigurationIds.InferenceEmbeddingRoute);
+        AssertUuidV7(KnownConfigurationIds.InferenceOpenAiProvider);
+        AssertUuidV7(KnownConfigurationIds.InferenceDeepSeekProvider);
+        AssertUuidV7(KnownConfigurationIds.InferenceAzureOpenAiProvider);
+        AssertUuidV7(KnownConfigurationIds.InferenceOpenAiCompatibleProvider);
     }
 
     private static PortwiseDbContext CreateContext()

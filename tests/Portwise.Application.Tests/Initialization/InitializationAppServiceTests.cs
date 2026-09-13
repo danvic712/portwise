@@ -84,9 +84,26 @@ public sealed class InitializationAppServiceTests
                 Revision = 1
             })
             .ToList();
+        var openAiProvider = new InferenceProvider
+        {
+            Id = KnownConfigurationIds.InferenceOpenAiProvider,
+            Name = "OpenAI",
+            NormalizedName = InferenceProvider.NormalizeName("OpenAI"),
+            BaseUrl = "https://api.openai.com/v1",
+            Revision = 1
+        };
+        var deepSeekProvider = new InferenceProvider
+        {
+            Id = KnownConfigurationIds.InferenceDeepSeekProvider,
+            Name = "DeepSeek",
+            NormalizedName = InferenceProvider.NormalizeName("DeepSeek"),
+            BaseUrl = "https://api.deepseek.com/v1",
+            Revision = 1
+        };
         var (service, unitOfWork, _) = CreateService(
             definitions: [definition],
             stockRoutes: stockRoutes,
+            inferenceProviders: [openAiProvider, deepSeekProvider],
             inferenceRoutes: inferenceRoutes);
 
         var response = await service.CompleteAsync(
@@ -105,21 +122,110 @@ public sealed class InitializationAppServiceTests
                     new("financial", "ftshare-main")
                 ],
                 [new CompleteInferenceProviderRequest(
-                    "cloud",
-                    "https://api.example.com/v1",
-                    new SecretUpdateRequest(SecretCodes.Replace, "api-key"))],
+                    openAiProvider.Id,
+                    new SecretUpdateRequest(SecretCodes.Replace, "openai-key")),
+                 new CompleteInferenceProviderRequest(
+                    deepSeekProvider.Id,
+                    new SecretUpdateRequest(SecretCodes.Replace, "deepseek-key"))],
                 [
-                    new("chat", "cloud", "chat-model"),
-                    new("embedding", "cloud", "embedding-model")
+                    new("chat", openAiProvider.Id, "chat-model"),
+                    new("embedding", deepSeekProvider.Id, "embedding-model")
                 ]),
             CancellationToken.None);
 
         Assert.All(
             response.Status.Limitations,
             item => Assert.Equal("configured-unverified", item.StatusCode));
-        Assert.DoesNotContain("api-key", response.Status.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("openai-key", response.Status.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("deepseek-key", response.Status.ToString(), StringComparison.Ordinal);
         Assert.DoesNotContain("ftshare-key", response.Status.ToString(), StringComparison.Ordinal);
+        Assert.Equal(2, openAiProvider.Revision);
+        Assert.Equal(2, deepSeekProvider.Revision);
+        Assert.Equal(openAiProvider.Id, inferenceRoutes.Single(route => route.Capability == InferenceCapability.Chat).ProviderId);
+        Assert.Equal(deepSeekProvider.Id, inferenceRoutes.Single(route => route.Capability == InferenceCapability.Embedding).ProviderId);
         unitOfWork.Verify(item => item.CommitAsync(CancellationToken.None), Times.Once);
+    }
+
+    [Fact]
+    public async Task CompleteAsync_SavesEditableInferenceProviderBaseUrl()
+    {
+        var provider = new InferenceProvider
+        {
+            Id = KnownConfigurationIds.InferenceAzureOpenAiProvider,
+            Name = "Azure OpenAI",
+            NormalizedName = InferenceProvider.NormalizeName("Azure OpenAI"),
+            BaseUrl = "https://your-resource.openai.azure.com/openai/v1",
+            IsBaseUrlEditable = true,
+            Revision = 1
+        };
+        var routes = Enum.GetValues<InferenceCapability>()
+            .Select(capability => new InferenceRoute
+            {
+                Id = Guid.CreateVersion7(),
+                Capability = capability,
+                Revision = 1
+            })
+            .ToList();
+        var (service, unitOfWork, _) = CreateService(
+            inferenceProviders: [provider],
+            inferenceRoutes: routes);
+
+        await service.CompleteAsync(
+            new CompleteInitializationRequest(
+                "zh-CN",
+                "system",
+                "Azure 组合",
+                null,
+                null,
+                [new CompleteInferenceProviderRequest(
+                    provider.Id,
+                    new SecretUpdateRequest(SecretCodes.Replace, "azure-key"),
+                    "https://custom-resource.openai.azure.com/openai/v1")],
+                [
+                    new("chat", provider.Id, "gpt-4.1-mini"),
+                    new("embedding", null, null)
+                ]),
+            CancellationToken.None);
+
+        Assert.Equal("https://custom-resource.openai.azure.com/openai/v1", provider.BaseUrl);
+        Assert.Equal(2, provider.Revision);
+        Assert.Equal("configured-unverified",
+            (await service.GetAsync(CancellationToken.None)).Limitations
+                .Single(item => item.CapabilityCode == "chat").StatusCode);
+        unitOfWork.Verify(item => item.CommitAsync(CancellationToken.None), Times.Once);
+    }
+
+    [Fact]
+    public async Task CompleteAsync_RejectsBaseUrlChangeForFixedInferenceProvider()
+    {
+        var provider = new InferenceProvider
+        {
+            Id = KnownConfigurationIds.InferenceOpenAiProvider,
+            Name = "OpenAI",
+            NormalizedName = InferenceProvider.NormalizeName("OpenAI"),
+            BaseUrl = "https://api.openai.com/v1",
+            IsBaseUrlEditable = false,
+            Revision = 1
+        };
+        var (service, unitOfWork, _) = CreateService(inferenceProviders: [provider]);
+
+        var exception = await Assert.ThrowsAsync<ApplicationErrorException>(() =>
+            service.CompleteAsync(
+                new CompleteInitializationRequest(
+                    "zh-CN",
+                    "system",
+                    "OpenAI 组合",
+                    null,
+                    null,
+                    [new CompleteInferenceProviderRequest(
+                        provider.Id,
+                        new SecretUpdateRequest(SecretCodes.Keep, null),
+                        "https://other.example/v1")],
+                    null),
+                CancellationToken.None));
+
+        Assert.Equal(ApplicationErrorCodes.InitializationValidationFailed, exception.ErrorCode);
+        unitOfWork.Verify(item => item.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -250,6 +356,7 @@ public sealed class InitializationAppServiceTests
         InitializationState? initializationState = null,
         IReadOnlyList<StockDataProviderDefinition>? definitions = null,
         IReadOnlyList<StockDataRoute>? stockRoutes = null,
+        IReadOnlyList<InferenceProvider>? inferenceProviders = null,
         IReadOnlyList<InferenceRoute>? inferenceRoutes = null,
         Mock<IRepository<Security>>? securityRepository = null,
         Mock<IRepository<PortfolioPosition>>? positionRepository = null)
@@ -262,7 +369,7 @@ public sealed class InitializationAppServiceTests
             Definitions = definitions?.ToList() ?? [],
             StockProviders = [],
             StockRoutes = stockRoutes?.ToList() ?? [],
-            InferenceProviders = [],
+            InferenceProviders = inferenceProviders?.ToList() ?? [],
             InferenceRoutes = inferenceRoutes?.ToList() ?? [],
             Securities = [],
             Positions = []

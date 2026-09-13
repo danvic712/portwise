@@ -24,4 +24,12 @@ public static class KnownConfigurationIds
     public static readonly Guid InferenceChatRoute = Guid.Parse("01a0929e-0a22-7eec-bdf8-94c2db32b317");
 
     public static readonly Guid InferenceEmbeddingRoute = Guid.Parse("01a0929e-0a23-7c2e-9948-e2028030f99a");
+
+    public static readonly Guid InferenceOpenAiProvider = Guid.Parse("01a0929e-0a24-7b9e-8af2-14d1c55e9a10");
+
+    public static readonly Guid InferenceDeepSeekProvider = Guid.Parse("01a0929e-0a25-7c8d-9be3-25e2d66fab21");
+
+    public static readonly Guid InferenceAzureOpenAiProvider = Guid.Parse("01a0929e-0a26-7d7c-a4f4-36f3e77abc32");
+
+    public static readonly Guid InferenceOpenAiCompatibleProvider = Guid.Parse("01a0929e-0a27-7f4a-8b5c-47a8b02c6d19");
 }

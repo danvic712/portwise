@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Portwise.Infrastructure;
@@ -11,9 +12,11 @@ using Portwise.Infrastructure;
 namespace Portwise.Infrastructure.Migrations
 {
     [DbContext(typeof(PortwiseDbContext))]
-    partial class PortwiseDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260912235714_SeedDefaultInferenceProviders")]
+    partial class SeedDefaultInferenceProviders
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -391,10 +394,6 @@ namespace Portwise.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at_utc");
 
-                    b.Property<bool>("IsBaseUrlEditable")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_base_url_editable");
-
                     b.Property<string>("LastVerificationErrorCode")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
@@ -459,7 +458,6 @@ namespace Portwise.Infrastructure.Migrations
                             Id = new Guid("01a0929e-0a24-7b9e-8af2-14d1c55e9a10"),
                             BaseUrl = "https://api.openai.com/v1",
                             CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 9, 12, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            IsBaseUrlEditable = false,
                             Name = "OpenAI",
                             NormalizedName = "OPENAI",
                             ProviderType = "openai-compatible",
@@ -472,7 +470,6 @@ namespace Portwise.Infrastructure.Migrations
                             Id = new Guid("01a0929e-0a25-7c8d-9be3-25e2d66fab21"),
                             BaseUrl = "https://api.deepseek.com/v1",
                             CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 9, 12, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            IsBaseUrlEditable = false,
                             Name = "DeepSeek",
                             NormalizedName = "DEEPSEEK",
                             ProviderType = "openai-compatible",
@@ -485,22 +482,8 @@ namespace Portwise.Infrastructure.Migrations
                             Id = new Guid("01a0929e-0a26-7d7c-a4f4-36f3e77abc32"),
                             BaseUrl = "https://your-resource.openai.azure.com/openai/v1",
                             CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 9, 12, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            IsBaseUrlEditable = true,
                             Name = "Azure OpenAI",
                             NormalizedName = "AZURE OPENAI",
-                            ProviderType = "openai-compatible",
-                            Revision = 1L,
-                            UpdatedAtUtc = new DateTimeOffset(new DateTime(2026, 9, 12, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            VerificationState = "unverified"
-                        },
-                        new
-                        {
-                            Id = new Guid("01a0929e-0a27-7f4a-8b5c-47a8b02c6d19"),
-                            BaseUrl = "https://api.openai.com/v1",
-                            CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 9, 12, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            IsBaseUrlEditable = true,
-                            Name = "OpenAI Compatible",
-                            NormalizedName = "OPENAI COMPATIBLE",
                             ProviderType = "openai-compatible",
                             Revision = 1L,
                             UpdatedAtUtc = new DateTimeOffset(new DateTime(2026, 9, 12, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),

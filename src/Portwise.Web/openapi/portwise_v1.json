@@ -1572,49 +1572,59 @@
       },
       "CompleteInferenceProviderRequest": {
         "required": [
-          "name",
-          "baseUrl",
+          "providerId",
           "apiKey"
         ],
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string"
-          },
-          "baseUrl": {
-            "type": "string"
+          "providerId": {
+            "type": "string",
+            "description": "The existing inference provider identifier.",
+            "format": "uuid"
           },
           "apiKey": {
+            "description": "The explicit encrypted-key operation.",
             "$ref": "#/components/schemas/SecretUpdateRequest"
+          },
+          "baseUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The optional service address for providers that allow customization."
           }
         },
-        "description": "Describes an optional inference provider to save during onboarding."
+        "description": "Describes an existing inference provider connection to save during onboarding."
       },
       "CompleteInferenceRouteRequest": {
         "required": [
           "capabilityCode",
-          "providerName",
+          "providerId",
           "modelName"
         ],
         "type": "object",
         "properties": {
           "capabilityCode": {
-            "type": "string"
+            "type": "string",
+            "description": "The stable Chat or Embedding capability code."
           },
-          "providerName": {
+          "providerId": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "The existing provider identifier, or null to leave this capability unconfigured.",
+            "format": "uuid"
           },
           "modelName": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "The provider model name, or null to leave this capability unconfigured."
           }
         },
-        "description": "Describes an optional Chat or Embedding binding by provider name and model."
+        "description": "Describes an optional Chat or Embedding binding by provider identifier and model."
       },
       "CompleteInitializationRequest": {
         "required": [
@@ -1668,7 +1678,7 @@
             "items": {
               "$ref": "#/components/schemas/CompleteInferenceProviderRequest"
             },
-            "description": "Optional inference provider configurations."
+            "description": "Optional keys for existing inference providers."
           },
           "inferenceRoutes": {
             "type": [
@@ -1678,7 +1688,7 @@
             "items": {
               "$ref": "#/components/schemas/CompleteInferenceRouteRequest"
             },
-            "description": "Optional chat and embedding model routes."
+            "description": "Optional Chat and Embedding routes, which may use different providers."
           },
           "initialStocks": {
             "type": [
@@ -1836,6 +1846,7 @@
           "name",
           "providerTypeCode",
           "baseUrl",
+          "isBaseUrlEditable",
           "secretState",
           "runtimeStatusCode",
           "verificationStateCode",
@@ -1848,38 +1859,51 @@
         "properties": {
           "id": {
             "type": "string",
+            "description": "The provider identifier.",
             "format": "uuid"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "The user-facing provider name."
           },
           "providerTypeCode": {
-            "type": "string"
+            "type": "string",
+            "description": "The stable provider protocol code."
           },
           "baseUrl": {
-            "type": "string"
+            "type": "string",
+            "description": "The current provider service address."
+          },
+          "isBaseUrlEditable": {
+            "type": "boolean",
+            "description": "Whether the service address can be changed by the user."
           },
           "secretState": {
+            "description": "The state of the protected API key.",
             "$ref": "#/components/schemas/SecretStateDto"
           },
           "runtimeStatusCode": {
-            "type": "string"
+            "type": "string",
+            "description": "The effective runtime readiness state."
           },
           "verificationStateCode": {
-            "type": "string"
+            "type": "string",
+            "description": "The last connection verification state."
           },
           "lastVerifiedAtUtc": {
             "type": [
               "null",
               "string"
             ],
+            "description": "The time of the last verification attempt.",
             "format": "date-time"
           },
           "lastVerificationErrorCode": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "The stable error code from the last failed verification."
           },
           "revision": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -1887,10 +1911,12 @@
               "integer",
               "string"
             ],
+            "description": "The optimistic concurrency revision.",
             "format": "int64"
           },
           "updatedAtUtc": {
             "type": "string",
+            "description": "The time the provider was last changed.",
             "format": "date-time"
           }
         },

@@ -18,6 +18,11 @@ public sealed class InferenceProvider
 
     public string BaseUrl { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Gets a value indicating whether the service address can be changed by the user.
+    /// </summary>
+    public bool IsBaseUrlEditable { get; set; }
+
     public string? ProtectedApiKey { get; set; }
 
     public ProviderVerificationState VerificationState { get; set; } =
@@ -37,7 +42,8 @@ public sealed class InferenceProvider
         string name,
         string baseUrl,
         string? protectedApiKey,
-        DateTimeOffset createdAtUtc)
+        DateTimeOffset createdAtUtc,
+        bool isBaseUrlEditable = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(baseUrl);
@@ -49,6 +55,7 @@ public sealed class InferenceProvider
             NormalizedName = NormalizeName(name),
             ProviderType = InferenceProviderType.OpenAiCompatible,
             BaseUrl = baseUrl.Trim(),
+            IsBaseUrlEditable = isBaseUrlEditable,
             ProtectedApiKey = protectedApiKey,
             VerificationState = ProviderVerificationState.Unverified,
             Revision = 1,

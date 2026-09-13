@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Check, Database, Info, KeyRound, Plus, Trash2 } from "lucide-react"
+import { ArrowLeft, ArrowRight, Bot, Check, Database, Info, KeyRound, Plus, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert"
@@ -14,9 +14,10 @@ import { getApiErrorMessage } from "@/shared/http/api-errors"
 import { isRequestAborted, useLatestRequest } from "@/shared/hooks/useLatestRequest"
 import { interpolate, useLocale, type Locale } from "@/shared/i18n/i18n"
 import { useTheme, type Theme } from "@/app/providers/ThemeContext"
-import type { CompleteInitializationRequest, CompleteInitializationResponse, StockDataProvidersResponse } from "@/shared/http/api-types"
+import type { CompleteInitializationRequest, CompleteInitializationResponse, InferenceProvidersResponse, StockDataProvidersResponse } from "@/shared/http/api-types"
 import { completeInitialization } from "@/onboarding/initialization.api"
 import { getStockDataProviders } from "@/settings/stock-data-providers.api"
+import { getInferenceProviders } from "@/settings/inference.api"
 import "./onboarding.css"
 
 type OnboardingProps = {
@@ -39,7 +40,13 @@ type InitialStockDraft = {
   heldShares: string
 }
 
-const defaultBaseUrl = "https://api.openai.com/v1"
+type InferenceCapability = "chat" | "embedding"
+
+type InferenceRouteDraft = {
+  providerId: string
+  modelName: string
+}
+
 const ftShareProviderKind = "ftshare"
 const aShareExchangeCodes = {
   sse: "SSE",
@@ -66,11 +73,15 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
   const stockDraftSequence = useRef(0)
   const [initialStocks, setInitialStocks] = useState<InitialStockDraft[]>([])
   const [providerKeys, setProviderKeys] = useState<Record<string, string>>({})
-  const [inferenceName, setInferenceName] = useState("")
-  const [inferenceBaseUrl, setInferenceBaseUrl] = useState(defaultBaseUrl)
-  const [inferenceKey, setInferenceKey] = useState("")
-  const [chatModel, setChatModel] = useState("")
-  const [embeddingModel, setEmbeddingModel] = useState("")
+  const [inferenceProviders, setInferenceProviders] = useState<InferenceProvidersResponse["providers"]>([])
+  const [inferenceProvidersLoading, setInferenceProvidersLoading] = useState(true)
+  const [inferenceProvidersError, setInferenceProvidersError] = useState(false)
+  const [inferenceProviderKeys, setInferenceProviderKeys] = useState<Record<string, string>>({})
+  const [inferenceProviderBaseUrls, setInferenceProviderBaseUrls] = useState<Record<string, string>>({})
+  const [inferenceRoutes, setInferenceRoutes] = useState<Record<InferenceCapability, InferenceRouteDraft>>({
+    chat: { providerId: "", modelName: "" },
+    embedding: { providerId: "", modelName: "" },
+  })
   const [definitions, setDefinitions] = useState<StockDataProvidersResponse["definitions"]>([])
   const [definitionsLoading, setDefinitionsLoading] = useState(true)
   const [definitionsError, setDefinitionsError] = useState(false)
@@ -78,6 +89,7 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
   const [error, setError] = useState<string | null>(null)
   const { begin: beginSubmit } = useLatestRequest()
   const { begin: beginDefinitions } = useLatestRequest()
+  const { begin: beginInferenceProviders } = useLatestRequest()
 
   useEffect(() => {
     const request = beginDefinitions()
@@ -97,13 +109,47 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
       })
   }, [beginDefinitions])
 
+  useEffect(() => {
+    const request = beginInferenceProviders()
+    void getInferenceProviders(request.signal)
+      .then((response) => {
+        if (request.isCurrent()) {
+          setInferenceProviders(response.providers)
+          setInferenceProviderBaseUrls(Object.fromEntries(response.providers.map((provider) => [provider.id, provider.baseUrl])))
+          setInferenceProvidersLoading(false)
+          setInferenceProvidersError(false)
+        }
+      })
+      .catch(() => {
+        if (request.isCurrent()) {
+          setInferenceProvidersLoading(false)
+          setInferenceProvidersError(true)
+        }
+      })
+  }, [beginInferenceProviders])
+
   const enabledDefinitions = useMemo(
     () => definitions.filter((definition) => definition.isEnabled),
     [definitions],
   )
 
+  const selectedInferenceProviderIds = useMemo(
+    () => Array.from(new Set(
+      Object.values(inferenceRoutes)
+        .map((route) => route.providerId)
+        .filter((providerId): providerId is string => Boolean(providerId)),
+    )),
+    [inferenceRoutes],
+  )
+  const selectedInferenceProviders = useMemo(
+    () => inferenceProviders.filter((provider) => selectedInferenceProviderIds.includes(provider.id)),
+    [inferenceProviders, selectedInferenceProviderIds],
+  )
+
   const hasStockDataInput = Object.values(providerKeys).some((value) => value.trim())
-  const hasInferenceInput = Boolean(inferenceName.trim() || inferenceKey.trim() || chatModel.trim() || embeddingModel.trim() || (inferenceBaseUrl.trim() && inferenceBaseUrl.trim() !== defaultBaseUrl))
+  const hasInferenceInput = selectedInferenceProviderIds.length > 0
+    || selectedInferenceProviderIds.some((providerId) => Boolean(inferenceProviderKeys[providerId]?.trim()))
+    || Object.values(inferenceRoutes).some((route) => route.modelName.trim())
   const hasPortfolioInput = Boolean(portfolioName.trim())
 
   function createStockDraft(): InitialStockDraft {
@@ -135,6 +181,21 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
     setProviderKeys((current) => ({ ...current, [providerKindCode]: value }))
   }
 
+  function updateInferenceProviderKey(providerId: string, value: string) {
+    setInferenceProviderKeys((current) => ({ ...current, [providerId]: value }))
+  }
+
+  function updateInferenceProviderBaseUrl(providerId: string, value: string) {
+    setInferenceProviderBaseUrls((current) => ({ ...current, [providerId]: value }))
+  }
+
+  function updateInferenceRoute(capability: InferenceCapability, patch: Partial<InferenceRouteDraft>) {
+    setInferenceRoutes((current) => ({
+      ...current,
+      [capability]: { ...current[capability], ...patch },
+    }))
+  }
+
   function buildRequest(): CompleteInitializationRequest {
     const stocks = initialStocks
       .filter((stock) => stock.securityCode.trim())
@@ -147,17 +208,46 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
       .map((definition) => ({ definition, key: providerKeys[definition.providerKindCode]?.trim() ?? "" }))
       .filter((item) => item.key)
       .map(({ definition, key }) => ({ providerDefinitionId: definition.id, name: definition.displayName, credentials: { action: "replace" as const, value: key } }))
-    const inferenceProviders = hasInferenceInput
-      ? [{ name: inferenceName.trim(), baseUrl: inferenceBaseUrl.trim(), apiKey: { action: inferenceKey.trim() ? "replace" as const : "clear" as const, value: inferenceKey.trim() || null } }]
-      : null
-    const inferenceRoutes = hasInferenceInput
+    const selectedProviderIds = new Set(selectedInferenceProviderIds)
+    const inferenceProviderRequests = inferenceProviders
+      .filter((provider) => selectedProviderIds.has(provider.id))
+      .map((provider) => {
+        const key = inferenceProviderKeys[provider.id]?.trim() ?? ""
+        return {
+          providerId: provider.id,
+          baseUrl: provider.isBaseUrlEditable
+            ? inferenceProviderBaseUrls[provider.id]?.trim() || null
+            : null,
+          apiKey: key
+            ? { action: "replace" as const, value: key }
+            : { action: "keep" as const, value: null },
+        }
+      })
+    const inferenceRouteRequests = hasInferenceInput
       ? [
-        { capabilityCode: "chat", providerName: inferenceName.trim() || null, modelName: chatModel.trim() || null },
-        { capabilityCode: "embedding", providerName: inferenceName.trim() || null, modelName: embeddingModel.trim() || null },
+        { capabilityCode: "chat", providerId: inferenceRoutes.chat.providerId || null, modelName: inferenceRoutes.chat.modelName.trim() || null },
+        { capabilityCode: "embedding", providerId: inferenceRoutes.embedding.providerId || null, modelName: inferenceRoutes.embedding.modelName.trim() || null },
       ]
       : null
 
-    return { languageCode: locale, themeCode: theme, portfolioName: portfolioName.trim(), initialStocks: stocks.length ? stocks : null, stockDataProviders: stockDataProviders.length ? stockDataProviders : null, stockDataRoutes: null, inferenceProviders, inferenceRoutes }
+    return { languageCode: locale, themeCode: theme, portfolioName: portfolioName.trim(), initialStocks: stocks.length ? stocks : null, stockDataProviders: stockDataProviders.length ? stockDataProviders : null, stockDataRoutes: null, inferenceProviders: inferenceProviderRequests.length ? inferenceProviderRequests : null, inferenceRoutes: inferenceRouteRequests }
+  }
+
+  function validateInferenceStep() {
+    for (const capability of ["chat", "embedding"] as const) {
+      const route = inferenceRoutes[capability]
+      const hasProvider = Boolean(route.providerId)
+      const hasModel = Boolean(route.modelName.trim())
+      if (hasProvider !== hasModel) return copy.validation.inferenceRoute
+    }
+
+    for (const provider of selectedInferenceProviders) {
+      if (provider.isBaseUrlEditable && !inferenceProviderBaseUrls[provider.id]?.trim()) {
+        return copy.validation.baseUrlRequired
+      }
+    }
+
+    return null
   }
 
   function validatePortfolioStep() {
@@ -187,9 +277,10 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
       setError(portfolioError)
       return
     }
-    if (hasInferenceInput && (!inferenceName.trim() || !inferenceKey.trim() || !chatModel.trim() || !embeddingModel.trim())) {
+    const inferenceError = validateInferenceStep()
+    if (inferenceError) {
       setStep(4)
-      setError(copy.validation.inference)
+      setError(inferenceError)
       return
     }
 
@@ -220,6 +311,13 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
       const portfolioError = validatePortfolioStep()
       if (portfolioError) {
         setError(portfolioError)
+        return
+      }
+    }
+    if (step === 4) {
+      const inferenceError = validateInferenceStep()
+      if (inferenceError) {
+        setError(inferenceError)
         return
       }
     }
@@ -477,14 +575,121 @@ export function Onboarding({ onNavigate, onComplete }: OnboardingProps) {
                       <p className="onboarding-provider-footer-hint">{copy.stock.futureProviderHint}</p>
                     </section>}
 
-                    {activeStep.key === "inference" && <FieldGroup className="onboarding-field-grid onboarding-inference-fields">
-                      <Field><FieldLabel htmlFor="onboarding-inference-name">{copy.inference.nameLabel}</FieldLabel><Input id="onboarding-inference-name" value={inferenceName} placeholder={copy.inference.namePlaceholder} onChange={(event) => setInferenceName(event.target.value)} /></Field>
-                      <Field><FieldLabel htmlFor="onboarding-inference-base-url">{copy.inference.baseUrlLabel}</FieldLabel><Input id="onboarding-inference-base-url" value={inferenceBaseUrl} onChange={(event) => setInferenceBaseUrl(event.target.value)} /></Field>
-                      <Field><FieldLabel htmlFor="onboarding-inference-key">{copy.inference.keyLabel}</FieldLabel><Input id="onboarding-inference-key" type="password" value={inferenceKey} placeholder={copy.inference.keyPlaceholder} onChange={(event) => setInferenceKey(event.target.value)} autoComplete="new-password" /></Field>
-                      <Field><FieldLabel htmlFor="onboarding-chat-model">{copy.inference.chatModelLabel}</FieldLabel><Input id="onboarding-chat-model" value={chatModel} placeholder={copy.inference.modelPlaceholder} onChange={(event) => setChatModel(event.target.value)} /></Field>
-                      <Field><FieldLabel htmlFor="onboarding-embedding-model">{copy.inference.embeddingModelLabel}</FieldLabel><Input id="onboarding-embedding-model" value={embeddingModel} placeholder={copy.inference.modelPlaceholder} onChange={(event) => setEmbeddingModel(event.target.value)} /></Field>
-                      <FieldDescription>{copy.inference.hint}</FieldDescription>
-                    </FieldGroup>}
+                    {activeStep.key === "inference" && <section className="onboarding-inference-editor" aria-labelledby="onboarding-inference-editor-title">
+                      <div className="onboarding-provider-editor-heading">
+                        <div>
+                          <div className="onboarding-provider-kicker"><Bot size={15} aria-hidden="true" />{copy.inference.providerSectionEyebrow}</div>
+                          <h4 id="onboarding-inference-editor-title">{copy.inference.providerSectionTitle}</h4>
+                          <p>{copy.inference.providerSectionDescription}</p>
+                        </div>
+                        {!inferenceProvidersLoading && !inferenceProvidersError && <Badge variant="outline">{interpolate(copy.inference.providerCount, { count: String(inferenceProviders.length) })}</Badge>}
+                      </div>
+
+                      {inferenceProvidersLoading ? (
+                        <div className="onboarding-provider-loading" role="status"><span className="onboarding-provider-loading-dot" aria-hidden="true" />{copy.inference.providersLoading}</div>
+                      ) : inferenceProvidersError ? (
+                        <Alert variant="attention" className="onboarding-provider-alert">
+                          <AlertTitle>{copy.inference.providersUnavailableTitle}</AlertTitle>
+                          <AlertDescription>{copy.inference.loadError}</AlertDescription>
+                        </Alert>
+                      ) : inferenceProviders.length === 0 ? (
+                        <div className="onboarding-provider-empty">{copy.inference.providersEmpty}</div>
+                      ) : <>
+                        <div className="onboarding-inference-section-heading onboarding-inference-routes-heading">
+                          <div>
+                            <h5 id="onboarding-inference-routes-title">{copy.inference.routesTitle}</h5>
+                            <p>{copy.inference.routesDescription}</p>
+                          </div>
+                        </div>
+                        <div className="onboarding-inference-routes" aria-labelledby="onboarding-inference-routes-title">
+                          {(["chat", "embedding"] as const).map((capability) => {
+                            const route = inferenceRoutes[capability]
+                            const selectedProvider = inferenceProviders.find((provider) => provider.id === route.providerId)
+                            const isChat = capability === "chat"
+                            return <article className="onboarding-inference-route-card" key={capability}>
+                              <div className="onboarding-inference-route-heading">
+                                <span className="onboarding-inference-route-icon"><Bot size={17} aria-hidden="true" /></span>
+                                <div>
+                                  <h5>{isChat ? copy.inference.chatTitle : copy.inference.embeddingTitle}</h5>
+                                  <p>{isChat ? copy.inference.chatDescription : copy.inference.embeddingDescription}</p>
+                                </div>
+                              </div>
+                              <FieldGroup className="onboarding-inference-route-fields">
+                                <Field>
+                                  <FieldLabel htmlFor={`onboarding-inference-provider-${capability}`}>{copy.inference.providerLabel}</FieldLabel>
+                                  <Select value={route.providerId || "none"} onValueChange={(value) => updateInferenceRoute(capability, value === "none" || value === null ? { providerId: "", modelName: "" } : { providerId: value })}>
+                                    <SelectTrigger id={`onboarding-inference-provider-${capability}`}>
+                                      <SelectValue>{selectedProvider?.name ?? copy.inference.providerPlaceholder}</SelectValue>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectGroup>
+                                        <SelectItem value="none">{copy.inference.providerNone}</SelectItem>
+                                        {inferenceProviders.map((provider) => <SelectItem value={provider.id} key={provider.id}>{provider.name}</SelectItem>)}
+                                      </SelectGroup>
+                                    </SelectContent>
+                                  </Select>
+                                </Field>
+                                <Field>
+                                  <FieldLabel htmlFor={`onboarding-inference-model-${capability}`}>{isChat ? copy.inference.chatModelLabel : copy.inference.embeddingModelLabel}</FieldLabel>
+                                  <Input id={`onboarding-inference-model-${capability}`} value={route.modelName} placeholder={copy.inference.modelPlaceholder} onChange={(event) => updateInferenceRoute(capability, { modelName: event.target.value })} autoComplete="off" />
+                                </Field>
+                              </FieldGroup>
+                            </article>
+                          })}
+                        </div>
+
+                        <div className="onboarding-inference-credentials">
+                          <div className="onboarding-inference-section-heading">
+                            <div>
+                              <h5>{copy.inference.credentialsTitle}</h5>
+                              <p>{copy.inference.credentialsDescription}</p>
+                            </div>
+                            {selectedInferenceProviders.length > 0 && <Badge variant="outline">{interpolate(copy.inference.selectedProviderCount, { count: String(selectedInferenceProviders.length) })}</Badge>}
+                          </div>
+                          {selectedInferenceProviders.length === 0 ? (
+                            <div className="onboarding-inference-credentials-empty" role="status">
+                              <span className="onboarding-inference-credentials-empty-icon"><KeyRound size={18} aria-hidden="true" /></span>
+                              <div>
+                                <strong>{copy.inference.credentialsEmptyTitle}</strong>
+                                <p>{copy.inference.credentialsEmptyDescription}</p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="onboarding-provider-list">
+                              {selectedInferenceProviders.map((provider) => {
+                                const providerKey = inferenceProviderKeys[provider.id] ?? ""
+                                const providerBaseUrl = inferenceProviderBaseUrls[provider.id] ?? provider.baseUrl
+                                const hasProviderKey = Boolean(providerKey.trim()) || provider.secretState.stateCode === "configured"
+                                return <article className="onboarding-provider-card" key={provider.id}>
+                                  <div className="onboarding-provider-card-header">
+                                    <div className="onboarding-provider-identity">
+                                      <span className="onboarding-provider-icon"><KeyRound size={18} aria-hidden="true" /></span>
+                                      <div>
+                                        <span className="onboarding-provider-label">{copy.inference.providerLabel}</span>
+                                        <h5>{provider.name}</h5>
+                                      </div>
+                                    </div>
+                                    <Badge variant={hasProviderKey ? "accent" : "outline"}>{hasProviderKey ? copy.inference.configured : copy.inference.notConfigured}</Badge>
+                                  </div>
+                                  {provider.isBaseUrlEditable && <Field className="onboarding-provider-base-url-field">
+                                    <FieldLabel htmlFor={`onboarding-inference-base-url-${provider.id}`}>{copy.inference.baseUrlLabel}</FieldLabel>
+                                    <Input id={`onboarding-inference-base-url-${provider.id}`} type="url" value={providerBaseUrl} placeholder={copy.inference.baseUrlPlaceholder} onChange={(event) => updateInferenceProviderBaseUrl(provider.id, event.target.value)} autoComplete="url" />
+                                    <FieldDescription>{copy.inference.baseUrlHint}</FieldDescription>
+                                  </Field>}
+                                  <Field className="onboarding-provider-key-field">
+                                    <FieldLabel htmlFor={`onboarding-inference-key-${provider.id}`}><KeyRound size={14} aria-hidden="true" />{copy.inference.keyLabel}</FieldLabel>
+                                    <Input id={`onboarding-inference-key-${provider.id}`} type="password" value={providerKey} placeholder={copy.inference.keyPlaceholder} onChange={(event) => updateInferenceProviderKey(provider.id, event.target.value)} autoComplete="new-password" />
+                                    <FieldDescription>{copy.inference.keyHint}</FieldDescription>
+                                  </Field>
+                                </article>
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </>}
+
+                      <p className="onboarding-provider-footer-hint">{copy.inference.hint}</p>
+                    </section>}
                     {error && <Alert variant="destructive" className="onboarding-error"><AlertTitle>{copy.states.errorTitle}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
                     <div className="onboarding-step-actions">
                       {step > 1 ? <Button type="button" variant="ghost" onClick={previousStep}><ArrowLeft data-icon="inline-start" />{copy.actions.back}</Button> : <span />}

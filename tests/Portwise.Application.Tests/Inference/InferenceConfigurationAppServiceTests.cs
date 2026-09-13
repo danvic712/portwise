@@ -32,6 +32,7 @@ public sealed class InferenceConfigurationAppServiceTests
 
         Assert.Equal("Primary AI", response.Name);
         Assert.Equal("https://ai.example/v1", response.BaseUrl);
+        Assert.True(response.IsBaseUrlEditable);
         Assert.Equal("openai-compatible", response.ProviderTypeCode);
         Assert.Equal("configured", response.SecretState.StateCode);
         Assert.Equal("configured-unverified", response.RuntimeStatusCode);
@@ -101,6 +102,36 @@ public sealed class InferenceConfigurationAppServiceTests
         Assert.Equal("configured-unverified", response.RuntimeStatusCode);
         Assert.Equal("unverified", response.VerificationStateCode);
         Assert.Null(response.LastVerifiedAtUtc);
+    }
+
+    [Fact]
+    public async Task UpdateProviderAsync_RejectsBaseUrlChangeForFixedProvider()
+    {
+        var provider = new InferenceProvider
+        {
+            Id = Guid.CreateVersion7(),
+            Name = "OpenAI",
+            NormalizedName = InferenceProvider.NormalizeName("OpenAI"),
+            BaseUrl = "https://api.openai.com/v1",
+            IsBaseUrlEditable = false,
+            Revision = 1
+        };
+        var fixture = CreateFixture(providers: [provider]);
+
+        var exception = await Assert.ThrowsAsync<ApplicationErrorException>(() =>
+            fixture.Service.UpdateProviderAsync(
+                provider.Id,
+                new UpdateInferenceProviderRequest(
+                    provider.Name,
+                    "https://other.example/v1",
+                    new SecretUpdateRequest("keep", null),
+                    provider.Revision),
+                CancellationToken.None));
+
+        Assert.Equal(ApplicationErrorCodes.InferenceProviderValidationFailed, exception.ErrorCode);
+        fixture.UnitOfWork.Verify(
+            unit => unit.CommitAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]

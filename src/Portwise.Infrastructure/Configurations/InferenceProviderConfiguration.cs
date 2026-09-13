@@ -1,11 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Portwise.Domain.Codes;
+using Portwise.Domain.Enums;
 using Portwise.Domain.Models;
 
 namespace Portwise.Infrastructure.Configurations;
 
 public sealed class InferenceProviderConfiguration : IEntityTypeConfiguration<InferenceProvider>
 {
+    private static readonly DateTimeOffset SeedTimestamp =
+        new(2026, 9, 12, 0, 0, 0, TimeSpan.Zero);
+
     public void Configure(EntityTypeBuilder<InferenceProvider> builder)
     {
         builder.ToTable("inference_providers", table =>
@@ -31,6 +36,9 @@ public sealed class InferenceProviderConfiguration : IEntityTypeConfiguration<In
             .HasColumnName("base_url")
             .HasMaxLength(500)
             .IsRequired();
+        builder.Property(x => x.IsBaseUrlEditable)
+            .HasColumnName("is_base_url_editable")
+            .IsRequired();
         builder.Property(x => x.ProtectedApiKey).HasColumnName("protected_api_key");
         builder.Property(x => x.VerificationState)
             .HasColumnName("verification_state")
@@ -51,5 +59,48 @@ public sealed class InferenceProviderConfiguration : IEntityTypeConfiguration<In
         builder.HasIndex(x => x.NormalizedName)
             .HasDatabaseName("uq_inference_providers_normalized_name")
             .IsUnique();
+
+        builder.HasData(
+            CreateSeed(
+                KnownConfigurationIds.InferenceOpenAiProvider,
+                "OpenAI",
+                "https://api.openai.com/v1",
+                isBaseUrlEditable: false),
+            CreateSeed(
+                KnownConfigurationIds.InferenceDeepSeekProvider,
+                "DeepSeek",
+                "https://api.deepseek.com/v1",
+                isBaseUrlEditable: false),
+            CreateSeed(
+                KnownConfigurationIds.InferenceAzureOpenAiProvider,
+                "Azure OpenAI",
+                "https://your-resource.openai.azure.com/openai/v1",
+                isBaseUrlEditable: true),
+            CreateSeed(
+                KnownConfigurationIds.InferenceOpenAiCompatibleProvider,
+                "OpenAI Compatible",
+                "https://api.openai.com/v1",
+                isBaseUrlEditable: true));
     }
+
+    private static InferenceProvider CreateSeed(
+        Guid id,
+        string name,
+        string baseUrl,
+        bool isBaseUrlEditable) => new()
+    {
+        Id = id,
+        Name = name,
+        NormalizedName = InferenceProvider.NormalizeName(name),
+        ProviderType = InferenceProviderType.OpenAiCompatible,
+        BaseUrl = baseUrl,
+        IsBaseUrlEditable = isBaseUrlEditable,
+        ProtectedApiKey = null,
+        VerificationState = ProviderVerificationState.Unverified,
+        LastVerifiedAtUtc = null,
+        LastVerificationErrorCode = null,
+        Revision = 1,
+        CreatedAtUtc = SeedTimestamp,
+        UpdatedAtUtc = SeedTimestamp
+    };
 }

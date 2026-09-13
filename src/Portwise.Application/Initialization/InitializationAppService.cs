@@ -128,13 +128,13 @@ public sealed class InitializationAppService(
             now,
             cancellationToken);
 
-        var inferenceProvidersByName = await SaveInferenceProvidersAsync(
+        var inferenceProvidersById = await SaveInferenceProvidersAsync(
             request.InferenceProviders,
             now,
             cancellationToken);
         await SaveInferenceRoutesAsync(
             request.InferenceRoutes,
-            inferenceProvidersByName,
+            inferenceProvidersById,
             now,
             cancellationToken);
 
@@ -258,48 +258,74 @@ public sealed class InitializationAppService(
         }
     }
 
-    private async Task<IReadOnlyDictionary<string, Guid>> SaveInferenceProvidersAsync(
+    private async Task<IReadOnlyDictionary<Guid, InferenceProvider>> SaveInferenceProvidersAsync(
         IReadOnlyList<CompleteInferenceProviderRequest>? requests,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        var byName = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
+        var providers = await uow.Get<InferenceProvider>()
+            .ListAsync(cancellationToken: cancellationToken, asNoTracking: false);
+        var byId = providers.ToDictionary(provider => provider.Id);
         if (requests is null)
         {
-            return byName;
+            return byId;
         }
 
-        var repository = uow.Get<InferenceProvider>();
+        var providerIds = new HashSet<Guid>();
         foreach (var request in requests)
         {
             if (request is null
-                || !TryNormalizeProviderInput(request.Name, request.BaseUrl, out var name, out var baseUrl)
-                || request.ApiKey is null
-                || !TryResolveCreateSecret(
+                || request.ProviderId == Guid.Empty
+                || !providerIds.Add(request.ProviderId)
+                || !byId.TryGetValue(request.ProviderId, out var provider)
+                || request.ApiKey is null)
+            {
+                throw InvalidRequest();
+            }
+
+            var baseUrl = provider.BaseUrl;
+            if (request.BaseUrl is not null
+                && !TryNormalizeBaseUrl(request.BaseUrl, out baseUrl))
+            {
+                throw InvalidRequest();
+            }
+
+            if (!TryResolveUpdateSecret(
                     request.ApiKey,
+                    provider.ProtectedApiKey,
                     SecretProtectionPurpose.InferenceProviderApiKey,
+                    out var secretChanged,
                     out var protectedApiKey))
             {
                 throw InvalidRequest();
             }
 
-            var normalizedName = InferenceProvider.NormalizeName(name);
-            if (!byName.TryAdd(normalizedName, Guid.Empty))
+            var baseUrlChanged = !string.Equals(
+                provider.BaseUrl,
+                baseUrl,
+                StringComparison.Ordinal);
+            if (baseUrlChanged && !provider.IsBaseUrlEditable)
             {
                 throw InvalidRequest();
             }
 
-            var provider = InferenceProvider.Create(name, baseUrl, protectedApiKey, now);
-            await repository.AddAsync(provider, cancellationToken);
-            byName[normalizedName] = provider.Id;
+            if (secretChanged || baseUrlChanged)
+            {
+                provider.Update(
+                    provider.Name,
+                    baseUrl,
+                    connectionChanged: true,
+                    protectedApiKey,
+                    now);
+            }
         }
 
-        return byName;
+        return byId;
     }
 
     private async Task SaveInferenceRoutesAsync(
         IReadOnlyList<CompleteInferenceRouteRequest>? requests,
-        IReadOnlyDictionary<string, Guid> providersByName,
+        IReadOnlyDictionary<Guid, InferenceProvider> providersById,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
@@ -313,7 +339,7 @@ public sealed class InitializationAppService(
         {
             if (request is null
                 || !InferenceCapabilityCodes.TryParse(request.CapabilityCode, out var capability)
-                || !IsValidInferenceBinding(request.ProviderName, request.ModelName)
+                || !IsValidInferenceBinding(request.ProviderId, request.ModelName)
                 || !requestedRoutes.TryAdd(capability, request))
             {
                 throw InvalidRequest();
@@ -336,10 +362,13 @@ public sealed class InitializationAppService(
         foreach (var route in routes)
         {
             var requested = requestedRoutes[route.Capability];
-            route.Bind(
-                ResolveProvider(requested.ProviderName, providersByName),
-                requested.ModelName?.Trim(),
-                now);
+            if (requested.ProviderId is { } providerId
+                && !providersById.ContainsKey(providerId))
+            {
+                throw InvalidRequest();
+            }
+
+            route.Bind(requested.ProviderId, requested.ModelName?.Trim(), now);
         }
     }
 
@@ -348,13 +377,6 @@ public sealed class InitializationAppService(
         if (request.StockDataRoutes is not null
             && request.StockDataProviders is null
             && request.StockDataRoutes.Any(route => !string.IsNullOrWhiteSpace(route?.ProviderName)))
-        {
-            return false;
-        }
-
-        if (request.InferenceRoutes is not null
-            && request.InferenceProviders is null
-            && request.InferenceRoutes.Any(route => !string.IsNullOrWhiteSpace(route?.ProviderName)))
         {
             return false;
         }
@@ -457,22 +479,18 @@ public sealed class InitializationAppService(
     private static bool IsValidName(string? name) =>
         !string.IsNullOrWhiteSpace(name) && name.Trim().Length <= 100;
 
-    private static bool TryNormalizeProviderInput(
-        string? requestedName,
+    private static bool TryNormalizeBaseUrl(
         string? requestedBaseUrl,
-        out string name,
         out string baseUrl)
     {
-        name = requestedName?.Trim() ?? string.Empty;
         baseUrl = requestedBaseUrl?.Trim().TrimEnd('/') ?? string.Empty;
-        return name.Length is > 0 and <= 100
-            && baseUrl.Length is > 0 and <= 500
+        return baseUrl.Length is > 0 and <= 500
             && Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri)
             && uri.Scheme is "http" or "https";
     }
 
-    private static bool IsValidInferenceBinding(string? providerName, string? modelName) =>
-        string.IsNullOrWhiteSpace(providerName)
+    private static bool IsValidInferenceBinding(Guid? providerId, string? modelName) =>
+        providerId is null
             ? string.IsNullOrWhiteSpace(modelName)
             : !string.IsNullOrWhiteSpace(modelName) && modelName.Trim().Length <= 200;
 
@@ -490,19 +508,29 @@ public sealed class InitializationAppService(
         };
     }
 
-    private bool TryProtect(
-        string? plaintext,
+    private bool TryResolveUpdateSecret(
+        SecretUpdateRequest request,
+        string? currentProtectedValue,
         SecretProtectionPurpose purpose,
+        out bool changed,
         out string? protectedValue)
     {
-        protectedValue = null;
-        if (string.IsNullOrWhiteSpace(plaintext))
+        changed = false;
+        protectedValue = currentProtectedValue;
+        switch (request.Action)
         {
-            return false;
+            case SecretCodes.Keep:
+                return true;
+            case SecretCodes.Clear:
+                changed = currentProtectedValue is not null;
+                protectedValue = null;
+                return true;
+            case SecretCodes.Replace:
+                changed = true;
+                return TryProtect(request.Value, purpose, out protectedValue);
+            default:
+                return false;
         }
-
-        protectedValue = secretProtector.Protect(plaintext, purpose);
-        return true;
     }
 
     private static Guid? ResolveProvider(
@@ -517,6 +545,21 @@ public sealed class InitializationAppService(
         return providersByName.TryGetValue(providerName.Trim(), out var providerId)
             ? providerId
             : throw InvalidRequest();
+    }
+
+    private bool TryProtect(
+        string? plaintext,
+        SecretProtectionPurpose purpose,
+        out string? protectedValue)
+    {
+        protectedValue = null;
+        if (string.IsNullOrWhiteSpace(plaintext))
+        {
+            return false;
+        }
+
+        protectedValue = secretProtector.Protect(plaintext, purpose);
+        return true;
     }
 
     private string GetSecretState(string? protectedValue, SecretProtectionPurpose purpose)

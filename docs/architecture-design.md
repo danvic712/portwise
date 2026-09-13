@@ -444,9 +444,9 @@ InitializationAppService
         └── IUow.CommitAsync() 一次数据库事务提交
 ```
 
-Initialization 不执行外部连接验证；外部网络故障不会阻止保存或进入系统。Onboarding 的投资组合步骤可以同时保存多只股票，每只股票只需要股票代码、交易所和当前持股数，并与偏好、组合、Provider/Route、初始化状态一起提交；未填写股票时仍然可以完成基础设置。已登记股票的资料由独立的 Stocks 页面查看和同步，后续独立股票录入入口由该 module 继续扩展；Provider 的显式连接验证由 Stock Data Providers 和 Inference module 提供。
+Initialization 不执行外部连接验证；外部网络故障不会阻止保存或进入系统。Onboarding 的投资组合步骤可以同时保存多只股票，每只股票只需要股票代码、交易所和当前持股数，并与偏好、组合、Provider/Route、初始化状态一起提交；未填写股票时仍然可以完成基础设置。已登记股票的资料由独立的 Stocks 页面查看和同步，后续独立股票录入入口由该 module 继续扩展；Provider 的显式连接验证由 Stock Data Providers 和 Inference module 提供。Inference Provider 由 migration 预置 OpenAI、DeepSeek、Azure OpenAI 和 OpenAI Compatible 四条 OpenAI-compatible 服务记录，预置记录不包含任何 key；其中 Azure OpenAI 与 OpenAI Compatible 允许用户填写自己的服务地址，其他预置服务使用固定地址。Onboarding 只引用这些 Provider ID，用户填写的地址与 key 通过一次初始化事务保存，key 通过 Data Protection 加密后写回对应记录。
 
-Onboarding Web 按原型实现为四步渐进式工作区向导：基础偏好、投资组合、股票数据服务和 AI 推理。首屏只展开语言与主题，投资组合步骤负责组合名称，并可选添加多只股票；每只股票填写代码、交易所和当前持股数，列表可以随时增删。股票数据服务步骤根据后端返回的已启用 Provider definition 动态生成服务卡片，当前明确展示 FTShare 及其访问密钥，未来新增 Provider 后沿用同一界面，不需要重新设计向导。后续步骤在同一 draft 中保留输入并在最后一次提交时调用上述 Initialization 事务。股票数据与 AI 步骤标记为可选，完成前检查持续显示每项状态。初始化页沿用共享 Header 的品牌与偏好控件，但隐藏业务中央导航，避免首次进入时出现与向导无关的菜单。
+Onboarding Web 按原型实现为四步渐进式工作区向导：基础偏好、投资组合、股票数据服务和 AI 助手。首屏只展开语言与主题，投资组合步骤负责组合名称，并可选添加多只股票；每只股票填写代码、交易所和当前持股数，列表可以随时增删。股票数据服务步骤根据后端返回的已启用 Provider definition 动态生成服务卡片，当前明确展示 FTShare 及其访问密钥，未来新增 Provider 后沿用同一界面，不需要重新设计向导。AI 助手步骤从数据库读取预置的 OpenAI、DeepSeek、Azure OpenAI 和 OpenAI Compatible provider，分别为 Chat 与 Embedding 选择 provider 和模型，并可为多个 provider 填写 key；两项能力可以绑定不同 provider，密钥区域只展示已被能力选择的 provider，只有允许自定义地址的 provider 才显示服务地址输入，避免要求用户配置未使用的服务。后续步骤在同一 draft 中保留输入并在最后一次提交时调用上述 Initialization 事务。股票数据与 AI 步骤标记为可选，完成前检查持续显示每项状态。初始化页沿用共享 Header 的品牌与偏好控件，但隐藏业务中央导航，避免首次进入时出现与向导无关的菜单。
 
 ### 8.1 Controller 与请求验证
 
