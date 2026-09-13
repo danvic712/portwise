@@ -222,6 +222,23 @@ public sealed class InitializationAppService(
     {
         if (requests is null)
         {
+            // Onboarding only asks for a stock-data credential. When there is a
+            // single configured provider, use it as the initial source for all
+            // stock capabilities. Multiple providers still require an explicit
+            // route choice in Settings.
+            if (providersByName.Count != 1)
+            {
+                return;
+            }
+
+            var defaultProviderId = providersByName.Single().Value;
+            var defaultRoutes = await uow.Get<StockDataRoute>()
+                .ListAsync(cancellationToken: cancellationToken, asNoTracking: false);
+            foreach (var route in defaultRoutes)
+            {
+                route.Bind(defaultProviderId, now);
+            }
+
             return;
         }
 

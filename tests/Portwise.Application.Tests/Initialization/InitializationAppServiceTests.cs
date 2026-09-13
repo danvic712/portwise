@@ -147,6 +147,49 @@ public sealed class InitializationAppServiceTests
     }
 
     [Fact]
+    public async Task CompleteAsync_BindsAllStockCapabilitiesToTheOnlyConfiguredProvider()
+    {
+        var definition = new StockDataProviderDefinition
+        {
+            Id = KnownConfigurationIds.FtShareProviderDefinition,
+            ProviderKind = StockDataProviderKind.FtShare,
+            DisplayName = "FTShare",
+            IsEnabled = true
+        };
+        var stockRoutes = Enum.GetValues<StockDataCapability>()
+            .Select(capability => new StockDataRoute
+            {
+                Id = Guid.CreateVersion7(),
+                Capability = capability,
+                Revision = 1
+            })
+            .ToList();
+        var (service, unitOfWork, _) = CreateService(
+            definitions: [definition],
+            stockRoutes: stockRoutes);
+
+        await service.CompleteAsync(
+            new CompleteInitializationRequest(
+                "zh-CN",
+                "system",
+                "长期组合",
+                [new CompleteStockDataProviderRequest(
+                    definition.Id,
+                    definition.DisplayName,
+                    new SecretUpdateRequest(SecretCodes.Replace, "ftshare-key"))],
+                null,
+                null,
+                null),
+            CancellationToken.None);
+
+        var providerIds = stockRoutes.Select(route => route.ProviderId).ToHashSet();
+        Assert.Single(providerIds);
+        Assert.DoesNotContain(null, providerIds);
+        Assert.All(stockRoutes, route => Assert.Equal(2, route.Revision));
+        unitOfWork.Verify(item => item.CommitAsync(CancellationToken.None), Times.Once);
+    }
+
+    [Fact]
     public async Task CompleteAsync_SavesEditableInferenceProviderBaseUrl()
     {
         var provider = new InferenceProvider
