@@ -2,6 +2,7 @@ import { Languages, Monitor, Moon, Settings2, Sun, SunMoon } from "lucide-react"
 import { useState } from "react"
 
 import { useTheme, type Theme } from "@/app/providers/ThemeContext"
+import { usePreferencesSync } from "@/app/providers/PreferencesSyncContext"
 import { Button } from "@/components/ui/Button"
 import { buttonVariants } from "@/components/ui/button-variants"
 import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/Popover"
@@ -21,6 +22,7 @@ type HeaderProps = {
 export function Header({ currentPath, onNavigate, showNavigation = true, showSettings = true }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const { locale, setLocale, messages } = useLocale()
+  const { persist } = usePreferencesSync()
   const [preferencesOpen, setPreferencesOpen] = useState(false)
   const themeOptions = [
     { value: "light" as Theme, label: messages.common.ui.theme.light, icon: Sun },
@@ -31,7 +33,13 @@ export function Header({ currentPath, onNavigate, showNavigation = true, showSet
   const handleLocaleChange = (value: string | null) => {
     if (value !== "zh-CN" && value !== "en-US") return
     setLocale(value)
+    void persist(value, theme).catch(() => undefined)
     setPreferencesOpen(false)
+  }
+
+  const handleThemeChange = (value: Theme) => {
+    setTheme(value)
+    void persist(locale, value).catch(() => undefined)
   }
 
   const handleNavigation = (event: React.MouseEvent<HTMLAnchorElement>, path: string) => {
@@ -69,7 +77,7 @@ export function Header({ currentPath, onNavigate, showNavigation = true, showSet
         <div className="topbar-actions d-header-actions">
           <div className="theme-control" role="group" aria-label={messages.common.ui.theme.label}>
             <SunMoon className="preference-icon" aria-hidden="true" />
-            {themeOptions.map((option) => { const Icon = option.icon; return <Button key={option.value} variant="ghost" size="sm" type="button" aria-pressed={theme === option.value} className={cn(theme === option.value && "theme-control-active")} onClick={() => setTheme(option.value)}><Icon data-icon="inline-start" className="theme-option-icon" aria-hidden="true" /><span className="theme-option-label">{option.label}</span></Button> })}
+            {themeOptions.map((option) => { const Icon = option.icon; return <Button key={option.value} variant="ghost" size="sm" type="button" aria-pressed={theme === option.value} className={cn(theme === option.value && "theme-control-active")} onClick={() => handleThemeChange(option.value)}><Icon data-icon="inline-start" className="theme-option-icon" aria-hidden="true" /><span className="theme-option-label">{option.label}</span></Button> })}
           </div>
           <div className="locale-control" aria-label={messages.common.ui.language.label}>
             <Select value={locale} onValueChange={handleLocaleChange}>
@@ -102,7 +110,7 @@ export function Header({ currentPath, onNavigate, showNavigation = true, showSet
                           aria-pressed={theme === option.value}
                           className={cn("mobile-theme-option", theme === option.value && "mobile-theme-option-active")}
                           onClick={() => {
-                            setTheme(option.value)
+                            handleThemeChange(option.value)
                           }}
                         >
                           <Icon data-icon="inline-start" aria-hidden="true" />
