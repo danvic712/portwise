@@ -147,6 +147,13 @@ public sealed class InitializationAppService(
             },
             cancellationToken);
 
+        if (initialStockValues.Count > 0)
+        {
+            await uow.Get<StockDataSyncJob>().AddAsync(
+                StockDataSyncJob.Create("initialization", now, "initialization"),
+                cancellationToken);
+        }
+
         try
         {
             await uow.CommitAsync(cancellationToken);

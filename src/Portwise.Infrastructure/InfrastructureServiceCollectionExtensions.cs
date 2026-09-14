@@ -6,6 +6,7 @@ using Portwise.Infrastructure.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using Portwise.Infrastructure.StockDataProviders.Runtime;
 using Portwise.Application.Inference.Contracts;
 using Portwise.Infrastructure.Inference;
@@ -24,6 +25,8 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddDbContext<PortwiseDbContext>(options =>
             options.UsePortwisePostgreSql(connectionString));
+        services.AddSingleton(NpgsqlDataSource.Create(connectionString));
+        services.AddSingleton<IStockDataSyncJobQueue, Stocks.PostgreSqlStockDataSyncJobQueue>();
         services.AddScoped<IUow, Repositories.EFUow>();
         services.AddScoped<IDatabaseLifecycle, DatabaseLifecycle>();
         services.AddSingleton<ISecretProtector, DataProtection.DataProtectionSecretProtector>();

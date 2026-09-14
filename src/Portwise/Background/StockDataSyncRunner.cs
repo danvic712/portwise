@@ -85,6 +85,7 @@ internal sealed class StockDataSyncRunner(
             StockDataSyncTrigger.Manual => "stock_data_sync",
             StockDataSyncTrigger.Initialization => "stock_data_sync",
             StockDataSyncTrigger.Scheduled => "daily_stock_data_sync",
+            StockDataSyncTrigger.Watchlist => "stock_data_sync",
             _ => throw new ArgumentOutOfRangeException(nameof(trigger), trigger, null)
         };
 }

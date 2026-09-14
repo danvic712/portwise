@@ -58,6 +58,7 @@ public sealed class StockWatchlistAppServiceTests
             .Returns(positionRepository.Object);
         IStockWatchlistAppService service = new StockWatchlistAppService(
             unitOfWork.Object,
+            TimeProvider.System,
             new AddStockRequestValidator());
 
         var result = await service.GetAsync(CancellationToken.None);
@@ -106,6 +107,7 @@ public sealed class StockWatchlistAppServiceTests
 
         var result = await new StockWatchlistAppService(
                 unitOfWork.Object,
+                TimeProvider.System,
                 new AddStockRequestValidator())
             .GetAsync(CancellationToken.None);
 
@@ -135,6 +137,7 @@ public sealed class StockWatchlistAppServiceTests
 
         var result = await new StockWatchlistAppService(
                 unitOfWork.Object,
+                TimeProvider.System,
                 new AddStockRequestValidator())
             .GetAsync(CancellationToken.None);
 
@@ -149,14 +152,17 @@ public sealed class StockWatchlistAppServiceTests
         var securityRepository = CreateRepository<Security>([]);
         var positionRepository = CreateRepository<PortfolioPosition>([]);
         var portfolioRepository = CreateRepository<PortfolioEntity>([portfolio]);
+        var syncJobRepository = CreateRepository<StockDataSyncJob>([]);
         var unitOfWork = new Mock<IUow>();
         unitOfWork.Setup(x => x.Get<Security>()).Returns(securityRepository.Object);
         unitOfWork.Setup(x => x.Get<PortfolioPosition>()).Returns(positionRepository.Object);
         unitOfWork.Setup(x => x.Get<PortfolioEntity>()).Returns(portfolioRepository.Object);
+        unitOfWork.Setup(x => x.Get<StockDataSyncJob>()).Returns(syncJobRepository.Object);
         unitOfWork.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var result = await new StockWatchlistAppService(
                 unitOfWork.Object,
+                TimeProvider.System,
                 new AddStockRequestValidator())
             .AddAsync(
                 new AddStockRequest(" 000001 ", " szse ", 100),
@@ -181,6 +187,12 @@ public sealed class StockWatchlistAppServiceTests
         Assert.Equal(100, position.HeldShares);
         Assert.Equal(100, position.CoreShares);
         Assert.Equal(100, position.TargetShares);
+        var syncJob = Assert.Single(syncJobRepository.Invocations
+            .Where(invocation => invocation.Method.Name == nameof(IRepository<StockDataSyncJob>.AddAsync))
+            .Select(invocation => invocation.Arguments[0])
+            .OfType<StockDataSyncJob>());
+        Assert.Equal("watchlist", syncJob.TriggerCode);
+        Assert.Equal("pending", syncJob.StatusCode);
         unitOfWork.Verify(item => item.CommitAsync(CancellationToken.None), Times.Once);
     }
 

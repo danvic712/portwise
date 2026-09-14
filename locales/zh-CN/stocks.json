@@ -94,6 +94,8 @@
       "heldShares": "持股数需要是 0 或更大的整数。",
       "dataWarningTitle": "读取提醒",
       "syncComplete": "资料同步完成",
+      "syncQueued": "同步任务已排队，页面会自动显示结果。",
+      "syncRunning": "正在后台同步股票资料…",
       "pendingTitle": "资料还在路上。",
       "pendingDescription": "这只股票已经保存到你的组合。基础资料、行情、股息和财务快照完成同步后，这里会自动出现价格阶梯。",
       "pendingMessage": "资料仍在后台同步，完整分析暂未生成。",

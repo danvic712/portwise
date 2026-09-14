@@ -4,5 +4,6 @@ public enum StockDataSyncTrigger
 {
     Manual,
     Initialization,
-    Scheduled
+    Scheduled,
+    Watchlist
 }

@@ -31,6 +31,10 @@ export async function syncStocks(signal?: AbortSignal) {
   return apiPost("/api/v1/stocks/sync", undefined, {}, { signal })
 }
 
+export async function getStockSyncJob(id: string, signal?: AbortSignal) {
+  return apiGet("/api/v1/stocks/sync-jobs/{id}", { id }, { signal })
+}
+
 export async function saveStockModelParameters(request: SaveStockModelParametersRequest, signal?: AbortSignal) {
   return apiPost("/api/v1/stocks/model-parameters", request, {}, { signal })
 }

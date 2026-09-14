@@ -942,12 +942,51 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Runs a manual synchronization for all configured stocks. */
+        /** Queues a manual synchronization for all configured stocks. */
         post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockDataSyncJobResponse"];
+                        "application/json": components["schemas"]["StockDataSyncJobResponse"];
+                        "text/json": components["schemas"]["StockDataSyncJobResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stocks/sync-jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns the status and result of a queued stock synchronization. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Synchronization job identifier. */
+                    id: string;
+                };
                 cookie?: never;
             };
             requestBody?: never;
@@ -958,13 +997,22 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["StockDataSyncRunResult"];
-                        "application/json": components["schemas"]["StockDataSyncRunResult"];
-                        "text/json": components["schemas"]["StockDataSyncRunResult"];
+                        "text/plain": components["schemas"]["StockDataSyncJobResponse"];
+                        "application/json": components["schemas"]["StockDataSyncJobResponse"];
+                        "text/json": components["schemas"]["StockDataSyncJobResponse"];
                     };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
                 };
             };
         };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1939,6 +1987,41 @@ export interface components {
             errorCode: string;
             /** @description Structured failure parameters. */
             parameters: Record<string, never>;
+        };
+        /** @description Persisted state of one full-watchlist synchronization request. */
+        StockDataSyncJobResponse: {
+            /**
+             * Format: uuid
+             * @description Task identifier.
+             */
+            id: string;
+            /** @description Source that requested the synchronization. */
+            triggerCode: string;
+            /** @description Pending, running, completed, completed with failures, or failed. */
+            statusCode: string;
+            /**
+             * Format: int32
+             * @description Number of execution attempts.
+             */
+            attemptCount: number | string;
+            /**
+             * Format: date-time
+             * @description UTC creation time.
+             */
+            createdAtUtc: string;
+            /**
+             * Format: date-time
+             * @description UTC start time, when claimed.
+             */
+            startedAtUtc: null | string;
+            /**
+             * Format: date-time
+             * @description UTC completion time for a terminal task.
+             */
+            completedAtUtc: null | string;
+            result: null | components["schemas"]["StockDataSyncRunResult"];
+            /** @description Stable error code after an unexpected failure. */
+            errorCode: null | string;
         };
         /** @description Summary of a stock data synchronization run. */
         StockDataSyncRunResult: {

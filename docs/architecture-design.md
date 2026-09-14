@@ -179,8 +179,7 @@ src/
     ├── Background/                     # ASP.NET Core 后台调度
     │   ├── DailyStockDataSyncHostedService.cs
     │   ├── StockDataSyncRunner.cs
-    │   ├── StockDataSyncBackgroundService.cs
-    │   └── StockDataSyncTaskQueue.cs
+    │   └── StockDataSyncBackgroundService.cs
     ├── Contracts/                      # Host 层可替换边界
     │   └── IStockDataSyncRunner.cs
     ├── Diagnostics/                    # 隐私感知的 Activity 诊断上下文
@@ -506,7 +505,7 @@ Application 只返回 `StockModelParameterSet` DTO，不返回 `ModelParameterSe
 
 ### 8.10 交易日数据同步
 
-`IStockDailyDataSyncAppService` 按关注列表逐只调用 `IStockFactSyncAppService`；事实同步模块按股票复用一次 Security 上下文，依次执行资料、行情、股息和财务快照同步。失败项记录股票、数据类型、稳定 `error_code` 和结构化 `parameters`，不在后台结果中固化某一种语言的展示文案；HTTP 请求先由 `RequestLocalizationMiddleware` 根据 `Accept-Language` 设置 `CurrentUICulture`，异常展示再由 `IApplicationErrorLocalizer` 使用该 culture 生成文本，后台日志和其他非 HTTP 消费者使用默认语言或显式 culture 在展示边界本地化。其他数据类型及其他股票继续执行，避免单个 FTShare 数据缺口阻断整批更新。结果中的 `FullyCompletedStockCount` 只统计四类数据全部成功的股票，`PartiallyFailedStockCount` 统计至少一类失败的股票。`POST /api/v1/stocks/sync` 提供手动触发入口。
+`IStockDailyDataSyncAppService` 按关注列表逐只调用 `IStockFactSyncAppService`；事实同步模块按股票复用一次 Security 上下文，依次执行资料、行情、股息和财务快照同步。失败项记录股票、数据类型、稳定 `error_code` 和结构化 `parameters`，不在后台结果中固化某一种语言的展示文案；HTTP 请求先由 `RequestLocalizationMiddleware` 根据 `Accept-Language` 设置 `CurrentUICulture`，异常展示再由 `IApplicationErrorLocalizer` 使用该 culture 生成文本，后台日志和其他非 HTTP 消费者使用默认语言或显式 culture 在展示边界本地化。其他数据类型及其他股票继续执行，避免单个 FTShare 数据缺口阻断整批更新。结果中的 `FullyCompletedStockCount` 只统计四类数据全部成功的股票，`PartiallyFailedStockCount` 统计至少一类失败的股票。`POST /api/v1/stocks/sync` 返回 `202 Accepted` 和任务 ID，`GET /api/v1/stocks/sync-jobs/{id}` 提供执行状态与最终结果。
 
 股票事实与建议的 Application 数据流如下：
 
@@ -536,7 +535,7 @@ PortfolioRecommendationAppService ──┘                 ▼
                                       (直接使用同一分析结果写入快照)
 ```
 
-Host 的 `DailyStockDataSyncHostedService` 按 `DailySync:LocalTime` 和 `DailySync:TimeZoneId` 调度，默认使用上海时间每日 18:00，并跳过周末；A 股法定节假日由数据源实际返回结果决定，重复快照通过事实同步用例幂等处理。`StockDataSyncBackgroundService` 监听有界队列，在 Initialization 提交后执行一次即时后台同步；它与每日调度和 HTTP 手动同步共享 `StockDataSyncRunner` 的串行闸门。runner 为每次实际执行生成 run ID，并统一记录触发来源、结果和失败摘要。生产环境可以通过 `DailySync:Enabled=false` 关闭定时调度，但 Initialization 后的一次性队列同步和手动接口仍然可用；后台单次失败不会终止 hosted service，详细的逐项失败仍由手动同步接口返回，后续运行会重试。
+Host 的 `DailyStockDataSyncHostedService` 按 `DailySync:LocalTime` 和 `DailySync:TimeZoneId` 调度，默认使用上海时间每日 18:00，并跳过周末；A 股法定节假日由数据源实际返回结果决定，重复快照通过事实同步用例幂等处理。Initialization 和新增关注股票在自身 UoW 内把任务写入 PostgreSQL；每日调度和 HTTP 手动接口也向同一队列入队。`StockDataSyncBackgroundService` 原子领取任务并调用 `StockDataSyncRunner`，以短事务 advisory lock、领取行锁和定期续租协调多实例，保留最终状态和结构化逐项失败。意外失败有限重试，预期的逐类数据失败保存为部分完成。调度服务在当日时间已过时补投并对入队失败重试。生产环境可通过 `DailySync:Enabled=false` 关闭每日调度，其他触发器仍可用。队列语义详见 [ADR-0006](adr/0006-postgresql-stock-sync-queue.md)。
 
 ### 8.11 交易记录与持仓成本
 
@@ -617,7 +616,7 @@ Application 使用 Riok.Mapperly 生成编译期映射代码，映射声明分�
 ### 10.6 本地启动与前端构建集成
 
 - `src/Portwise/Properties/launchSettings.json` 是 Host 本地启动的唯一 profile 来源，提供 `http` profile（`applicationUrl=http://localhost:5276`，`ASPNETCORE_ENVIRONMENT=Development`），供 `dotnet run --launch-profile http` 和 IDE 运行配置下拉框使用；该 profile 同时设置 `DOTNET_USE_POLLING_FILE_WATCHER=1`，兼容 macOS 上当前 .NET 10.0.0 的 `FileSystemWatcher` 启动递归问题，避免 Host 卡在 `WebApplication.CreateBuilder` 阶段；这是 .NET Web 项目模板的标准文件，缺失会导致手动 `dotnet run` 在没有显式设置环境变量时以 `Production` 环境启动，从而绕过开发期配置和异常页面。
-- `appsettings.Development.json` 是 `Development` 环境的配置覆盖（当前只覆盖 Serilog 最低日志级别为 `Debug`），与 `appsettings.json`、`appsettings.Production.json` 一起构成完整的三段式环境配置；新增只在本地开发环境需要的配置项时优先放入这个文件，不要污染 `appsettings.json` 的默认值。
+- `appsettings.Development.json` 是 `Development` 环境的配置覆盖（包含 Serilog 最低日志级别 `Debug` 和本地 Data Protection key ring 路径 `.portwise/keys`），与 `appsettings.json`、`appsettings.Production.json` 一起构成完整的三段式环境配置；相对的 `DataProtection:KeysPath` 会固定解析到 Host content root，避免随启动工作目录变化；新增只在本地开发环境需要的配置项时优先放入这个文件，不要污染 `appsettings.json` 的默认值。
 - 本地开发使用 .NET 官方标准的 `Microsoft.AspNetCore.SpaProxy` 集成前端：Host 项目仅在 `Debug` 配置下引用 `Microsoft.AspNetCore.SpaProxy` 包，并声明 `SpaRoot`（`../Portwise.Web/`）、`SpaProxyServerUrl`（`http://localhost:4173`）、`SpaProxyLaunchCommand`（`pnpm run dev`）；同时通过 `portwise.esproj`（`Microsoft.VisualStudio.JavaScript.Sdk`）以 `ReferenceOutputAssembly=false` 挂入 Host，使 Rider 识别标准 `.NET Launch Settings Profile` 与 SPA 启动项目。`Properties/launchSettings.json` 的 `http` profile 设置了 `ASPNETCORE_HOSTINGSTARTUPASSEMBLIES=Microsoft.AspNetCore.SpaProxy`，Host 地址为 `http://localhost:5276`。执行 `dotnet run --launch-profile http` 或 IDE 的 `http` 配置时，SpaProxy 通过 `IHostingStartup` 自动注入的 `IStartupFilter` 检测 Vite dev server 是否就绪，未就绪则自动执行 `SpaProxyLaunchCommand` 拉起，并把非 API 请求反向代理到 dev server；开发者只需要一条命令即可完成前后端联调。还原、构建、运行（CI、Dockerfile、`BuildFrontend` Target、SpaProxy dev server）全部统一使用 pnpm，不引入 npm。`WebApplicationExtensions` 的中间件管道不需要为此做任何区分（Development/Production 都是同一套 `UseDefaultFiles`/`UseStaticFiles`/`MapFallbackToFile`），SpaProxy 的转发逻辑完全由 `IStartupFilter` 在管道最前面完成。Release/Publish 不引用 SpaProxy 包，发布产物仍是纯静态文件。
 - 前端（`src/Portwise.Web`）与 Host 项目在构建上保持独立：CI（`build-and-test.yml`）和 Dockerfile 分别用 `pnpm install`/`pnpm build` 显式构建前端后再构建/发布 Host，这是为了避免在只安装 .NET SDK、没有 Node.js/pnpm 的构建环境（例如 Docker 后端构建阶段镜像）上因为隐式触发前端构建而失败。`Portwise.csproj` 额外提供一个默认关闭的 `BuildFrontend` MSBuild Target（`BeforeTargets="Build;Publish"`），只有显式传入 `-p:BuildFrontend=true` 执行 `dotnet build`/`dotnet publish` 时才会自动执行 `pnpm install`/`pnpm build` 并把产物写入 Host 的 `wwwroot`，用于本地一次性生成前后端产物；CI 和 Docker 流程不依赖也不触发这个 Target。</replace>
 

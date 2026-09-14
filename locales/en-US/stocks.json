@@ -94,6 +94,8 @@
       "heldShares": "Held shares must be a whole number of 0 or more.",
       "dataWarningTitle": "Read notice",
       "syncComplete": "Data sync complete",
+      "syncQueued": "Sync is queued. This page will show the result automatically.",
+      "syncRunning": "Stock data is syncing in the background…",
       "pendingTitle": "The data is still on its way.",
       "pendingDescription": "This stock is already in your portfolio. The price ladder will appear after its profile, quotes, dividends, and financial snapshots finish syncing.",
       "pendingMessage": "Background sync is still running, so the full analysis is not ready yet.",

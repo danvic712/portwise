@@ -286,7 +286,8 @@ API 使用 URL Segment 版本号，当前版本为 `v1`，完整接口和请求�
 | `GET /api/v1/initialization` | 查询初始化完成标记、偏好和能力 readiness |
 | `POST /api/v1/initialization/complete` | 以一个数据库事务保存初始化基础配置和可选 Provider/Route |
 | `GET /api/v1/stocks` | 获取关注股票和持仓摘要 |
-| `POST /api/v1/stocks/sync` | 手动触发全部股票资料同步 |
+| `POST /api/v1/stocks/sync` | 将全部股票资料同步加入 PostgreSQL 队列，返回 `202` 和任务 ID |
+| `GET /api/v1/stocks/sync-jobs/{id}` | 查询同步任务状态与最终逐项结果 |
 | `GET /api/v1/stocks/{securityCode}/{exchangeCode}/analysis` | 获取单只股票分析与交易参考 |
 | `GET /api/v1/stocks/{securityCode}/{exchangeCode}/model-parameters` | 获取当前生效模型参数 |
 | `POST /api/v1/stocks/model-parameters` | 保存单只股票模型参数 |

@@ -40,7 +40,7 @@ export type ApiDeletePath = PathsWithMethod<"delete">
 
 type ApiOperation<P extends ApiPath, Method extends HttpMethod> = paths[P][Method]
 type ApiSuccessBody<Operation> = Operation extends { responses: infer Responses }
-  ? Responses extends { 200: infer Success }
+  ? Responses extends { 200: infer Success } | { 201: infer Success } | { 202: infer Success }
     ? Success extends { content: infer Content }
       ? Content extends Record<string, infer Body>
         ? Body

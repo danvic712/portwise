@@ -22,10 +22,12 @@ import { displayStockName, exchangeLabel } from "@/shared/display/stock-display"
 import { hasAnalysisData, localizeRecommendationExplanation } from "@/shared/display/recommendation-display"
 import { formatDate, formatDateTime, formatMoney, formatPercent, stockKey } from "@/shared/utils/utils"
 import type { StockAnalysisResult, StockDataSyncRunResult, StockModelParameterSet, StockWatchlistItem } from "@/shared/http/api-types"
-import { isRequestAborted, useLatestRequest } from "@/shared/hooks/useLatestRequest"
-import { addWatchedStock, getStockModelParameters, getStockAnalysis, getWatchedStocks, syncStocks } from "@/stocks/stocks.api"
+import { isRequestAborted, useLatestRequest, type LatestRequest } from "@/shared/hooks/useLatestRequest"
+import { addWatchedStock, getStockModelParameters, getStockAnalysis, getStockSyncJob, getWatchedStocks, syncStocks } from "@/stocks/stocks.api"
 import { StockDetailSkeleton } from "@/stocks/StockDetailSkeleton"
 import "./stocks.css"
+
+const pendingSyncJobKey = "portwise-pending-stock-sync-job"
 
 export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { messages } = useLocale()
@@ -40,6 +42,7 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
   const [detailError, setDetailError] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<StockDataSyncRunResult | null>(null)
+  const [syncJobStatus, setSyncJobStatus] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [addDraft, setAddDraft] = useState({ securityCode: "", exchangeCode: "SSE", heldShares: "0" })
   const [addError, setAddError] = useState<string | null>(null)
@@ -133,17 +136,54 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
     return () => window.clearTimeout(timeoutId)
   }, [detailRefreshVersion, loadDetail])
 
+  const followSyncJob = useCallback(async (jobId: string, request: LatestRequest) => {
+    setSyncing(true)
+    setSyncResult(null)
+    setError(null)
+    try {
+      let job = await getStockSyncJob(jobId, request.signal)
+      while (request.isCurrent() && (job.statusCode === "pending" || job.statusCode === "running")) {
+        setSyncJobStatus(job.statusCode)
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 1500))
+        if (!request.isCurrent()) return
+        job = await getStockSyncJob(jobId, request.signal)
+      }
+      if (!request.isCurrent()) return
+      sessionStorage.removeItem(pendingSyncJobKey)
+      setSyncJobStatus(null)
+      if (job.statusCode === "failed" || !job.result) {
+        setError(copy.states.syncError)
+        return
+      }
+      setSyncResult(job.result)
+      await loadStocks({ preserveView: true })
+      if (request.isCurrent()) setDetailRefreshVersion((current) => current + 1)
+    } catch (syncError) {
+      if (request.isCurrent() && !isRequestAborted(syncError, request.signal)) setError(getApiErrorMessage(syncError, copy.states.syncError, messages.common.ui.errors))
+    } finally {
+      if (request.isCurrent()) setSyncing(false)
+    }
+  }, [copy.states.syncError, loadStocks, messages.common.ui.errors])
+
+  useEffect(() => {
+    const jobId = sessionStorage.getItem(pendingSyncJobKey)
+    if (!jobId) return
+    const timeoutId = window.setTimeout(() => {
+      void followSyncJob(jobId, beginSync())
+    }, 0)
+    return () => window.clearTimeout(timeoutId)
+  }, [beginSync, followSyncJob])
+
   async function syncAll() {
     const request = beginSync()
     setSyncing(true)
     setSyncResult(null)
     setError(null)
     try {
-      const result = await syncStocks(request.signal)
+      const job = await syncStocks(request.signal)
       if (!request.isCurrent()) return
-      setSyncResult(result)
-      await loadStocks({ preserveView: true })
-      if (request.isCurrent()) setDetailRefreshVersion((current) => current + 1)
+      sessionStorage.setItem(pendingSyncJobKey, job.id)
+      await followSyncJob(job.id, request)
     } catch (syncError) {
       if (request.isCurrent() && !isRequestAborted(syncError, request.signal)) setError(getApiErrorMessage(syncError, copy.states.syncError, messages.common.ui.errors))
     } finally {
@@ -291,6 +331,7 @@ export function StocksPage({ onNavigate }: { onNavigate: (path: string) => void 
         </Card>
       </div>
 
+      {syncJobStatus && <section className="sync-results"><Alert><AlertDescription>{syncJobStatus === "pending" ? copy.states.syncQueued : copy.states.syncRunning}</AlertDescription></Alert></section>}
       {syncResult && <section className="sync-results"><Alert variant={syncResult.partiallyFailedStockCount ? "attention" : "default"}><AlertTitle><Database className="sync-results-icon" />{copy.states.syncComplete}</AlertTitle><AlertDescription><span>{interpolate(copy.sync.attempted, { count: syncResult.attemptedStockCount, complete: syncResult.fullyCompletedStockCount, failed: syncResult.partiallyFailedStockCount })}</span>{syncResult.failures.length > 0 && <span> {interpolate(copy.sync.failures, { items: syncResult.failures.map((failure) => `${failure.securityCode} ${failure.dataKind}`).join(", ") })}</span>}</AlertDescription></Alert></section>}
     </PageFrame>
   )

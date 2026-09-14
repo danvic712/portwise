@@ -1091,27 +1091,72 @@
         "tags": [
           "Stocks"
         ],
-        "summary": "Runs a manual synchronization for all configured stocks.",
+        "summary": "Queues a manual synchronization for all configured stocks.",
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncJobResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncJobResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncJobResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stocks/sync-jobs/{id}": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Returns the status and result of a queued stock synchronization.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Synchronization job identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/StockDataSyncRunResult"
+                  "$ref": "#/components/schemas/StockDataSyncJobResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StockDataSyncRunResult"
+                  "$ref": "#/components/schemas/StockDataSyncJobResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StockDataSyncRunResult"
+                  "$ref": "#/components/schemas/StockDataSyncJobResponse"
                 }
               }
             }
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }
@@ -3129,6 +3174,84 @@
           }
         },
         "description": "Describes one stock data synchronization failure."
+      },
+      "StockDataSyncJobResponse": {
+        "required": [
+          "id",
+          "triggerCode",
+          "statusCode",
+          "attemptCount",
+          "createdAtUtc",
+          "startedAtUtc",
+          "completedAtUtc",
+          "result",
+          "errorCode"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Task identifier.",
+            "format": "uuid"
+          },
+          "triggerCode": {
+            "type": "string",
+            "description": "Source that requested the synchronization."
+          },
+          "statusCode": {
+            "type": "string",
+            "description": "Pending, running, completed, completed with failures, or failed."
+          },
+          "attemptCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Number of execution attempts.",
+            "format": "int32"
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "description": "UTC creation time.",
+            "format": "date-time"
+          },
+          "startedAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "UTC start time, when claimed.",
+            "format": "date-time"
+          },
+          "completedAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "UTC completion time for a terminal task.",
+            "format": "date-time"
+          },
+          "result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Structured result when synchronization completes.",
+                "$ref": "#/components/schemas/StockDataSyncRunResult"
+              }
+            ]
+          },
+          "errorCode": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Stable error code after an unexpected failure."
+          }
+        },
+        "description": "Persisted state of one full-watchlist synchronization request."
       },
       "StockDataSyncRunResult": {
         "required": [

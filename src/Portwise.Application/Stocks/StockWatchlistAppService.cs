@@ -15,6 +15,7 @@ namespace Portwise.Application.Stocks;
 
 public sealed class StockWatchlistAppService(
     IUow uow,
+    TimeProvider timeProvider,
     IValidator<AddStockRequest> addStockRequestValidator) : IStockWatchlistAppService
 {
     public async Task<IReadOnlyList<StockWatchlistItem>> GetAsync(
@@ -108,6 +109,9 @@ public sealed class StockWatchlistAppService(
 
         await securityRepository.AddAsync(security, cancellationToken);
         await uow.Get<PortfolioPosition>().AddAsync(position, cancellationToken);
+        await uow.Get<StockDataSyncJob>().AddAsync(
+            StockDataSyncJob.Create("watchlist", timeProvider.GetUtcNow()),
+            cancellationToken);
         try
         {
             await uow.CommitAsync(cancellationToken);

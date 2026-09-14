@@ -4,7 +4,6 @@ using Portwise.Application.Recommendations.Contracts;
 using Portwise.Application.Recommendations.Dtos;
 using Portwise.Application.Stocks.Contracts;
 using Portwise.Application.Stocks.Dtos;
-using Portwise.Contracts;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Portwise.Controllers;
@@ -20,7 +19,7 @@ public sealed class StocksController(
     IStockDividendEventAppService stockDividendEventAppService,
     IStockRecommendationAppService stockRecommendationAppService,
     IStockFinancialSnapshotAppService stockFinancialSnapshotAppService,
-    IStockDataSyncRunner stockDataSyncRunner)
+    IStockDataSyncJobQueue stockDataSyncJobQueue)
     : ControllerBase
 {
     /// <summary>Returns all stocks configured in the portfolio watchlist.</summary>
@@ -47,17 +46,32 @@ public sealed class StocksController(
         return Ok(stock);
     }
 
-    /// <summary>Runs a manual synchronization for all configured stocks.</summary>
+    /// <summary>Queues a manual synchronization for all configured stocks.</summary>
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpPost("sync")]
-    public async Task<ActionResult<StockDataSyncRunResult>> SyncStocks(
+    [ProducesResponseType(typeof(StockDataSyncJobResponse), StatusCodes.Status202Accepted)]
+    public async Task<ActionResult<StockDataSyncJobResponse>> SyncStocks(
         CancellationToken cancellationToken)
     {
-        var execution = await stockDataSyncRunner.RunAsync(
-            StockDataSyncTrigger.Manual,
+        var job = await stockDataSyncJobQueue.EnqueueAsync(
+            "manual",
+            null,
             cancellationToken);
-        Response.Headers["X-Sync-Run-Id"] = execution.RunId;
-        return Ok(execution.Result);
+        return AcceptedAtAction(nameof(GetSyncJob), new { version = "1", id = job.Id }, job);
+    }
+
+    /// <summary>Returns the status and result of a queued stock synchronization.</summary>
+    /// <param name="id">Synchronization job identifier.</param>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
+    [HttpGet("sync-jobs/{id:guid}")]
+    [ProducesResponseType(typeof(StockDataSyncJobResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<StockDataSyncJobResponse>> GetSyncJob(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var job = await stockDataSyncJobQueue.GetAsync(id, cancellationToken);
+        return job is null ? NotFound() : Ok(job);
     }
 
     /// <summary>Returns the active model parameters for one stock.</summary>

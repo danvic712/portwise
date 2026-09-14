@@ -38,6 +38,7 @@ export type CashLedgerEntryResult = ApiSchema<"CashLedgerEntryResult">
 export type RecordPortfolioTradeRequest = ApiSchema<"RecordPortfolioTradeRequest">
 export type PortfolioTradeResult = ApiSchema<"PortfolioTradeResult">
 export type StockDataSyncRunResult = ApiSchema<"StockDataSyncRunResult">
+export type StockDataSyncJobResponse = ApiSchema<"StockDataSyncJobResponse">
 export type StockDataSyncFailure = ApiSchema<"StockDataSyncFailure">
 export type PreferencesResponse = ApiSchema<"PreferencesResponse">
 export type UpdatePreferencesRequest = ApiSchema<"UpdatePreferencesRequest">

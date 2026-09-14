@@ -43,6 +43,8 @@ internal sealed class PortwiseDbContext(DbContextOptions<PortwiseDbContext> opti
 
     public DbSet<InferenceRoute> InferenceRoutes => Set<InferenceRoute>();
 
+    public DbSet<StockDataSyncJob> StockDataSyncJobs => Set<StockDataSyncJob>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("public");

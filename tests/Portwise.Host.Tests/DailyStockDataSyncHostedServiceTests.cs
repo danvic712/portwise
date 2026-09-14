@@ -1,7 +1,7 @@
+using Portwise.Application.Stocks.Contracts;
 using Portwise.Application.Stocks.Dtos;
 using Portwise.Background;
 using Portwise.Configuration;
-using Portwise.Contracts;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -13,23 +13,57 @@ namespace Portwise.Host.Tests;
 public sealed class DailyStockDataSyncHostedServiceTests
 {
     [Fact]
+    public async Task ExecuteAsync_QueuesCurrentTradingDayAfterScheduledTime()
+    {
+        var jobQueued = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var queue = new Mock<IStockDataSyncJobQueue>();
+        queue.Setup(x => x.EnqueueAsync(
+                "scheduled", "scheduled:2026-09-07", It.IsAny<CancellationToken>()))
+            .Callback(() => jobQueued.TrySetResult())
+            .ReturnsAsync(new StockDataSyncJobResponse(
+                Guid.CreateVersion7(), "scheduled", "pending", 0,
+                DateTimeOffset.UnixEpoch, null, null, null, null));
+        var timeProvider = new FakeTimeProvider(
+            new DateTimeOffset(2026, 9, 7, 10, 1, 0, TimeSpan.Zero));
+        var service = new DailyStockDataSyncHostedService(
+            queue.Object,
+            Options.Create(new DailySyncOptions
+            {
+                Enabled = true,
+                LocalTime = "18:00",
+                TimeZoneId = "Asia/Shanghai"
+            }),
+            timeProvider,
+            NullLogger<DailyStockDataSyncHostedService>.Instance);
+
+        await service.StartAsync(CancellationToken.None);
+        await jobQueued.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await service.StopAsync(CancellationToken.None);
+
+        queue.Verify(x => x.EnqueueAsync(
+            "scheduled", "scheduled:2026-09-07", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_UsesInjectedTimeProviderForScheduledDelay()
     {
-        var syncStarted = new TaskCompletionSource(
+        var jobQueued = new TaskCompletionSource(
             TaskCreationOptions.RunContinuationsAsynchronously);
-        var runner = new Mock<IStockDataSyncRunner>();
-        runner
-            .Setup(x => x.RunAsync(
-                StockDataSyncTrigger.Scheduled,
+        var queue = new Mock<IStockDataSyncJobQueue>();
+        queue
+            .Setup(x => x.EnqueueAsync(
+                "scheduled",
+                "scheduled:2026-09-07",
                 It.IsAny<CancellationToken>()))
-            .Callback(() => syncStarted.TrySetResult())
-            .ReturnsAsync(new StockDataSyncExecutionResult(
-                "scheduled-run",
-                new StockDataSyncRunResult(1, 1, 0, [], DateTimeOffset.UnixEpoch)));
+            .Callback(() => jobQueued.TrySetResult())
+            .ReturnsAsync(new StockDataSyncJobResponse(
+                Guid.CreateVersion7(), "scheduled", "pending", 0,
+                DateTimeOffset.UnixEpoch, null, null, null, null));
         var timeProvider = new FakeTimeProvider(
             new DateTimeOffset(2026, 9, 7, 9, 59, 0, TimeSpan.Zero));
         var service = new DailyStockDataSyncHostedService(
-            runner.Object,
+            queue.Object,
             Options.Create(new DailySyncOptions
             {
                 Enabled = true,
@@ -43,11 +77,12 @@ public sealed class DailyStockDataSyncHostedServiceTests
         await Task.Delay(100);
         timeProvider.Advance(TimeSpan.FromMinutes(1));
 
-        await syncStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await jobQueued.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await service.StopAsync(CancellationToken.None);
 
-        runner.Verify(x => x.RunAsync(
-            StockDataSyncTrigger.Scheduled,
+        queue.Verify(x => x.EnqueueAsync(
+            "scheduled",
+            "scheduled:2026-09-07",
             It.IsAny<CancellationToken>()), Times.Once);
     }
 }

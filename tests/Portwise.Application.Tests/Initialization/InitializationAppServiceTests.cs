@@ -316,6 +316,13 @@ public sealed class InitializationAppServiceTests
                     && position.TargetShares == position.HeldShares
                     && position.AverageCostPerShare == 0m),
                 It.IsAny<CancellationToken>()), Times.Once));
+        Mock.Get(unitOfWork.Object.Get<StockDataSyncJob>())
+            .Verify(repository => repository.AddAsync(
+                It.Is<StockDataSyncJob>(job =>
+                    job.TriggerCode == "initialization"
+                    && job.DeduplicationKey == "initialization"
+                    && job.StatusCode == "pending"),
+                CancellationToken.None), Times.Once);
         unitOfWork.Verify(item => item.CommitAsync(CancellationToken.None), Times.Once);
         Assert.True(response.Status.IsComplete);
     }
@@ -430,7 +437,8 @@ public sealed class InitializationAppServiceTests
             [typeof(InferenceProvider)] = RepositoryMock.Create(data.InferenceProviders),
             [typeof(InferenceRoute)] = RepositoryMock.Create(data.InferenceRoutes),
             [typeof(Security)] = securityRepository,
-            [typeof(PortfolioPosition)] = positionRepository
+            [typeof(PortfolioPosition)] = positionRepository,
+            [typeof(StockDataSyncJob)] = RepositoryMock.Create<StockDataSyncJob>([])
         };
         var unitOfWork = new Mock<IUow>();
         unitOfWork
@@ -463,6 +471,9 @@ public sealed class InitializationAppServiceTests
         unitOfWork
             .Setup(item => item.Get<PortfolioPosition>())
             .Returns(positionRepository.Object);
+        unitOfWork
+            .Setup(item => item.Get<StockDataSyncJob>())
+            .Returns(((Mock<IRepository<StockDataSyncJob>>)repositories[typeof(StockDataSyncJob)]).Object);
         unitOfWork
             .Setup(item => item.CommitAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);

@@ -4,7 +4,6 @@ using Portwise.Application.Recommendations.Contracts;
 using Portwise.Application.Recommendations.Dtos;
 using Portwise.Application.Stocks.Contracts;
 using Portwise.Application.Stocks.Dtos;
-using Portwise.Contracts;
 using Portwise.Controllers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -32,7 +31,7 @@ public sealed class StocksControllerTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(stock);
         var controller = CreateController(
-            Mock.Of<IStockDataSyncRunner>(),
+            Mock.Of<IStockDataSyncJobQueue>(),
             watchlist.Object);
 
         var response = await controller.AddStock(
@@ -50,34 +49,54 @@ public sealed class StocksControllerTests
     }
 
     [Fact]
-    public async Task SyncStocks_RunsManualTriggerThroughSharedRunner()
+    public async Task SyncStocks_QueuesManualJobAndReturnsAcceptedResponse()
     {
-        var syncResult = new StockDataSyncRunResult(
-            1,
-            1,
-            0,
-            [],
-            DateTimeOffset.UnixEpoch);
-        var runner = new Mock<IStockDataSyncRunner>();
-        runner
-            .Setup(x => x.RunAsync(
-                StockDataSyncTrigger.Manual,
+        var job = new StockDataSyncJobResponse(
+            Guid.CreateVersion7(), "manual", "pending", 0,
+            DateTimeOffset.UnixEpoch, null, null, null, null);
+        var queue = new Mock<IStockDataSyncJobQueue>();
+        queue
+            .Setup(x => x.EnqueueAsync(
+                "manual",
+                null,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new StockDataSyncExecutionResult("run-1", syncResult));
-        var controller = CreateController(runner.Object);
+            .ReturnsAsync(job);
+        var controller = CreateController(queue.Object);
 
         var response = await controller.SyncStocks(CancellationToken.None);
 
-        var ok = Assert.IsType<OkObjectResult>(response.Result);
-        Assert.Same(syncResult, ok.Value);
-        Assert.Equal("run-1", controller.Response.Headers["X-Sync-Run-Id"]);
-        runner.Verify(x => x.RunAsync(
-            StockDataSyncTrigger.Manual,
+        var accepted = Assert.IsType<AcceptedAtActionResult>(response.Result);
+        Assert.Equal(nameof(StocksController.GetSyncJob), accepted.ActionName);
+        Assert.Equal("1", accepted.RouteValues?["version"]);
+        Assert.Same(job, accepted.Value);
+        queue.Verify(x => x.EnqueueAsync(
+            "manual",
+            null,
             CancellationToken.None), Times.Once);
     }
 
+    [Fact]
+    public async Task GetSyncJob_ReturnsPersistedStatusAndResult()
+    {
+        var job = new StockDataSyncJobResponse(
+            Guid.CreateVersion7(), "manual", "completed_with_failures", 1,
+            DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch,
+            DateTimeOffset.UnixEpoch,
+            new StockDataSyncRunResult(1, 0, 1, [], DateTimeOffset.UnixEpoch),
+            null);
+        var queue = new Mock<IStockDataSyncJobQueue>();
+        queue.Setup(x => x.GetAsync(job.Id, CancellationToken.None))
+            .ReturnsAsync(job);
+        var controller = CreateController(queue.Object);
+
+        var response = await controller.GetSyncJob(job.Id, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(response.Result);
+        Assert.Same(job, ok.Value);
+    }
+
     private static StocksController CreateController(
-        IStockDataSyncRunner runner,
+        IStockDataSyncJobQueue queue,
         IStockWatchlistAppService? watchlist = null)
         => new(
             watchlist ?? Mock.Of<IStockWatchlistAppService>(),
@@ -86,7 +105,7 @@ public sealed class StocksControllerTests
             Mock.Of<IStockDividendEventAppService>(),
             Mock.Of<IStockRecommendationAppService>(),
             Mock.Of<IStockFinancialSnapshotAppService>(),
-            runner)
+            queue)
         {
             ControllerContext = new ControllerContext
             {

@@ -1,13 +1,13 @@
 using System.Globalization;
 using Portwise.Application.Stocks;
+using Portwise.Application.Stocks.Contracts;
 using Portwise.Configuration;
-using Portwise.Contracts;
 using Microsoft.Extensions.Options;
 
 namespace Portwise.Background;
 
 public sealed class DailyStockDataSyncHostedService(
-    IStockDataSyncRunner syncRunner,
+    IStockDataSyncJobQueue queue,
     IOptions<DailySyncOptions> options,
     TimeProvider timeProvider,
     ILogger<DailyStockDataSyncHostedService> logger) : BackgroundService
@@ -25,6 +25,15 @@ public sealed class DailyStockDataSyncHostedService(
             "HH:mm",
             CultureInfo.InvariantCulture);
         var timeZone = TimeZoneInfo.FindSystemTimeZoneById(options.Value.TimeZoneId);
+
+        var localNow = TimeZoneInfo.ConvertTime(timeProvider.GetUtcNow(), timeZone);
+        if (localNow.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday)
+            && localNow.TimeOfDay >= localTime.ToTimeSpan())
+        {
+            await QueueSyncAsync(
+                DateOnly.FromDateTime(localNow.DateTime),
+                stoppingToken);
+        }
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -47,23 +56,46 @@ public sealed class DailyStockDataSyncHostedService(
                 }
             }
 
-            await RunSyncAsync(stoppingToken);
+            var localDate = DateOnly.FromDateTime(
+                TimeZoneInfo.ConvertTime(nextRun, timeZone).DateTime);
+            await QueueSyncAsync(localDate, stoppingToken);
         }
     }
 
-    private async Task RunSyncAsync(CancellationToken cancellationToken)
+    private async Task QueueSyncAsync(
+        DateOnly localDate,
+        CancellationToken cancellationToken)
     {
-        try
+        var deduplicationKey = "scheduled:"
+            + localDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        while (!cancellationToken.IsCancellationRequested)
         {
-            await syncRunner.RunAsync(StockDataSyncTrigger.Scheduled, cancellationToken);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            return;
-        }
-        catch (Exception)
-        {
-            // The shared runner records the failure with its run ID. Keep scheduling future runs.
+            try
+            {
+                await queue.EnqueueAsync(
+                    "scheduled",
+                    deduplicationKey,
+                    cancellationToken);
+                return;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(
+                    "Daily stock sync job could not be queued. ExceptionType: {ExceptionType}.",
+                    exception.GetType().Name);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(30), timeProvider, cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+            }
         }
     }
 }

@@ -2,7 +2,6 @@ using System.Globalization;
 using Asp.Versioning;
 using Portwise.Application;
 using Portwise.Application.Contracts;
-using Portwise.Application.Stocks.Contracts;
 using Portwise.Background;
 using Portwise.Configuration;
 using Portwise.Contracts;
@@ -16,6 +15,7 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Enrichers.Span;
@@ -31,13 +31,34 @@ public static class HostServiceCollectionExtensions
         builder.Services
             .AddPortwiseApplication()
             .AddPortwiseInfrastructure(builder.Configuration)
-            .AddPortwiseHost(builder.Configuration);
+            .AddPortwiseHost(builder.Configuration, builder.Environment);
         return builder;
     }
 
     public static IServiceCollection AddPortwiseHost(
         this IServiceCollection services,
         IConfiguration configuration)
+        => AddPortwiseHost(
+            services,
+            configuration,
+            Directory.GetCurrentDirectory());
+
+    public static IServiceCollection AddPortwiseHost(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment hostEnvironment)
+    {
+        ArgumentNullException.ThrowIfNull(hostEnvironment);
+        return AddPortwiseHost(
+            services,
+            configuration,
+            hostEnvironment.ContentRootPath);
+    }
+
+    private static IServiceCollection AddPortwiseHost(
+        IServiceCollection services,
+        IConfiguration configuration,
+        string contentRootPath)
     {
         var dataProtectionOptions = configuration
             .GetSection(PortwiseDataProtectionOptions.SectionName)
@@ -47,9 +68,13 @@ public static class HostServiceCollectionExtensions
             throw new InvalidOperationException("DataProtection:KeysPath cannot be empty.");
         }
 
+        var keysPath = ResolveKeysPath(
+            dataProtectionOptions.KeysPath,
+            contentRootPath);
+        Directory.CreateDirectory(keysPath);
         services.AddDataProtection()
             .SetApplicationName("Portwise")
-            .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionOptions.KeysPath));
+            .PersistKeysToFileSystem(new DirectoryInfo(keysPath));
         services.AddSerilog((serviceProvider, loggerConfiguration) =>
             loggerConfiguration
                 .ReadFrom.Configuration(configuration)
@@ -78,9 +103,6 @@ public static class HostServiceCollectionExtensions
             .Bind(configuration.GetSection(DailySyncOptions.SectionName))
             .ValidateOnStart();
         services.AddSingleton<IStockDataSyncRunner, StockDataSyncRunner>();
-        services.AddSingleton<StockDataSyncTaskQueue>();
-        services.AddSingleton<IStockDataSyncScheduler>(serviceProvider =>
-            serviceProvider.GetRequiredService<StockDataSyncTaskQueue>());
         services.AddHostedService<StockDataSyncBackgroundService>();
         services.AddHostedService<DailyStockDataSyncHostedService>();
         services
@@ -89,5 +111,23 @@ public static class HostServiceCollectionExtensions
             .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
 
         return services;
+    }
+
+    private static string ResolveKeysPath(
+        string configuredPath,
+        string contentRootPath)
+    {
+        if (Path.IsPathRooted(configuredPath))
+        {
+            return Path.GetFullPath(configuredPath);
+        }
+
+        if (string.IsNullOrWhiteSpace(contentRootPath))
+        {
+            throw new InvalidOperationException(
+                "The application content root is required for a relative DataProtection:KeysPath.");
+        }
+
+        return Path.GetFullPath(configuredPath, contentRootPath);
     }
 }
