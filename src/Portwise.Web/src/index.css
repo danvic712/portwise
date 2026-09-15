@@ -91,6 +91,24 @@ body { margin: 0; min-width: 320px; background: var(--background); color: var(--
 button, input, select { font: inherit; }
 button { cursor: pointer; }
 
+.action-feedback { position: fixed; z-index: 60; top: 86px; right: clamp(18px, 3vw, 46px); display: grid; grid-template-columns: auto minmax(0, 1fr) auto; width: min(390px, calc(100vw - 28px)); align-items: start; gap: 10px; overflow: hidden; padding: 13px 14px 15px; box-shadow: 0 14px 38px rgb(29 65 104 / .2); animation: action-feedback-enter 260ms cubic-bezier(.22, 1, .36, 1) both; }
+.action-feedback > svg { margin-top: 2px; color: var(--accent-strong); }
+.action-feedback-attention > svg { color: var(--attention-strong); }
+.action-feedback-error > svg { color: var(--destructive); }
+.action-feedback [data-slot="alert-description"] { color: inherit; line-height: 1.55; }
+.action-feedback > button { display: grid; width: 26px; height: 26px; margin: -4px -5px 0 0; place-items: center; border: 0; border-radius: 8px; background: transparent; color: currentColor; cursor: pointer; opacity: .65; transition: background-color 140ms ease, opacity 140ms ease, transform 140ms ease; }
+.action-feedback > button:hover { background: color-mix(in srgb, currentColor 9%, transparent); opacity: 1; transform: scale(1.06); }
+.action-feedback > button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.action-feedback-progress { position: absolute; right: 0; bottom: 0; left: 0; height: 3px; background: currentColor; opacity: .24; transform-origin: left; animation: action-feedback-progress var(--action-feedback-duration) linear forwards; }
+.action-feedback.is-leaving { pointer-events: none; animation: action-feedback-exit 180ms ease-in forwards; }
+@keyframes action-feedback-enter { from { opacity: 0; transform: translateY(-10px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes action-feedback-exit { to { opacity: 0; transform: translateY(-7px) scale(.98); } }
+@keyframes action-feedback-progress { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+@media (max-width: 900px) {
+  .action-feedback { top: 126px; right: 14px; }
+}
+
 .app-frame { min-height: 100vh; background: radial-gradient(circle at 75% -10%, color-mix(in srgb, var(--accent-soft) 80%, transparent), transparent 36rem), var(--background); }
 .app-frame::after { position: absolute; top: 120px; right: -180px; width: 520px; height: 520px; pointer-events: none; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--attention-soft) 70%, transparent), transparent 70%); opacity: .58; content: ""; }
 .topbar { position: sticky; z-index: 20; top: 0; display: grid; grid-template-columns: minmax(190px, 1fr) auto minmax(190px, 1fr); align-items: center; gap: 24px; min-height: 76px; padding: 14px clamp(18px, 4vw, 64px); border-bottom: 1px solid color-mix(in srgb, var(--border) 75%, transparent); background: color-mix(in srgb, var(--background) 88%, transparent); backdrop-filter: blur(18px); }
@@ -580,4 +598,6 @@ body { background: var(--background); }
 
 @media (prefers-reduced-motion: reduce) {
   .scroll-to-top, .scroll-to-top-visible, .scroll-to-top svg, .skeleton { animation: none; transition: none; }
+  .action-feedback, .action-feedback.is-leaving, .action-feedback-progress { animation: none; }
+  .action-feedback > button { transition: none; }
 }

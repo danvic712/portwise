@@ -2,6 +2,7 @@ import { RefreshCw } from "lucide-react"
 
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/Card"
 import { Skeleton } from "@/components/ui/Skeleton"
+import { PageFrame } from "@/components/layout/PageFrame"
 
 export type SettingsSkeletonGroup = {
   key: string
@@ -89,4 +90,38 @@ export function SettingsParameterSkeleton({ label, groups }: { label: string; gr
 
 function SettingsSkeletonField() {
   return <div className="settings-loading-field"><Skeleton className="settings-loading-label" /><Skeleton className="settings-loading-input" /><Skeleton className="settings-loading-help" /></div>
+}
+
+export function SettingsWorkspaceSkeleton({ label, onNavigate, kind = "stock" }: { label: string; onNavigate: (path: string) => void; kind?: "stock" | "ai" }) {
+  return <PageFrame currentPath="/settings" onNavigate={onNavigate} dataState="pending" contentClassName="settings-workspace-wrap">
+    <div className="settings-workspace-hero settings-workspace-hero-loading" aria-hidden="true">
+      <Skeleton className="settings-workspace-skeleton-sticker" />
+      <div className="settings-workspace-hero-copy"><Skeleton className="settings-workspace-skeleton-kicker" /><Skeleton className="settings-workspace-skeleton-title" /><Skeleton className="settings-workspace-skeleton-copy" /></div>
+      <Skeleton className="settings-workspace-skeleton-status" />
+    </div>
+    <div className="settings-workspace-panel">
+      <div className="settings-workspace-tabs settings-workspace-skeleton-tabs" aria-hidden="true"><Skeleton /><Skeleton /></div>
+      <SettingsFormSkeleton kind={kind} label={label} />
+    </div>
+  </PageFrame>
+}
+
+export function SettingsFormSkeleton({ kind, label }: { kind: "stock" | "ai"; label: string }) {
+  return <div className="settings-workspace-form-skeleton" role="status" aria-label={label} aria-busy="true">
+    <span className="sr-only">{label}</span>
+    <section>
+      <Skeleton className="settings-workspace-skeleton-kicker" />
+      <Skeleton className="settings-workspace-skeleton-section-title" />
+      <Skeleton className="settings-workspace-skeleton-copy" />
+      {kind === "ai" && <div className="settings-workspace-skeleton-providers">{[0, 1, 2, 3].map((index) => <Skeleton key={index} />)}</div>}
+      <div className="settings-workspace-skeleton-fields">{[0, 1].map((index) => <div key={index}><Skeleton /><Skeleton /></div>)}</div>
+      <Skeleton className="settings-workspace-skeleton-action" />
+    </section>
+    <section>
+      <Skeleton className="settings-workspace-skeleton-kicker" />
+      <Skeleton className="settings-workspace-skeleton-section-title" />
+      <Skeleton className="settings-workspace-skeleton-copy" />
+      <div className="settings-workspace-skeleton-routes">{Array.from({ length: kind === "ai" ? 2 : 4 }, (_, index) => <div key={index}><Skeleton /><Skeleton /></div>)}</div>
+    </section>
+  </div>
 }

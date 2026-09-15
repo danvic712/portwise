@@ -16,6 +16,7 @@ test("resolveInitializationPath keeps incomplete users on onboarding and complet
   }
   assert.equal(resolveInitializationPath(false, "/onboarding"), null)
   assert.equal(resolveInitializationPath(true, "/onboarding"), "/overview")
+  assert.equal(resolveInitializationPath(true, "/settings/preferences"), "/settings")
   assert.equal(resolveInitializationPath(true, "/unknown"), "/404")
 })
 

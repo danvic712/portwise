@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
 
-import { ApplicationErrorPage } from "@/components/feedback/ApplicationErrorPage"
-import { NotFoundPage } from "@/components/feedback/NotFoundPage"
+import { ApplicationErrorPage } from "@/components/feedback/ApplicationError"
+import { NotFoundPage } from "@/components/feedback/NotFound"
 import { RouteErrorBoundary } from "@/components/feedback/RouteErrorBoundary"
 import { ScrollToTop } from "@/components/layout/ScrollToTop"
 import { StatusPageSkeleton } from "@/components/feedback/StatusPageShell"
@@ -11,6 +11,8 @@ import { useLocale } from "@/shared/i18n/i18n"
 import { isRequestAborted, useLatestRequest } from "@/shared/hooks/useLatestRequest"
 import { getInitialization } from "@/onboarding/initialization.api"
 import { OnboardingSkeleton } from "@/onboarding/OnboardingSkeleton"
+import { Settings } from "@/settings/Settings"
+import { SettingsWorkspaceSkeleton } from "@/settings/SettingsSkeleton"
 import type { InitializationStatusResponse } from "@/shared/http/api-types"
 import {
   createBrowserNavigation,
@@ -21,15 +23,11 @@ import {
 } from "@/app/routing/navigation"
 
 const Onboarding = lazy(async () => ({ default: (await import("@/onboarding/Onboarding")).Onboarding }))
-const RecommendationsPage = lazy(async () => ({ default: (await import("@/recommendations/RecommendationsPage")).RecommendationsPage }))
-const StocksPage = lazy(async () => ({ default: (await import("@/stocks/StocksPage")).StocksPage }))
-const BudgetPage = lazy(async () => ({ default: (await import("@/budget/BudgetPage")).BudgetPage }))
-const PortfolioPage = lazy(async () => ({ default: (await import("@/portfolio/PortfolioPage")).PortfolioPage }))
-const SettingsOverviewPage = lazy(async () => ({ default: (await import("@/settings/SettingsOverviewPage")).SettingsOverviewPage }))
-const PreferencesPage = lazy(async () => ({ default: (await import("@/settings/PreferencesPage")).PreferencesPage }))
-const StockDataProvidersPage = lazy(async () => ({ default: (await import("@/settings/StockDataProvidersPage")).StockDataProvidersPage }))
-const InferencePage = lazy(async () => ({ default: (await import("@/settings/InferencePage")).InferencePage }))
-const StrategyPage = lazy(async () => ({ default: (await import("@/strategy/StrategyPage")).StrategyPage }))
+const RecommendationsPage = lazy(async () => ({ default: (await import("@/recommendations/Recommendations")).RecommendationsPage }))
+const StocksPage = lazy(async () => ({ default: (await import("@/stocks/Stocks")).StocksPage }))
+const BudgetPage = lazy(async () => ({ default: (await import("@/budget/Budget")).BudgetPage }))
+const PortfolioPage = lazy(async () => ({ default: (await import("@/portfolio/Portfolio")).PortfolioPage }))
+const StrategyPage = lazy(async () => ({ default: (await import("@/strategy/Strategy")).StrategyPage }))
 
 export function ApplicationShell() {
   const { locale, setLocale, messages } = useLocale()
@@ -68,6 +66,15 @@ export function ApplicationShell() {
     document.title = location.pathname === "/onboarding" ? messages.onboarding.ui.pageTitle : messages.common.ui.pageTitle
     document.documentElement.lang = locale
   }, [locale, location.pathname, messages.common.ui.pageTitle, messages.onboarding.ui.pageTitle])
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (location.pathname === "/settings/stock-data-providers") navigate("/settings", true)
+    if (location.pathname === "/settings/inference") navigate("/settings?tab=ai", true)
+  }, [location.pathname, navigate])
 
   useEffect(() => {
     initializationErrorRef.current = messages.common.application_error_unknown.detail
@@ -133,20 +140,19 @@ export function ApplicationShell() {
         onSelectedStockKeyChange={handlePortfolioStockChange}
       />
     }
-    if (location.pathname === "/settings") return <SettingsOverviewPage onNavigate={navigate} />
-    if (location.pathname === "/settings/preferences") return <PreferencesPage onNavigate={navigate} />
-    if (location.pathname === "/settings/stock-data-providers") return <StockDataProvidersPage onNavigate={navigate} />
-    if (location.pathname === "/settings/inference") return <InferencePage onNavigate={navigate} />
+    if (location.pathname === "/settings" || location.pathname === "/settings/stock-data-providers" || location.pathname === "/settings/inference") return <Settings onNavigate={navigate} activeTab={location.pathname === "/settings/inference" || location.search.get("tab") === "ai" ? "ai" : "stock"} onTabChange={(tab) => replaceQuery({ tab: tab === "ai" ? "ai" : null })} initialStatus={initializationStatus} />
     if (location.pathname === "/strategy") return <StrategyPage onNavigate={navigate} onReplaceQuery={replaceQuery} initialStockKey={readSettingsStockKey(location)} />
     return <NotFoundPage onNavigate={navigate} />
   }
 
   const isOnboardingRoute = location.pathname === "/onboarding"
+  const isSettingsRoute = location.pathname === "/settings" || location.pathname === "/settings/stock-data-providers" || location.pathname === "/settings/inference"
   const onboardingLoadingPage = <OnboardingSkeleton label={messages.common.ui.states.preparingInitialization} onNavigate={navigate} />
+  const settingsLoadingPage = <SettingsWorkspaceSkeleton label={messages.common.ui.states.preparingInitialization} onNavigate={navigate} kind={location.pathname === "/settings/inference" || location.search.get("tab") === "ai" ? "ai" : "stock"} />
   const page = loading
     ? isOnboardingRoute
       ? onboardingLoadingPage
-      : <StatusPageSkeleton label={messages.common.ui.states.connecting} onNavigate={navigate} />
+      : isSettingsRoute ? settingsLoadingPage : <StatusPageSkeleton label={messages.common.ui.states.connecting} onNavigate={navigate} />
     : error
       ? <ApplicationErrorPage
         message={error}
@@ -158,9 +164,9 @@ export function ApplicationShell() {
           resetKey={`${location.pathname}${location.search.toString()}${location.hash}`}
           fallback={<ApplicationErrorPage message={messages.common.application_error_unknown.detail} onRetry={() => window.location.reload()} onNavigate={navigate} />}
         >
-          <Suspense fallback={isOnboardingRoute ? onboardingLoadingPage : <StatusPageSkeleton label={messages.common.ui.states.preparingInitialization} onNavigate={navigate} />}>{renderPage()}</Suspense>
+          <Suspense fallback={isOnboardingRoute ? onboardingLoadingPage : isSettingsRoute ? settingsLoadingPage : <StatusPageSkeleton label={messages.common.ui.states.preparingInitialization} onNavigate={navigate} />}>{renderPage()}</Suspense>
         </RouteErrorBoundary>
-        : <StatusPageSkeleton label={messages.common.ui.states.preparingInitialization} onNavigate={navigate} />
+        : isSettingsRoute ? settingsLoadingPage : <StatusPageSkeleton label={messages.common.ui.states.preparingInitialization} onNavigate={navigate} />
 
   return (
     <>

@@ -21,7 +21,7 @@ type PageFrameProps = {
 export function PageFrame({ children, currentPath, onNavigate, lastUpdated, dataState = "unknown", contentClassName, showBreadcrumb = true, showNavigation = true, showSettings = true }: PageFrameProps) {
   const { messages } = useLocale()
   const pageLabel = findSiteNavigationItem(currentPath)
-  const usesWideFrame = currentPath === "/overview" || currentPath === "/status"
+  const usesWideFrame = currentPath === "/overview" || currentPath === "/status" || currentPath === "/settings"
 
   return (
     <div className={cn("app-frame", usesWideFrame && "app-frame-wide", currentPath === "/overview" && "app-frame-overview", currentPath === "/status" && "app-frame-status", currentPath === "/onboarding" && "app-frame-onboarding")}>

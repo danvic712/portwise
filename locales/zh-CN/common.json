@@ -41,7 +41,8 @@
       "enUS": "EN"
     },
     "actions": {
-      "retry": "重新读取"
+      "retry": "重新读取",
+      "dismiss": "关闭提示"
     },
     "errors": {
       "requestFailed": "暂时无法完成请求，请稍后再试。",

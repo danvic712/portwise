@@ -6,7 +6,6 @@ export const applicationPaths = [
   "/budget",
   "/portfolio",
   "/settings",
-  "/settings/preferences",
   "/settings/stock-data-providers",
   "/settings/inference",
   "/strategy",
@@ -40,6 +39,7 @@ export function isApplicationPath(pathname: string): pathname is ApplicationPath
 
 export function resolveInitializationPath(isComplete: boolean, pathname: string): ApplicationPath | null {
   if (!isComplete) return pathname === "/onboarding" ? null : "/onboarding"
+  if (pathname === "/settings/preferences") return "/settings"
   if (pathname === "/onboarding" || pathname === "/error") return "/overview"
   return isApplicationPath(pathname) ? null : "/404"
 }

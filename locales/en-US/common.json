@@ -41,7 +41,8 @@
       "enUS": "EN"
     },
     "actions": {
-      "retry": "Retry"
+      "retry": "Retry",
+      "dismiss": "Dismiss message"
     },
     "errors": {
       "requestFailed": "The request could not be completed. Please try again later.",
