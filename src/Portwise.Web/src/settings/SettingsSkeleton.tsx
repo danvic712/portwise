@@ -100,28 +100,132 @@ export function SettingsWorkspaceSkeleton({ label, onNavigate, kind = "stock" }:
       <Skeleton className="settings-workspace-skeleton-status" />
     </div>
     <div className="settings-workspace-panel">
-      <div className="settings-workspace-tabs settings-workspace-skeleton-tabs" aria-hidden="true"><Skeleton /><Skeleton /></div>
-      <SettingsFormSkeleton kind={kind} label={label} />
+      <div className="settings-workspace-tabs settings-workspace-skeleton-tabs" aria-hidden="true">
+        {["stock", "ai"].map((tab) => <div className="settings-workspace-tab settings-workspace-skeleton-tab" key={tab}>
+          <Skeleton className="settings-workspace-skeleton-tab-icon" />
+          <Skeleton className="settings-workspace-skeleton-tab-label" />
+          <Skeleton className="settings-workspace-skeleton-tab-status" />
+        </div>)}
+      </div>
+      <SettingsFormSkeleton kind={kind} label={label} includeSchedule={kind === "stock"} />
     </div>
   </PageFrame>
 }
 
-export function SettingsFormSkeleton({ kind, label }: { kind: "stock" | "ai"; label: string }) {
-  return <div className="settings-workspace-form-skeleton" role="status" aria-label={label} aria-busy="true">
+export function SettingsFormSkeleton({ kind, label, includeSchedule = false }: { kind: "stock" | "ai"; label: string; includeSchedule?: boolean }) {
+  return <div className={`settings-workspace-form-skeleton settings-${kind}-form-skeleton`} role="status" aria-label={label} aria-busy="true">
     <span className="sr-only">{label}</span>
-    <section>
-      <Skeleton className="settings-workspace-skeleton-kicker" />
-      <Skeleton className="settings-workspace-skeleton-section-title" />
-      <Skeleton className="settings-workspace-skeleton-copy" />
-      {kind === "ai" && <div className="settings-workspace-skeleton-providers">{[0, 1, 2, 3].map((index) => <Skeleton key={index} />)}</div>}
-      <div className="settings-workspace-skeleton-fields">{[0, 1].map((index) => <div key={index}><Skeleton /><Skeleton /></div>)}</div>
-      <Skeleton className="settings-workspace-skeleton-action" />
-    </section>
-    <section>
-      <Skeleton className="settings-workspace-skeleton-kicker" />
-      <Skeleton className="settings-workspace-skeleton-section-title" />
-      <Skeleton className="settings-workspace-skeleton-copy" />
-      <div className="settings-workspace-skeleton-routes">{Array.from({ length: kind === "ai" ? 2 : 4 }, (_, index) => <div key={index}><Skeleton /><Skeleton /></div>)}</div>
-    </section>
+    {kind === "stock" ? <StockDataFormSkeleton includeSchedule={includeSchedule} /> : <InferenceFormSkeleton />}
   </div>
+}
+
+function StockDataFormSkeleton({ includeSchedule }: { includeSchedule: boolean }) {
+  return <>
+    <div className="settings-stock-tab-intro settings-skeleton-stock-intro" aria-hidden="true">
+      <Skeleton className="settings-skeleton-stock-intro-mark" />
+      <div className="settings-stock-tab-intro-copy">
+        <Skeleton className="settings-skeleton-stock-kicker" />
+        <Skeleton className="settings-skeleton-stock-title" />
+        <Skeleton className="settings-skeleton-stock-description" />
+      </div>
+    </div>
+
+    <div className="settings-stock-capability-rail settings-skeleton-capability-rail" aria-hidden="true">
+      {[0, 1, 2, 3].map((index) => <div className="settings-stock-capability-item" key={index}>
+        <Skeleton className="settings-skeleton-capability-mark" />
+        <div><Skeleton className="settings-skeleton-capability-title" /><Skeleton className="settings-skeleton-capability-provider" /></div>
+        <Skeleton className="settings-skeleton-capability-badge" />
+      </div>)}
+    </div>
+
+    <div className="settings-stock-config-grid settings-skeleton-stock-config" aria-hidden="true">
+      <Card className="settings-stock-source-card settings-skeleton-stock-card">
+        <SkeletonStockCardHeader route={false} />
+        <CardContent><div className="settings-stock-fields settings-skeleton-stock-fields">
+          <SkeletonStockField />
+          <SkeletonStockField />
+        </div></CardContent>
+        <CardFooter><Skeleton className="settings-skeleton-card-button" /><Skeleton className="settings-skeleton-card-button settings-skeleton-card-button-secondary" /></CardFooter>
+      </Card>
+
+      <Card className="settings-stock-routes-card settings-skeleton-stock-card">
+        <SkeletonStockCardHeader route />
+        <CardContent><div className="settings-stock-route-fields settings-skeleton-route-fields">
+          {[0, 1, 2, 3].map((index) => <div className="settings-stock-route-field" data-slot="field" key={index}>
+            <div className="settings-skeleton-route-label-row"><Skeleton className="settings-skeleton-route-label" /><Skeleton className="settings-skeleton-route-badge" /></div>
+            <Skeleton className="settings-skeleton-route-select" />
+          </div>)}
+        </div></CardContent>
+        <CardFooter><Skeleton className="settings-skeleton-card-button" /></CardFooter>
+      </Card>
+    </div>
+
+    {includeSchedule && <StockDataSyncScheduleSkeleton />}
+  </>
+}
+
+function SkeletonStockCardHeader({ route }: { route: boolean }) {
+  return <CardHeader>
+    <div className="settings-stock-card-heading">
+      <Skeleton className={`settings-skeleton-stock-card-icon${route ? " settings-skeleton-stock-card-icon-route" : ""}`} />
+      <div className="settings-skeleton-stock-card-copy"><Skeleton className="settings-skeleton-card-kicker" /><Skeleton className="settings-skeleton-card-title" /><Skeleton className="settings-skeleton-card-description" /></div>
+    </div>
+    <Skeleton className={route ? "settings-skeleton-route-count" : "settings-skeleton-card-badge"} />
+  </CardHeader>
+}
+
+function SkeletonStockField() {
+  return <div className="settings-skeleton-stock-field" data-slot="field"><Skeleton className="settings-skeleton-field-label" /><Skeleton className="settings-skeleton-field-input" /></div>
+}
+
+export function StockDataSyncScheduleSkeleton({ wrapped = true, includeHeader = true }: { wrapped?: boolean; includeHeader?: boolean } = {}) {
+  const header = <CardHeader>
+    <div className="settings-skeleton-schedule-heading"><Skeleton className="settings-skeleton-card-kicker" /><Skeleton className="settings-skeleton-schedule-title" /><Skeleton className="settings-skeleton-schedule-description" /></div>
+    <Skeleton className="settings-skeleton-card-badge" />
+  </CardHeader>
+  const content = <>
+      <CardContent>
+        <div className="settings-sync-schedule-layout">
+          <div className="settings-sync-schedule-controls">
+            <div className="settings-sync-schedule-grid settings-skeleton-schedule-controls">
+              <div className="settings-skeleton-schedule-toggle"><Skeleton className="settings-skeleton-switch" /><div><Skeleton className="settings-skeleton-field-label" /><Skeleton className="settings-skeleton-field-help" /></div></div>
+              <div className="settings-skeleton-schedule-field"><Skeleton className="settings-skeleton-field-label" /><Skeleton className="settings-skeleton-field-input" /><Skeleton className="settings-skeleton-field-help" /></div>
+            </div>
+          </div>
+          <div className="settings-sync-times settings-skeleton-sync-times">
+            <div className="settings-sync-times-heading"><div><Skeleton className="settings-skeleton-run-title" /><Skeleton className="settings-skeleton-run-copy" /></div><Skeleton className="settings-skeleton-run-count" /></div>
+            <div className="settings-sync-time-list settings-skeleton-time-list">
+              {[0, 1, 2, 3].map((index) => <div className="settings-sync-time-row" key={index}><Skeleton className="settings-skeleton-time-label" /><Skeleton className="settings-skeleton-time-picker" /><Skeleton className="settings-skeleton-time-remove" /></div>)}
+            </div>
+            <Skeleton className="settings-skeleton-add-time" />
+          </div>
+        </div>
+        <div className="settings-sync-next-run settings-skeleton-next-run"><Skeleton className="settings-skeleton-next-run-icon" /><div className="settings-sync-next-run-copy"><div className="settings-sync-next-run-primary"><Skeleton className="settings-skeleton-next-run-label" /><Skeleton className="settings-skeleton-next-run-value" /></div><div className="settings-sync-configured-times"><Skeleton className="settings-skeleton-configured-label" /><div className="settings-sync-configured-time-list">{[0, 1, 2, 3].map((index) => <Skeleton className="settings-skeleton-configured-time" key={index} />)}</div></div></div></div>
+      </CardContent>
+      <CardFooter><Skeleton className="settings-skeleton-card-button" /></CardFooter>
+  </>
+  const card = <Card className="settings-sync-schedule-card settings-skeleton-schedule-card" aria-hidden="true">{includeHeader && header}{content}</Card>
+  return wrapped ? <div className="settings-sync-schedule-wrap settings-sync-schedule-wrap-skeleton">{card}</div> : includeHeader ? card : content
+}
+
+function InferenceFormSkeleton() {
+  return <div className="settings-skeleton-inference-sections" aria-hidden="true">
+    <Card className="settings-subpage-card settings-inference-provider-card settings-skeleton-inference-card">
+      <CardHeader><div className="settings-skeleton-inference-heading"><Skeleton className="settings-skeleton-card-kicker" /><Skeleton className="settings-skeleton-inference-title" /><Skeleton className="settings-skeleton-card-description" /></div></CardHeader>
+      <CardContent>
+        <div className="settings-inference-provider-list settings-skeleton-inference-providers">{[0, 1, 2, 3].map((index) => <Skeleton key={index} />)}</div>
+        <div className="settings-provider-fields settings-skeleton-inference-fields"><SkeletonInferenceField /><SkeletonInferenceField /><SkeletonInferenceField /></div>
+      </CardContent>
+      <CardFooter><Skeleton className="settings-skeleton-card-button" /><Skeleton className="settings-skeleton-card-button settings-skeleton-card-button-secondary" /></CardFooter>
+    </Card>
+    <Card className="settings-subpage-card settings-inference-routes-card settings-skeleton-inference-card">
+      <CardHeader><div className="settings-skeleton-inference-heading"><Skeleton className="settings-skeleton-card-kicker" /><Skeleton className="settings-skeleton-inference-title settings-skeleton-inference-title-short" /><Skeleton className="settings-skeleton-card-description" /></div></CardHeader>
+      <CardContent className="settings-route-list settings-skeleton-inference-routes">{[0, 1].map((index) => <div className="settings-route-row" key={index}><div><Skeleton className="settings-skeleton-route-label" /><Skeleton className="settings-skeleton-route-badge" /></div><Skeleton className="settings-skeleton-route-select" /><Skeleton className="settings-skeleton-route-select" /></div>)}</CardContent>
+      <CardFooter><Skeleton className="settings-skeleton-card-button" /></CardFooter>
+    </Card>
+  </div>
+}
+
+function SkeletonInferenceField() {
+  return <div className="settings-skeleton-inference-field"><Skeleton className="settings-skeleton-field-label" /><Skeleton className="settings-skeleton-field-input" /><Skeleton className="settings-skeleton-field-help" /></div>
 }

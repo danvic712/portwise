@@ -316,13 +316,22 @@ public sealed class InitializationAppServiceTests
                     && position.TargetShares == position.HeldShares
                     && position.AverageCostPerShare == 0m),
                 It.IsAny<CancellationToken>()), Times.Once));
-        Mock.Get(unitOfWork.Object.Get<StockDataSyncJob>())
-            .Verify(repository => repository.AddAsync(
-                It.Is<StockDataSyncJob>(job =>
-                    job.TriggerCode == "initialization"
-                    && job.DeduplicationKey == "initialization"
-                    && job.StatusCode == "pending"),
-                CancellationToken.None), Times.Once);
+        var syncJobs = Mock.Get(unitOfWork.Object.Get<StockDataSyncJob>())
+            .Invocations
+            .Where(invocation => invocation.Method.Name == nameof(IRepository<StockDataSyncJob>.AddAsync))
+            .Select(invocation => invocation.Arguments[0])
+            .OfType<StockDataSyncJob>()
+            .ToList();
+        Assert.Equal(2, syncJobs.Count);
+        Assert.All(syncJobs, job =>
+        {
+            Assert.Equal("initialization", job.TriggerCode);
+            Assert.Equal("pending", job.StatusCode);
+            Assert.Contains($"initialization:{job.SecurityId}", job.DeduplicationKey);
+            Assert.NotEqual(Guid.Empty, job.BatchId);
+            Assert.NotEqual(Guid.Empty, job.SecurityId);
+        });
+        Assert.Equal(syncJobs[0].BatchId, syncJobs[1].BatchId);
         unitOfWork.Verify(item => item.CommitAsync(CancellationToken.None), Times.Once);
         Assert.True(response.Status.IsComplete);
     }

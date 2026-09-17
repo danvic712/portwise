@@ -12,8 +12,23 @@ internal sealed class PostgreSqlStockDataSyncJobQueue(
 {
     private const int MaxAttempts = 3;
 
-    public async Task<StockDataSyncJobResponse> EnqueueAsync(
+    public Task<StockDataSyncJobResponse> EnqueueStockAsync(
         string triggerCode,
+        Guid batchId,
+        Guid securityId,
+        string? deduplicationKey,
+        CancellationToken cancellationToken)
+        => EnqueueInternalAsync(
+            triggerCode,
+            batchId,
+            securityId,
+            deduplicationKey,
+            cancellationToken);
+
+    private async Task<StockDataSyncJobResponse> EnqueueInternalAsync(
+        string triggerCode,
+        Guid batchId,
+        Guid securityId,
         string? deduplicationKey,
         CancellationToken cancellationToken)
     {
@@ -22,9 +37,10 @@ internal sealed class PostgreSqlStockDataSyncJobQueue(
         await using (var command = new NpgsqlCommand(
             """
             INSERT INTO public.stock_data_sync_jobs
-                (id, trigger_code, status_code, deduplication_key, created_at_utc,
-                 available_at_utc, attempt_count)
-            VALUES (@id, @trigger, 'pending', @key, @now, @now, 0)
+                (id, trigger_code, status_code, deduplication_key, batch_id, security_id,
+                 created_at_utc, available_at_utc, attempt_count)
+            VALUES (@id, @trigger, 'pending', @key, @batch_id, @security_id,
+                    @now, @now, 0)
             ON CONFLICT (deduplication_key) DO NOTHING
             RETURNING id
             """, connection))
@@ -32,6 +48,8 @@ internal sealed class PostgreSqlStockDataSyncJobQueue(
             command.Parameters.AddWithValue("id", id);
             command.Parameters.AddWithValue("trigger", triggerCode);
             command.Parameters.AddWithValue("key", (object?)deduplicationKey ?? DBNull.Value);
+            command.Parameters.AddWithValue("batch_id", batchId);
+            command.Parameters.AddWithValue("security_id", securityId);
             command.Parameters.AddWithValue("now", timeProvider.GetUtcNow());
             var insertedId = await command.ExecuteScalarAsync(cancellationToken);
             if (insertedId is Guid persistedId)
@@ -60,30 +78,73 @@ internal sealed class PostgreSqlStockDataSyncJobQueue(
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var command = new NpgsqlCommand(
             """
-            SELECT id, trigger_code, status_code, attempt_count, created_at_utc,
-                   started_at_utc, completed_at_utc, result_json::text, error_code
-            FROM public.stock_data_sync_jobs WHERE id = @id
+            SELECT job.id, job.trigger_code, job.status_code, job.attempt_count,
+                   job.created_at_utc, job.started_at_utc, job.completed_at_utc,
+                   job.result_json::text, job.error_code, job.batch_id, job.security_id,
+                   security.security_code, security.exchange_code
+            FROM public.stock_data_sync_jobs AS job
+            JOIN public.securities AS security ON security.security_id = job.security_id
+            WHERE job.id = @id
             """, connection);
         command.Parameters.AddWithValue("id", id);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (!await reader.ReadAsync(cancellationToken))
+        return await reader.ReadAsync(cancellationToken) ? ReadJob(reader) : null;
+    }
+
+    public async Task<StockDataSyncBatchResponse?> GetBatchAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var command = new NpgsqlCommand(
+            """
+            SELECT job.id, job.trigger_code, job.status_code, job.attempt_count,
+                   job.created_at_utc, job.started_at_utc, job.completed_at_utc,
+                   job.result_json::text, job.error_code, job.batch_id, job.security_id,
+                   security.security_code, security.exchange_code
+            FROM public.stock_data_sync_jobs AS job
+            JOIN public.securities AS security ON security.security_id = job.security_id
+            WHERE job.batch_id = @batch_id
+            ORDER BY job.created_at_utc, job.id
+            """, connection);
+        command.Parameters.AddWithValue("batch_id", id);
+
+        var jobs = new List<StockDataSyncJobResponse>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            jobs.Add(ReadJob(reader));
+        }
+
+        if (jobs.Count == 0)
         {
             return null;
         }
 
-        var result = reader.IsDBNull(7)
-            ? null
-            : JsonSerializer.Deserialize<StockDataSyncRunResult>(reader.GetString(7));
-        return new StockDataSyncJobResponse(
-            reader.GetGuid(0),
-            reader.GetString(1),
-            reader.GetString(2),
-            reader.GetInt32(3),
-            reader.GetFieldValue<DateTimeOffset>(4),
-            reader.IsDBNull(5) ? null : reader.GetFieldValue<DateTimeOffset>(5),
-            reader.IsDBNull(6) ? null : reader.GetFieldValue<DateTimeOffset>(6),
-            result,
-            reader.IsDBNull(8) ? null : reader.GetString(8));
+        var pending = jobs.Count(job => job.StatusCode == "pending");
+        var running = jobs.Count(job => job.StatusCode == "running");
+        var completed = jobs.Count(job => job.StatusCode == "completed");
+        var failed = jobs.Count(job => job.StatusCode is "failed" or "completed_with_failures"
+            || job.Result?.Failures.Count > 0);
+        var status = pending > 0 || running > 0
+            ? running > 0 ? "running" : "pending"
+            : failed > 0 ? "completed_with_failures" : "completed";
+        var terminal = completed + failed;
+        var completedAt = terminal == jobs.Count
+            ? jobs.Max(job => job.CompletedAtUtc)
+            : null;
+        return new StockDataSyncBatchResponse(
+            id,
+            jobs[0].TriggerCode,
+            status,
+            jobs.Count,
+            pending,
+            running,
+            completed,
+            failed,
+            jobs.Min(job => job.CreatedAtUtc),
+            completedAt,
+            jobs);
     }
 
     public async Task<StockDataSyncJobLease?> TryClaimAsync(
@@ -135,7 +196,10 @@ internal sealed class PostgreSqlStockDataSyncJobQueue(
                 error_code = NULL
             FROM candidate
             WHERE job.id = candidate.id
-            RETURNING job.id, job.trigger_code, job.attempt_count
+            RETURNING job.id, job.trigger_code, job.attempt_count, job.batch_id,
+                      job.security_id,
+                      (SELECT security_code FROM public.securities WHERE security_id = job.security_id),
+                      (SELECT exchange_code FROM public.securities WHERE security_id = job.security_id)
             """, connection, transaction);
         claim.Parameters.AddWithValue("max_attempts", MaxAttempts);
         claim.Parameters.AddWithValue("owner", ownerId);
@@ -144,7 +208,13 @@ internal sealed class PostgreSqlStockDataSyncJobQueue(
         {
             lease = await reader.ReadAsync(cancellationToken)
                 ? new StockDataSyncJobLease(
-                    reader.GetGuid(0), reader.GetString(1), reader.GetInt32(2))
+                    reader.GetGuid(0),
+                    reader.GetString(1),
+                    reader.GetInt32(2),
+                    reader.GetGuid(3),
+                    reader.GetGuid(4),
+                    reader.GetString(5),
+                    reader.GetString(6))
                 : null;
         }
 
@@ -172,7 +242,7 @@ internal sealed class PostgreSqlStockDataSyncJobQueue(
     public async Task CompleteAsync(
         Guid id,
         Guid ownerId,
-        StockDataSyncRunResult result,
+        StockFactSyncResult result,
         CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -184,8 +254,9 @@ internal sealed class PostgreSqlStockDataSyncJobQueue(
                 lease_expires_at_utc = NULL
             WHERE id = @id AND lease_owner_id = @owner AND status_code = 'running'
             """, connection);
-        command.Parameters.AddWithValue("status",
-            result.PartiallyFailedStockCount > 0 ? "completed_with_failures" : "completed");
+        command.Parameters.AddWithValue(
+            "status",
+            result.Failures.Count > 0 ? "completed_with_failures" : "completed");
         command.Parameters.Add("result", NpgsqlDbType.Jsonb).Value =
             JsonSerializer.Serialize(result);
         command.Parameters.AddWithValue("id", id);
@@ -221,5 +292,29 @@ internal sealed class PostgreSqlStockDataSyncJobQueue(
         command.Parameters.AddWithValue("id", id);
         command.Parameters.AddWithValue("owner", ownerId);
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static StockDataSyncJobResponse ReadJob(NpgsqlDataReader reader)
+    {
+        var batchId = reader.GetGuid(9);
+        var securityId = reader.GetGuid(10);
+        StockFactSyncResult? result = reader.IsDBNull(7)
+            ? null
+            : JsonSerializer.Deserialize<StockFactSyncResult>(reader.GetString(7));
+
+        return new StockDataSyncJobResponse(
+            reader.GetGuid(0),
+            reader.GetString(1),
+            reader.GetString(2),
+            reader.GetInt32(3),
+            reader.GetFieldValue<DateTimeOffset>(4),
+            reader.IsDBNull(5) ? null : reader.GetFieldValue<DateTimeOffset>(5),
+            reader.IsDBNull(6) ? null : reader.GetFieldValue<DateTimeOffset>(6),
+            result,
+            reader.IsDBNull(8) ? null : reader.GetString(8),
+            batchId,
+            securityId,
+            reader.GetString(11),
+            reader.GetString(12));
     }
 }

@@ -127,7 +127,8 @@ src/
 │   │   ├── StockPriceObservationAppService.cs
 │   │   ├── StockDividendEventAppService.cs
 │   │   ├── StockFinancialSnapshotAppService.cs
-│   │   ├── StockDailyDataSyncAppService.cs
+│   │   ├── StockDataSyncCoordinator.cs
+│   │   ├── StockDataSyncSettingsAppService.cs
 │   │   ├── StocksMapper.cs
 │   │   └── DailySyncSchedule.cs
 │   ├── Portfolio/                      # Portfolio module：现金流水、交易和持仓变更
@@ -505,12 +506,14 @@ Application 只返回 `StockModelParameterSet` DTO，不返回 `ModelParameterSe
 
 ### 8.10 交易日数据同步
 
-`IStockDailyDataSyncAppService` 按关注列表逐只调用 `IStockFactSyncAppService`；事实同步模块按股票复用一次 Security 上下文，依次执行资料、行情、股息和财务快照同步。失败项记录股票、数据类型、稳定 `error_code` 和结构化 `parameters`，不在后台结果中固化某一种语言的展示文案；HTTP 请求先由 `RequestLocalizationMiddleware` 根据 `Accept-Language` 设置 `CurrentUICulture`，异常展示再由 `IApplicationErrorLocalizer` 使用该 culture 生成文本，后台日志和其他非 HTTP 消费者使用默认语言或显式 culture 在展示边界本地化。其他数据类型及其他股票继续执行，避免单个 FTShare 数据缺口阻断整批更新。结果中的 `FullyCompletedStockCount` 只统计四类数据全部成功的股票，`PartiallyFailedStockCount` 统计至少一类失败的股票。`POST /api/v1/stocks/sync` 返回 `202 Accepted` 和任务 ID，`GET /api/v1/stocks/sync-jobs/{id}` 提供执行状态与最终结果。
+`IStockDataSyncCoordinator` 负责把一次同步请求拆成一个批次和多个单股任务。手动、Initialization、新增关注股票和每日计划都通过同一个 PostgreSQL 队列创建任务；批量入口按关注列表稳定顺序逐只入队，后台 worker 一次只领取一只股票，因此一个数据源缺口只影响当前股票，不会阻塞同批次的其他股票。每个任务携带持久化的 `batch_id`、`security_id` 和规范化 A 股引用，`IStockFactSyncAppService` 负责该股票的资料、行情、股息和财务事实同步，并返回 `StockFactSyncResult`。结果按任务保存，失败项包含股票、数据类型、稳定 `error_code` 和结构化 `parameters`，不固化某一种语言的展示文案。
+
+批次查询由队列根据单股任务实时聚合，返回总数、待处理数、运行中数、已完成数、失败数和每只股票的结果。`POST /api/v1/stocks/sync` 和 `POST /api/v1/stocks/{securityCode}/{exchangeCode}/sync` 返回 `202 Accepted` 及批次；`GET /api/v1/stocks/sync-batches/{id}` 查询批次进度，`GET /api/v1/stocks/sync-jobs/{id}` 查询单股任务。事实写入仍按自然键幂等，任务本身采用至少一次语义。
 
 股票事实与建议的 Application 数据流如下：
 
 ```text
-StockDailyDataSyncAppService ──┐
+StockDataSyncCoordinator ─────┐
                                ▼
                      StockFactSyncAppService
                                ├── Security 上下文
@@ -535,7 +538,7 @@ PortfolioRecommendationAppService ──┘                 ▼
                                       (直接使用同一分析结果写入快照)
 ```
 
-Host 的 `DailyStockDataSyncHostedService` 按 `DailySync:LocalTime` 和 `DailySync:TimeZoneId` 调度，默认使用上海时间每日 18:00，并跳过周末；A 股法定节假日由数据源实际返回结果决定，重复快照通过事实同步用例幂等处理。Initialization 和新增关注股票在自身 UoW 内把任务写入 PostgreSQL；每日调度和 HTTP 手动接口也向同一队列入队。`StockDataSyncBackgroundService` 原子领取任务并调用 `StockDataSyncRunner`，以短事务 advisory lock、领取行锁和定期续租协调多实例，保留最终状态和结构化逐项失败。意外失败有限重试，预期的逐类数据失败保存为部分完成。调度服务在当日时间已过时补投并对入队失败重试。生产环境可通过 `DailySync:Enabled=false` 关闭每日调度，其他触发器仍可用。队列语义详见 [ADR-0006](adr/0006-postgresql-stock-sync-queue.md)。
+Host 的 `DailyStockDataSyncHostedService` 从 `stock_data_sync_settings` 读取计划，默认使用上海时间每日 18:00，也支持每天多个 `HH:mm` 运行时间，并跳过周末；A 股法定节假日由数据源实际返回结果决定，重复快照通过事实同步用例幂等处理。设置记录由 migration seed，用户可在 Settings 的股票 Tab 更新启用状态、时区和运行时间，更新携带 revision 做乐观并发保护。Initialization 和新增关注股票在自身 UoW 内把单股任务写入 PostgreSQL；每日调度和 HTTP 手动接口向同一队列创建批次。`StockDataSyncBackgroundService` 原子领取一只股票并调用 `StockDataSyncRunner`，以短事务 advisory lock、领取行锁和定期续租协调多实例，保留任务状态和结构化逐类失败。意外失败有限重试，预期的数据类型失败保存为部分完成。调度服务在当日时间已过时补投每个尚未入队的运行时间，并对入队失败重试。队列语义详见 [ADR-0007](adr/0007-per-stock-sync-batches-and-database-schedule.md)。
 
 ### 8.11 交易记录与持仓成本
 
@@ -656,7 +659,7 @@ Serilog 通过 `Serilog.Enrichers.Span` 的 `Enrich.WithSpan()` 自动把当前 
 - Application 测试通过 `IRepository<TEntity>`、`IUow` 和数据提供 Adapter 的 Interface mock 验证用例行为。
 - Application 测试不创建真实 DbContext，也不依赖真实 PostgreSQL 或 FTShare 网络连接。
 - Infrastructure 测试验证 FTShare transport、payload 规范化和数据库运行时 adapter 的非数据库行为；数据库 migration 通过生成 SQL、pending-model-changes 检查和 Compose smoke 验证。
-- Host 测试验证同步执行器的并发边界、Controller 入口、Options 校验和调度时间。
+- Host 测试验证同步执行器的并发边界、Controller 入口和数据库计划的调度时间。
 - Infrastructure 的 EF Fluent 配置和 Adapter 通过编译、依赖检查及后续专门测试验证；不把 EF Core 细节泄漏到 Application 单元测试。
 
 所有测试必须保持对 Interface 的验证，而不是依赖具体实现内部结构。

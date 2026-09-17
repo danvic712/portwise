@@ -19,7 +19,8 @@ public sealed class StocksController(
     IStockDividendEventAppService stockDividendEventAppService,
     IStockRecommendationAppService stockRecommendationAppService,
     IStockFinancialSnapshotAppService stockFinancialSnapshotAppService,
-    IStockDataSyncJobQueue stockDataSyncJobQueue)
+    IStockDataSyncJobQueue stockDataSyncJobQueue,
+    IStockDataSyncCoordinator stockDataSyncCoordinator)
     : ControllerBase
 {
     /// <summary>Returns all stocks configured in the portfolio watchlist.</summary>
@@ -46,18 +47,21 @@ public sealed class StocksController(
         return Ok(stock);
     }
 
-    /// <summary>Queues a manual synchronization for all configured stocks.</summary>
+    /// <summary>Queues a manual synchronization batch with one task per configured stock.</summary>
     /// <param name="cancellationToken">Token used to cancel the request.</param>
     [HttpPost("sync")]
-    [ProducesResponseType(typeof(StockDataSyncJobResponse), StatusCodes.Status202Accepted)]
-    public async Task<ActionResult<StockDataSyncJobResponse>> SyncStocks(
+    [ProducesResponseType(typeof(StockDataSyncBatchResponse), StatusCodes.Status202Accepted)]
+    public async Task<ActionResult<StockDataSyncBatchResponse>> SyncStocks(
         CancellationToken cancellationToken)
     {
-        var job = await stockDataSyncJobQueue.EnqueueAsync(
+        var batch = await stockDataSyncCoordinator.EnqueueWatchlistAsync(
             "manual",
             null,
             cancellationToken);
-        return AcceptedAtAction(nameof(GetSyncJob), new { version = "1", id = job.Id }, job);
+        return AcceptedAtAction(
+            nameof(GetSyncBatch),
+            new { version = "1", id = batch.Id },
+            batch);
     }
 
     /// <summary>Returns the status and result of a queued stock synchronization.</summary>
@@ -72,6 +76,42 @@ public sealed class StocksController(
     {
         var job = await stockDataSyncJobQueue.GetAsync(id, cancellationToken);
         return job is null ? NotFound() : Ok(job);
+    }
+
+    /// <summary>Returns the aggregate status of a per-stock synchronization batch.</summary>
+    /// <param name="id">Synchronization batch identifier.</param>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
+    [HttpGet("sync-batches/{id:guid}")]
+    [ProducesResponseType(typeof(StockDataSyncBatchResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<StockDataSyncBatchResponse>> GetSyncBatch(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var batch = await stockDataSyncCoordinator.GetBatchAsync(id, cancellationToken);
+        return batch is null ? NotFound() : Ok(batch);
+    }
+
+    /// <summary>Queues a synchronization task for one configured stock.</summary>
+    /// <param name="securityCode">Six-digit A-share security code.</param>
+    /// <param name="exchangeCode">Exchange code: SSE, SZSE or BSE.</param>
+    /// <param name="cancellationToken">Token used to cancel the request.</param>
+    [HttpPost("{securityCode}/{exchangeCode}/sync")]
+    [ProducesResponseType(typeof(StockDataSyncBatchResponse), StatusCodes.Status202Accepted)]
+    public async Task<ActionResult<StockDataSyncBatchResponse>> SyncStock(
+        string securityCode,
+        string exchangeCode,
+        CancellationToken cancellationToken)
+    {
+        var batch = await stockDataSyncCoordinator.EnqueueStockAsync(
+            "manual",
+            securityCode,
+            exchangeCode,
+            cancellationToken);
+        return AcceptedAtAction(
+            nameof(GetSyncBatch),
+            new { version = "1", id = batch.Id },
+            batch);
     }
 
     /// <summary>Returns the active model parameters for one stock.</summary>

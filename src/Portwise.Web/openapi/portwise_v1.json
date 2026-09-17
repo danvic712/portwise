@@ -998,6 +998,85 @@
         }
       }
     },
+    "/api/v1/stock-data-sync/settings": {
+      "get": {
+        "tags": [
+          "StockDataSyncSettings"
+        ],
+        "summary": "Returns the current database-backed synchronization schedule.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncSettingsResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncSettingsResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncSettingsResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "StockDataSyncSettings"
+        ],
+        "summary": "Updates the synchronization schedule with optimistic concurrency.",
+        "requestBody": {
+          "description": "Token used to cancel the request.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStockDataSyncSettingsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStockDataSyncSettingsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStockDataSyncSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncSettingsResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncSettingsResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncSettingsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/stocks": {
       "get": {
         "tags": [
@@ -1091,24 +1170,24 @@
         "tags": [
           "Stocks"
         ],
-        "summary": "Queues a manual synchronization for all configured stocks.",
+        "summary": "Queues a manual synchronization batch with one task per configured stock.",
         "responses": {
           "202": {
             "description": "Accepted",
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/StockDataSyncJobResponse"
+                  "$ref": "#/components/schemas/StockDataSyncBatchResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StockDataSyncJobResponse"
+                  "$ref": "#/components/schemas/StockDataSyncBatchResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StockDataSyncJobResponse"
+                  "$ref": "#/components/schemas/StockDataSyncBatchResponse"
                 }
               }
             }
@@ -1157,6 +1236,101 @@
           },
           "404": {
             "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/v1/stocks/sync-batches/{id}": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Returns the aggregate status of a per-stock synchronization batch.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Synchronization batch identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncBatchResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncBatchResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncBatchResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/v1/stocks/{securityCode}/{exchangeCode}/sync": {
+      "post": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Queues a synchronization task for one configured stock.",
+        "parameters": [
+          {
+            "name": "securityCode",
+            "in": "path",
+            "description": "Six-digit A-share security code.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "exchangeCode",
+            "in": "path",
+            "description": "Exchange code: SSE, SZSE or BSE.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncBatchResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncBatchResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDataSyncBatchResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -3142,6 +3316,103 @@
         },
         "description": "Returns all fixed stock data capability routes."
       },
+      "StockDataSyncBatchResponse": {
+        "required": [
+          "id",
+          "triggerCode",
+          "statusCode",
+          "totalStockCount",
+          "pendingStockCount",
+          "runningStockCount",
+          "completedStockCount",
+          "failedStockCount",
+          "createdAtUtc",
+          "completedAtUtc",
+          "jobs"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Batch identifier.",
+            "format": "uuid"
+          },
+          "triggerCode": {
+            "type": "string",
+            "description": "Source that requested the synchronization."
+          },
+          "statusCode": {
+            "type": "string",
+            "description": "Pending, running, completed, or completed with failures."
+          },
+          "totalStockCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Number of stock tasks in the batch.",
+            "format": "int32"
+          },
+          "pendingStockCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Number of tasks waiting to run.",
+            "format": "int32"
+          },
+          "runningStockCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Number of tasks currently running.",
+            "format": "int32"
+          },
+          "completedStockCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Stocks whose four fact groups completed without failures.",
+            "format": "int32"
+          },
+          "failedStockCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Stocks with a partial or unexpected task failure.",
+            "format": "int32"
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "description": "UTC creation time of the first task.",
+            "format": "date-time"
+          },
+          "completedAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "UTC completion time when every task is terminal.",
+            "format": "date-time"
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockDataSyncJobResponse"
+            },
+            "description": "Per-stock task details."
+          }
+        },
+        "description": "Aggregated status for the per-stock tasks created by one request."
+      },
       "StockDataSyncFailure": {
         "required": [
           "securityCode",
@@ -3185,7 +3456,11 @@
           "startedAtUtc",
           "completedAtUtc",
           "result",
-          "errorCode"
+          "errorCode",
+          "batchId",
+          "securityId",
+          "securityCode",
+          "exchangeCode"
         ],
         "type": "object",
         "properties": {
@@ -3239,7 +3514,7 @@
               },
               {
                 "description": "Structured result when synchronization completes.",
-                "$ref": "#/components/schemas/StockDataSyncRunResult"
+                "$ref": "#/components/schemas/StockFactSyncResult"
               }
             ]
           },
@@ -3249,61 +3524,72 @@
               "string"
             ],
             "description": "Stable error code after an unexpected failure."
+          },
+          "batchId": {
+            "type": "string",
+            "description": "Batch identifier shared by tasks created for one request.",
+            "format": "uuid"
+          },
+          "securityId": {
+            "type": "string",
+            "description": "Persistent security identifier for a per-stock task.",
+            "format": "uuid"
+          },
+          "securityCode": {
+            "type": "string",
+            "description": "Security code resolved from the persisted security."
+          },
+          "exchangeCode": {
+            "type": "string",
+            "description": "Exchange code resolved from the persisted security."
           }
         },
-        "description": "Persisted state of one full-watchlist synchronization request."
+        "description": "Persisted state of one stock synchronization task."
       },
-      "StockDataSyncRunResult": {
+      "StockDataSyncSettingsResponse": {
         "required": [
-          "attemptedStockCount",
-          "fullyCompletedStockCount",
-          "partiallyFailedStockCount",
-          "failures",
-          "completedAt"
+          "enabled",
+          "timeZoneId",
+          "runTimes",
+          "revision",
+          "updatedAtUtc",
+          "nextRunAtUtc"
         ],
         "type": "object",
         "properties": {
-          "attemptedStockCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "description": "Number of stocks attempted.",
-            "format": "int32"
+          "enabled": {
+            "type": "boolean"
           },
-          "fullyCompletedStockCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "description": "Number of fully synchronized stocks.",
-            "format": "int32"
+          "timeZoneId": {
+            "type": "string"
           },
-          "partiallyFailedStockCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "description": "Number of stocks with partial failures.",
-            "format": "int32"
-          },
-          "failures": {
+          "runTimes": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/StockDataSyncFailure"
-            },
-            "description": "Failures collected during synchronization."
+              "type": "string"
+            }
           },
-          "completedAt": {
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "updatedAtUtc": {
             "type": "string",
-            "description": "UTC completion timestamp.",
+            "format": "date-time"
+          },
+          "nextRunAtUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date-time"
           }
         },
-        "description": "Summary of a stock data synchronization run."
+        "description": "Persisted daily stock synchronization schedule."
       },
       "StockDividendEventResult": {
         "required": [
@@ -3410,6 +3696,60 @@
           }
         },
         "description": "Persisted dividend event returned by the API."
+      },
+      "StockFactSyncResult": {
+        "required": [
+          "securityCode",
+          "exchangeCode",
+          "priceObservation",
+          "dividendEvents",
+          "financialSnapshots",
+          "failures"
+        ],
+        "type": "object",
+        "properties": {
+          "securityCode": {
+            "type": "string",
+            "description": "Security code."
+          },
+          "exchangeCode": {
+            "type": "string",
+            "description": "Exchange code."
+          },
+          "priceObservation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Latest price observation, when available.",
+                "$ref": "#/components/schemas/StockPriceObservationResult"
+              }
+            ]
+          },
+          "dividendEvents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockDividendEventResult"
+            },
+            "description": "Persisted dividend events."
+          },
+          "financialSnapshots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockFinancialSnapshotResult"
+            },
+            "description": "Persisted financial snapshots."
+          },
+          "failures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockDataSyncFailure"
+            },
+            "description": "Failures collected during synchronization."
+          }
+        },
+        "description": "Result of synchronizing all supported stock facts for one stock."
       },
       "StockFinancialSnapshotResult": {
         "required": [
@@ -4117,6 +4457,38 @@
         },
         "description": "Requests one atomic update to all fixed stock data capability routes."
       },
+      "UpdateStockDataSyncSettingsRequest": {
+        "required": [
+          "enabled",
+          "timeZoneId",
+          "runTimes",
+          "expectedRevision"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "timeZoneId": {
+            "type": "string"
+          },
+          "runTimes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expectedRevision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          }
+        },
+        "description": "Updates the persisted daily stock synchronization schedule."
+      },
       "VerifyInferenceProviderRequest": {
         "required": [
           "expectedRevision"
@@ -4198,6 +4570,9 @@
     },
     {
       "name": "StockDataProviders"
+    },
+    {
+      "name": "StockDataSyncSettings"
     },
     {
       "name": "Stocks"

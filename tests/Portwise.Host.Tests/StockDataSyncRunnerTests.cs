@@ -4,6 +4,7 @@ using Portwise.Application.Stocks.Contracts;
 using Portwise.Application.Stocks.Dtos;
 using Portwise.Background;
 using Portwise.Contracts;
+using Portwise.Domain.Securities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -21,20 +22,23 @@ public sealed class StockDataSyncRunnerTests
         var releaseFirstRun = new TaskCompletionSource(
             TaskCreationOptions.RunContinuationsAsynchronously);
         var invocationCount = 0;
-        var syncAppService = new Mock<IStockDailyDataSyncAppService>();
-        syncAppService
-            .Setup(x => x.SyncAsync(It.IsAny<CancellationToken>()))
-            .Returns(async (CancellationToken cancellationToken) =>
+        var factSync = new Mock<IStockFactSyncAppService>();
+        factSync
+            .Setup(x => x.SyncAsync(
+                It.IsAny<AShareReference>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(async (AShareReference reference, CancellationToken cancellationToken) =>
             {
                 Interlocked.Increment(ref invocationCount);
                 firstRunEntered.TrySetResult();
                 await releaseFirstRun.Task.WaitAsync(cancellationToken);
-                return CreateResult();
+                return CreateResult(reference);
             });
 
-        await using var serviceProvider = CreateServiceProvider(syncAppService.Object);
+        await using var serviceProvider = CreateServiceProvider(factSync.Object);
         var runner = CreateRunner(serviceProvider);
-        var firstRun = runner.RunAsync(StockDataSyncTrigger.Manual, CancellationToken.None);
+        var reference = AShareReference.Create("000001", "SZSE");
+        var firstRun = runner.RunAsync(StockDataSyncTrigger.Manual, reference, CancellationToken.None);
 
         await firstRunEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
         try
@@ -42,6 +46,7 @@ public sealed class StockDataSyncRunnerTests
             using var cancellation = new CancellationTokenSource();
             var queuedRun = runner.RunAsync(
                 StockDataSyncTrigger.Scheduled,
+                reference,
                 cancellation.Token);
             cancellation.Cancel();
 
@@ -58,10 +63,12 @@ public sealed class StockDataSyncRunnerTests
     [Fact]
     public async Task RunAsync_CreatesRunContextForEachTrigger()
     {
-        var syncAppService = new Mock<IStockDailyDataSyncAppService>();
-        syncAppService
-            .Setup(x => x.SyncAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CreateResult());
+        var factSync = new Mock<IStockFactSyncAppService>();
+        factSync
+            .Setup(x => x.SyncAsync(
+                It.IsAny<AShareReference>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AShareReference reference, CancellationToken _) => CreateResult(reference));
         var scopes = new List<DiagnosticScope>();
         var diagnosticContext = new Mock<IDiagnosticContext>();
         diagnosticContext
@@ -69,14 +76,17 @@ public sealed class StockDataSyncRunnerTests
             .Callback<DiagnosticScope>(scopes.Add)
             .Returns(Mock.Of<IDisposable>());
 
-        await using var serviceProvider = CreateServiceProvider(syncAppService.Object);
+        await using var serviceProvider = CreateServiceProvider(factSync.Object);
         var runner = CreateRunner(serviceProvider, diagnosticContext.Object);
+        var reference = AShareReference.Create("000001", "SZSE");
 
         var manual = await runner.RunAsync(
             StockDataSyncTrigger.Manual,
+            reference,
             CancellationToken.None);
         var scheduled = await runner.RunAsync(
             StockDataSyncTrigger.Scheduled,
+            reference,
             CancellationToken.None);
 
         Assert.NotEqual(manual.RunId, scheduled.RunId);
@@ -97,9 +107,9 @@ public sealed class StockDataSyncRunnerTests
     }
 
     private static ServiceProvider CreateServiceProvider(
-        IStockDailyDataSyncAppService syncAppService)
+        IStockFactSyncAppService factSync)
         => new ServiceCollection()
-            .AddScoped(_ => syncAppService)
+            .AddScoped(_ => factSync)
             .BuildServiceProvider();
 
     private static StockDataSyncRunner CreateRunner(
@@ -119,6 +129,6 @@ public sealed class StockDataSyncRunnerTests
         return diagnosticContext.Object;
     }
 
-    private static StockDataSyncRunResult CreateResult()
-        => new(1, 1, 0, [], DateTimeOffset.UnixEpoch);
+    private static StockFactSyncResult CreateResult(AShareReference reference)
+        => new(reference.SecurityCode, reference.ExchangeCode, null, [], [], []);
 }

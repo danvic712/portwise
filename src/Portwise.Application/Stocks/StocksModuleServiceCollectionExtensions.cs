@@ -13,7 +13,8 @@ public static class StocksModuleServiceCollectionExtensions
         services.AddScoped<IStockDividendEventAppService, StockDividendEventAppService>();
         services.AddScoped<IStockFinancialSnapshotAppService, StockFinancialSnapshotAppService>();
         services.AddScoped<IStockFactSyncAppService, StockFactSyncAppService>();
-        services.AddScoped<IStockDailyDataSyncAppService, StockDailyDataSyncAppService>();
+        services.AddScoped<IStockDataSyncSettingsAppService, StockDataSyncSettingsAppService>();
+        services.AddScoped<IStockDataSyncCoordinator, StockDataSyncCoordinator>();
         return services;
     }
 }

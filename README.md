@@ -21,7 +21,7 @@ Portwise 是一个面向个人 A 股长期投资者的私人工具。它把股�
 - 首次设置时一次添加多只 A 股，可录入已有持仓、核心仓、目标股数和平均成本；
 - 建账先保存股票和组合，FTShare 资料同步进入后台任务，不阻塞用户进入系统；
 - 通过 FTShare MCP Adapter 获取股票基础资料、行情、股息事件和财务快照；
-- 按交易日自动同步全部关注股票，也可以在股票资料页手动触发同步；
+- 按交易日按计划同步关注股票，每只股票独立排队执行，也可以在股票资料页手动触发单只或全部同步；
 - 使用 TTM 实际每股股息计算股息率，并结合可靠性检查、价格区域、预算和核心仓生成参考；
 - 支持多只股票独立配置模型参数，同时在组合层汇总预算、持仓和建议；
 - 提供今日决策、股票资料、资金预算、交易记录和设置页面；
@@ -235,11 +235,9 @@ ASP.NET Core 按默认规则加载 `appsettings.json` 和当前环境对应的 `
 | `FtShare__RequestTimeoutSeconds` | 每次 HTTP attempt 超时；完整 MCP exchange deadline 会按重试次数扩展 | `30` |
 | `FtShare__MaxRetryCount` | MCP 请求最大重试次数 | `2` |
 | `FtShare__RetryDelayMilliseconds` | 重试间隔 | `250` |
-| `DailySync__Enabled` | 是否启用每日同步 | `true` |
-| `DailySync__LocalTime` | 每日同步时间 | `18:00` |
-| `DailySync__TimeZoneId` | 每日同步时区 | `Asia/Shanghai` |
+| `DataProtection__KeysPath` | Data Protection 密钥环路径 | `data/keys` |
 
-`FtShare` 和 `DailySync` 配置会在 Host 启动时校验。地址、时间格式、时区、超时和重试范围无效时，应用会直接报告配置错误，不会等到首次同步请求才失败。
+`FtShare` 配置会在 Host 启动时校验。股票同步计划由 migration 写入 PostgreSQL 默认记录，并在 Settings 的股票 Tab 中配置启用状态、时区和每天多个运行时间；接口为 `GET/PUT /api/v1/stock-data-sync/settings`，更新使用 revision 做并发保护。时间格式、时区、超时和重试范围无效时，应用会在设置保存时返回可读错误。
 
 FTShare 通过命名的 `IHttpClientFactory` client 复用连接池；标准 resilience 管线负责暂态 HTTP 响应、`Retry-After`、jitter、指数退避和每次 attempt 超时。响应流中断会在 transport 边界被明确分类，并由 exchange resilience pipeline 重试；完整 MCP exchange 仍有一个有界 deadline，以覆盖 session 初始化和流式响应读取。当前 FTShare 工具为只读契约，若接入有副作用的 MCP 工具，必须使用独立 client 并重新声明幂等性。
 
@@ -286,8 +284,10 @@ API 使用 URL Segment 版本号，当前版本为 `v1`，完整接口和请求�
 | `GET /api/v1/initialization` | 查询初始化完成标记、偏好和能力 readiness |
 | `POST /api/v1/initialization/complete` | 以一个数据库事务保存初始化基础配置和可选 Provider/Route |
 | `GET /api/v1/stocks` | 获取关注股票和持仓摘要 |
-| `POST /api/v1/stocks/sync` | 将全部股票资料同步加入 PostgreSQL 队列，返回 `202` 和任务 ID |
-| `GET /api/v1/stocks/sync-jobs/{id}` | 查询同步任务状态与最终逐项结果 |
+| `POST /api/v1/stocks/sync` | 为全部关注股票创建一个同步批次，每只股票一个 PostgreSQL 队列任务，返回 `202` 和批次 ID |
+| `POST /api/v1/stocks/{securityCode}/{exchangeCode}/sync` | 为一只已配置股票创建同步批次，返回 `202` 和批次 ID |
+| `GET /api/v1/stocks/sync-batches/{id}` | 查询批次进度、逐股状态和逐类结果 |
+| `GET /api/v1/stocks/sync-jobs/{id}` | 查询单只股票任务状态与最终结果 |
 | `GET /api/v1/stocks/{securityCode}/{exchangeCode}/analysis` | 获取单只股票分析与交易参考 |
 | `GET /api/v1/stocks/{securityCode}/{exchangeCode}/model-parameters` | 获取当前生效模型参数 |
 | `POST /api/v1/stocks/model-parameters` | 保存单只股票模型参数 |

@@ -6,23 +6,45 @@ public static class DailySyncSchedule
         DateTimeOffset utcNow,
         TimeOnly localRunTime,
         TimeZoneInfo timeZone)
+        => GetNextRunUtc(utcNow, [localRunTime], timeZone);
+
+    public static DateTimeOffset GetNextRunUtc(
+        DateTimeOffset utcNow,
+        IReadOnlyList<TimeOnly> localRunTimes,
+        TimeZoneInfo timeZone)
     {
         ArgumentNullException.ThrowIfNull(timeZone);
+        ArgumentNullException.ThrowIfNull(localRunTimes);
+        if (localRunTimes.Count == 0)
+        {
+            throw new ArgumentException("At least one local run time is required.", nameof(localRunTimes));
+        }
 
         var localNow = TimeZoneInfo.ConvertTime(utcNow, timeZone);
         var nextDate = DateOnly.FromDateTime(localNow.DateTime);
-        if (localNow.TimeOfDay >= localRunTime.ToTimeSpan())
+        var runTimes = localRunTimes.Order().ToArray();
+        while (true)
         {
+            if (nextDate.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
+            {
+                foreach (var localRunTime in runTimes)
+                {
+                    if (nextDate != DateOnly.FromDateTime(localNow.DateTime)
+                        || localNow.TimeOfDay < localRunTime.ToTimeSpan())
+                    {
+                        var nextLocal = nextDate.ToDateTime(localRunTime, DateTimeKind.Unspecified);
+                        if (timeZone.IsInvalidTime(nextLocal))
+                        {
+                            continue;
+                        }
+
+                        var nextUtc = TimeZoneInfo.ConvertTimeToUtc(nextLocal, timeZone);
+                        return new DateTimeOffset(nextUtc, TimeSpan.Zero);
+                    }
+                }
+            }
+
             nextDate = nextDate.AddDays(1);
         }
-
-        while (nextDate.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
-        {
-            nextDate = nextDate.AddDays(1);
-        }
-
-        var nextLocal = nextDate.ToDateTime(localRunTime, DateTimeKind.Unspecified);
-        var nextUtc = TimeZoneInfo.ConvertTimeToUtc(nextLocal, timeZone);
-        return new DateTimeOffset(nextUtc, TimeSpan.Zero);
     }
 }

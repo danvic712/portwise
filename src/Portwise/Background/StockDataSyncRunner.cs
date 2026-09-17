@@ -3,6 +3,7 @@ using Portwise.Application.Diagnostics;
 using Portwise.Application.Exceptions;
 using Portwise.Application.Stocks.Contracts;
 using Portwise.Contracts;
+using Portwise.Domain.Securities;
 
 namespace Portwise.Background;
 
@@ -15,6 +16,7 @@ internal sealed class StockDataSyncRunner(
 
     public async Task<StockDataSyncExecutionResult> RunAsync(
         StockDataSyncTrigger trigger,
+        AShareReference reference,
         CancellationToken cancellationToken)
     {
         var operation = GetDiagnosticOperation(trigger);
@@ -29,18 +31,16 @@ internal sealed class StockDataSyncRunner(
         try
         {
             await using var scope = serviceScopeFactory.CreateAsyncScope();
-            var syncAppService = scope.ServiceProvider
-                .GetRequiredService<IStockDailyDataSyncAppService>();
-            var result = await syncAppService.SyncAsync(cancellationToken);
-
+            var factSyncAppService = scope.ServiceProvider
+                .GetRequiredService<IStockFactSyncAppService>();
+            var result = await factSyncAppService.SyncAsync(reference, cancellationToken);
             logger.LogInformation(
-                "Stock data synchronization finished. Trigger: {Trigger}, RunId: {RunId}, attempted: {Attempted}, completed: {Completed}, failed: {Failed}.",
+                "Stock data synchronization finished. Trigger: {Trigger}, RunId: {RunId}, SecurityCode: {SecurityCode}, ExchangeCode: {ExchangeCode}, failed: {Failed}.",
                 trigger,
                 runId,
-                result.AttemptedStockCount,
-                result.FullyCompletedStockCount,
-                result.PartiallyFailedStockCount);
-
+                reference.SecurityCode,
+                reference.ExchangeCode,
+                result.Failures.Count);
             return new StockDataSyncExecutionResult(runId, result);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

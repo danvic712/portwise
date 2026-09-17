@@ -2,6 +2,7 @@ using Portwise.Application.Exceptions;
 using Portwise.Application.Stocks.Contracts;
 using Portwise.Application.Stocks.Dtos;
 using Portwise.Contracts;
+using Portwise.Domain.Securities;
 
 namespace Portwise.Background;
 
@@ -63,7 +64,10 @@ internal sealed class StockDataSyncBackgroundService(
                 throw new InvalidOperationException("Unknown stock sync job trigger.");
             }
 
-            var execution = await runner.RunAsync(trigger, runCancellation.Token);
+            var execution = await runner.RunAsync(
+                trigger,
+                AShareReference.Create(job.SecurityCode, job.ExchangeCode),
+                runCancellation.Token);
             runCancellation.Cancel();
             await heartbeat;
             if (leaseLost)
@@ -71,7 +75,11 @@ internal sealed class StockDataSyncBackgroundService(
                 throw new InvalidOperationException("The stock sync job lease was lost.");
             }
 
-            await queue.CompleteAsync(job.Id, ownerId, execution.Result, stoppingToken);
+            await queue.CompleteAsync(
+                job.Id,
+                ownerId,
+                execution.Result,
+                stoppingToken);
             logger.LogInformation(
                 "Stock sync job completed. JobId: {JobId}, RunId: {RunId}.",
                 job.Id,

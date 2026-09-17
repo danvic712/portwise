@@ -10,6 +10,10 @@ public sealed class StockDataSyncJob
 
     public string? DeduplicationKey { get; set; }
 
+    public Guid BatchId { get; set; }
+
+    public Guid SecurityId { get; set; }
+
     public DateTimeOffset CreatedAtUtc { get; set; }
 
     public DateTimeOffset AvailableAtUtc { get; set; }
@@ -30,10 +34,14 @@ public sealed class StockDataSyncJob
 
     public static StockDataSyncJob Create(
         string triggerCode,
+        Guid batchId,
+        Guid securityId,
         DateTimeOffset now,
         string? deduplicationKey = null) => new()
     {
         TriggerCode = triggerCode,
+        BatchId = batchId,
+        SecurityId = securityId,
         DeduplicationKey = deduplicationKey,
         CreatedAtUtc = now,
         AvailableAtUtc = now

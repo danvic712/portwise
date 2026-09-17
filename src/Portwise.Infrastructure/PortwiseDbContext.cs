@@ -45,6 +45,8 @@ internal sealed class PortwiseDbContext(DbContextOptions<PortwiseDbContext> opti
 
     public DbSet<StockDataSyncJob> StockDataSyncJobs => Set<StockDataSyncJob>();
 
+    public DbSet<StockDataSyncSettings> StockDataSyncSettings => Set<StockDataSyncSettings>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("public");

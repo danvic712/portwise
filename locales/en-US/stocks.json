@@ -5,6 +5,11 @@
     "detail": "{message}",
     "validation_message": "Please review the stock synchronization request fields and try again."
   },
+  "stock_data_sync_settings_revision_conflict": {
+    "status_code": 409,
+    "title": "The sync schedule was updated",
+    "detail": "The sync schedule changed in another request. Read it again before saving."
+  },
   "stock_data_provider_unavailable": {
     "status_code": 503,
     "title": "The stock data provider is temporarily unavailable",
@@ -96,6 +101,7 @@
       "syncComplete": "Data sync complete",
       "syncQueued": "Sync is queued. This page will show the result automatically.",
       "syncRunning": "Stock data is syncing in the background…",
+      "syncStillRunning": "Sync is still running in the background. You can leave this page and check the result later.",
       "pendingTitle": "The data is still on its way.",
       "pendingDescription": "This stock is already in your portfolio. The price ladder will appear after its profile, quotes, dividends, and financial snapshots finish syncing.",
       "pendingMessage": "Background sync is still running, so the full analysis is not ready yet.",
@@ -158,8 +164,15 @@
       }
     },
     "sync": {
-      "attempted": "Tried {count}; completed {complete}; partially failed {failed}.",
+      "progress": "Processed {complete} of {total} stocks.",
+      "failedStocks": "{count} stock(s) need attention.",
       "failures": "Failed items: {items}."
+    },
+    "dataKinds": {
+      "profile": "profile",
+      "price": "price",
+      "dividend": "dividend",
+      "financial": "financials"
     }
   }
 }

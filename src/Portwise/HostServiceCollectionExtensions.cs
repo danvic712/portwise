@@ -16,7 +16,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Enrichers.Span;
 using ApplicationDiagnosticContext = Portwise.Application.Contracts.IDiagnosticContext;
@@ -97,11 +96,6 @@ public static class HostServiceCollectionExtensions
         services.AddSingleton<ApplicationDiagnosticContext, ActivityDiagnosticContext>();
         services.AddExceptionHandler<ApplicationExceptionHandler>();
         services.AddPortwiseOpenApiDescription();
-        services.AddSingleton<IValidateOptions<DailySyncOptions>, DailySyncOptionsValidator>();
-        services
-            .AddOptions<DailySyncOptions>()
-            .Bind(configuration.GetSection(DailySyncOptions.SectionName))
-            .ValidateOnStart();
         services.AddSingleton<IStockDataSyncRunner, StockDataSyncRunner>();
         services.AddHostedService<StockDataSyncBackgroundService>();
         services.AddHostedService<DailyStockDataSyncHostedService>();

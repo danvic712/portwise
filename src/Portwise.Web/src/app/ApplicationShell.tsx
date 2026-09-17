@@ -24,7 +24,7 @@ import {
 
 const Onboarding = lazy(async () => ({ default: (await import("@/onboarding/Onboarding")).Onboarding }))
 const RecommendationsPage = lazy(async () => ({ default: (await import("@/recommendations/Recommendations")).RecommendationsPage }))
-const StocksPage = lazy(async () => ({ default: (await import("@/stocks/Stocks")).StocksPage }))
+const Stocks = lazy(async () => ({ default: (await import("@/stocks/Stocks")).Stocks }))
 const BudgetPage = lazy(async () => ({ default: (await import("@/budget/Budget")).BudgetPage }))
 const PortfolioPage = lazy(async () => ({ default: (await import("@/portfolio/Portfolio")).PortfolioPage }))
 const StrategyPage = lazy(async () => ({ default: (await import("@/strategy/Strategy")).StrategyPage }))
@@ -129,7 +129,7 @@ export function ApplicationShell() {
     if (location.pathname === "/" || location.pathname === "/overview") return <RecommendationsPage onNavigate={navigate} initializationStatus={initializationStatus} />
     if (location.pathname === "/404") return <NotFoundPage onNavigate={navigate} />
     if (location.pathname === "/error") return <ApplicationErrorPage message={messages.common.application_error_unknown.detail} onRetry={() => void checkInitialization()} onNavigate={navigate} />
-    if (location.pathname === "/stocks") return <StocksPage onNavigate={navigate} />
+    if (location.pathname === "/stocks") return <Stocks onNavigate={navigate} />
     if (location.pathname === "/budget") return <BudgetPage onNavigate={navigate} />
     if (location.pathname === "/portfolio") {
       return <PortfolioPage

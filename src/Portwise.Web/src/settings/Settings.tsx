@@ -3,12 +3,14 @@ import { useState } from "react"
 
 import { PageFrame } from "@/components/layout/PageFrame"
 import { Alert, AlertDescription } from "@/components/ui/Alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getInitialization } from "@/onboarding/initialization.api"
 import { isRequestAborted, useLatestRequest } from "@/shared/hooks/useLatestRequest"
 import { useLocale } from "@/shared/i18n/i18n"
 import type { InitializationStatusResponse } from "@/shared/http/api-types"
 import { Inference } from "@/settings/Inference"
 import { StockDataProviders } from "@/settings/StockDataProviders"
+import { StockDataSyncSchedule } from "@/settings/StockDataSyncSchedule"
 
 import "./settings.css"
 
@@ -55,13 +57,8 @@ export function Settings({ onNavigate, activeTab, onTabChange, initialStatus }: 
     onTabChange(tab)
   }
 
-  function onTabKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    const tab = event.key === "ArrowRight" || event.key === "End" ? "ai" : event.key === "ArrowLeft" || event.key === "Home" ? "stock" : null
-    if (!tab) return
-    event.preventDefault()
-    selectTab(tab)
-    const index = tab === "stock" ? 0 : 1
-    event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[index]?.focus()
+  function handleTabChange(value: string) {
+    if (value === "stock" || value === "ai") selectTab(value)
   }
 
   const stockStatus = capabilityStatus(status, ["profile", "market", "dividend", "financial"])
@@ -83,12 +80,22 @@ export function Settings({ onNavigate, activeTab, onTabChange, initialStatus }: 
     {refreshFailed && <Alert variant="attention" className="settings-workspace-notice"><Sparkles size={16} aria-hidden="true" /><AlertDescription>{copy.statusRefreshFailed}</AlertDescription></Alert>}
 
     <section className="settings-workspace-panel" aria-label={copy.tabsLabel}>
-      <div className="settings-workspace-tabs" role="tablist" aria-label={copy.tabsLabel} onKeyDown={onTabKeyDown}>
-        <button type="button" role="tab" id="settings-stock-tab" aria-controls="settings-stock-panel" aria-selected={activeTab === "stock"} tabIndex={activeTab === "stock" ? 0 : -1} className={activeTab === "stock" ? "settings-workspace-tab is-active" : "settings-workspace-tab"} onClick={() => selectTab("stock")}><LineChart size={18} aria-hidden="true" /><span>{copy.stockTab}</span><small>{statusLabel(stockStatus)}</small></button>
-        <button type="button" role="tab" id="settings-ai-tab" aria-controls="settings-ai-panel" aria-selected={activeTab === "ai"} tabIndex={activeTab === "ai" ? 0 : -1} className={activeTab === "ai" ? "settings-workspace-tab is-active" : "settings-workspace-tab"} onClick={() => selectTab("ai")}><Bot size={18} aria-hidden="true" /><span>{copy.aiTab}</span><small>{statusLabel(aiStatus)}</small></button>
-      </div>
-      {(visited.stock || activeTab === "stock") && <div id="settings-stock-panel" role="tabpanel" aria-labelledby="settings-stock-tab" hidden={activeTab !== "stock"}><StockDataProviders onUpdated={refreshStatus} /></div>}
-      {(visited.ai || activeTab === "ai") && <div id="settings-ai-panel" role="tabpanel" aria-labelledby="settings-ai-tab" hidden={activeTab !== "ai"}><Inference onUpdated={refreshStatus} /></div>}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="settings-workspace-tabs-root">
+        <TabsList className="settings-workspace-tabs" aria-label={copy.tabsLabel}>
+          <TabsTrigger value="stock" className="settings-workspace-tab">
+            <span className="settings-workspace-tab-icon"><LineChart size={17} aria-hidden="true" /></span>
+            <span className="settings-workspace-tab-label">{copy.stockTab}</span>
+            <small><span className="settings-workspace-tab-status-mark" aria-hidden="true" />{statusLabel(stockStatus)}</small>
+          </TabsTrigger>
+          <TabsTrigger value="ai" className="settings-workspace-tab">
+            <span className="settings-workspace-tab-icon"><Bot size={17} aria-hidden="true" /></span>
+            <span className="settings-workspace-tab-label">{copy.aiTab}</span>
+            <small><span className="settings-workspace-tab-status-mark" aria-hidden="true" />{statusLabel(aiStatus)}</small>
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="stock" className="settings-workspace-tab-panel">{(visited.stock || activeTab === "stock") && <><StockDataProviders onUpdated={refreshStatus} /><StockDataSyncSchedule onUpdated={refreshStatus} /></>}</TabsContent>
+        <TabsContent value="ai" className="settings-workspace-tab-panel">{(visited.ai || activeTab === "ai") && <Inference onUpdated={refreshStatus} />}</TabsContent>
+      </Tabs>
     </section>
   </PageFrame>
 }

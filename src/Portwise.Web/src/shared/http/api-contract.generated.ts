@@ -866,6 +866,73 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/stock-data-sync/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns the current database-backed synchronization schedule. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockDataSyncSettingsResponse"];
+                        "application/json": components["schemas"]["StockDataSyncSettingsResponse"];
+                        "text/json": components["schemas"]["StockDataSyncSettingsResponse"];
+                    };
+                };
+            };
+        };
+        /** Updates the synchronization schedule with optimistic concurrency. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Token used to cancel the request. */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateStockDataSyncSettingsRequest"];
+                    "text/json": components["schemas"]["UpdateStockDataSyncSettingsRequest"];
+                    "application/*+json": components["schemas"]["UpdateStockDataSyncSettingsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockDataSyncSettingsResponse"];
+                        "application/json": components["schemas"]["StockDataSyncSettingsResponse"];
+                        "text/json": components["schemas"]["StockDataSyncSettingsResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/stocks": {
         parameters: {
             query?: never;
@@ -942,7 +1009,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Queues a manual synchronization for all configured stocks. */
+        /** Queues a manual synchronization batch with one task per configured stock. */
         post: {
             parameters: {
                 query?: never;
@@ -958,9 +1025,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["StockDataSyncJobResponse"];
-                        "application/json": components["schemas"]["StockDataSyncJobResponse"];
-                        "text/json": components["schemas"]["StockDataSyncJobResponse"];
+                        "text/plain": components["schemas"]["StockDataSyncBatchResponse"];
+                        "application/json": components["schemas"]["StockDataSyncBatchResponse"];
+                        "text/json": components["schemas"]["StockDataSyncBatchResponse"];
                     };
                 };
             };
@@ -1013,6 +1080,97 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stocks/sync-batches/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns the aggregate status of a per-stock synchronization batch. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Synchronization batch identifier. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockDataSyncBatchResponse"];
+                        "application/json": components["schemas"]["StockDataSyncBatchResponse"];
+                        "text/json": components["schemas"]["StockDataSyncBatchResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stocks/{securityCode}/{exchangeCode}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Queues a synchronization task for one configured stock. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Six-digit A-share security code. */
+                    securityCode: string;
+                    /** @description Exchange code: SSE, SZSE or BSE. */
+                    exchangeCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockDataSyncBatchResponse"];
+                        "application/json": components["schemas"]["StockDataSyncBatchResponse"];
+                        "text/json": components["schemas"]["StockDataSyncBatchResponse"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -1975,6 +2133,55 @@ export interface components {
         StockDataRoutesResponse: {
             routes: components["schemas"]["StockDataRouteDto"][];
         };
+        /** @description Aggregated status for the per-stock tasks created by one request. */
+        StockDataSyncBatchResponse: {
+            /**
+             * Format: uuid
+             * @description Batch identifier.
+             */
+            id: string;
+            /** @description Source that requested the synchronization. */
+            triggerCode: string;
+            /** @description Pending, running, completed, or completed with failures. */
+            statusCode: string;
+            /**
+             * Format: int32
+             * @description Number of stock tasks in the batch.
+             */
+            totalStockCount: number | string;
+            /**
+             * Format: int32
+             * @description Number of tasks waiting to run.
+             */
+            pendingStockCount: number | string;
+            /**
+             * Format: int32
+             * @description Number of tasks currently running.
+             */
+            runningStockCount: number | string;
+            /**
+             * Format: int32
+             * @description Stocks whose four fact groups completed without failures.
+             */
+            completedStockCount: number | string;
+            /**
+             * Format: int32
+             * @description Stocks with a partial or unexpected task failure.
+             */
+            failedStockCount: number | string;
+            /**
+             * Format: date-time
+             * @description UTC creation time of the first task.
+             */
+            createdAtUtc: string;
+            /**
+             * Format: date-time
+             * @description UTC completion time when every task is terminal.
+             */
+            completedAtUtc: null | string;
+            /** @description Per-stock task details. */
+            jobs: components["schemas"]["StockDataSyncJobResponse"][];
+        };
         /** @description Describes one stock data synchronization failure. */
         StockDataSyncFailure: {
             /** @description Security code that failed. */
@@ -1988,7 +2195,7 @@ export interface components {
             /** @description Structured failure parameters. */
             parameters: Record<string, never>;
         };
-        /** @description Persisted state of one full-watchlist synchronization request. */
+        /** @description Persisted state of one stock synchronization task. */
         StockDataSyncJobResponse: {
             /**
              * Format: uuid
@@ -2019,34 +2226,35 @@ export interface components {
              * @description UTC completion time for a terminal task.
              */
             completedAtUtc: null | string;
-            result: null | components["schemas"]["StockDataSyncRunResult"];
+            result: null | components["schemas"]["StockFactSyncResult"];
             /** @description Stable error code after an unexpected failure. */
             errorCode: null | string;
+            /**
+             * Format: uuid
+             * @description Batch identifier shared by tasks created for one request.
+             */
+            batchId: string;
+            /**
+             * Format: uuid
+             * @description Persistent security identifier for a per-stock task.
+             */
+            securityId: string;
+            /** @description Security code resolved from the persisted security. */
+            securityCode: string;
+            /** @description Exchange code resolved from the persisted security. */
+            exchangeCode: string;
         };
-        /** @description Summary of a stock data synchronization run. */
-        StockDataSyncRunResult: {
-            /**
-             * Format: int32
-             * @description Number of stocks attempted.
-             */
-            attemptedStockCount: number | string;
-            /**
-             * Format: int32
-             * @description Number of fully synchronized stocks.
-             */
-            fullyCompletedStockCount: number | string;
-            /**
-             * Format: int32
-             * @description Number of stocks with partial failures.
-             */
-            partiallyFailedStockCount: number | string;
-            /** @description Failures collected during synchronization. */
-            failures: components["schemas"]["StockDataSyncFailure"][];
-            /**
-             * Format: date-time
-             * @description UTC completion timestamp.
-             */
-            completedAt: string;
+        /** @description Persisted daily stock synchronization schedule. */
+        StockDataSyncSettingsResponse: {
+            enabled: boolean;
+            timeZoneId: string;
+            runTimes: string[];
+            /** Format: int64 */
+            revision: number | string;
+            /** Format: date-time */
+            updatedAtUtc: string;
+            /** Format: date-time */
+            nextRunAtUtc: null | string;
         };
         /** @description Persisted dividend event returned by the API. */
         StockDividendEventResult: {
@@ -2101,6 +2309,20 @@ export interface components {
             sourceRecordId: string;
             /** @description Normalized data quality code. */
             dataQualityCode: string;
+        };
+        /** @description Result of synchronizing all supported stock facts for one stock. */
+        StockFactSyncResult: {
+            /** @description Security code. */
+            securityCode: string;
+            /** @description Exchange code. */
+            exchangeCode: string;
+            priceObservation: null | components["schemas"]["StockPriceObservationResult"];
+            /** @description Persisted dividend events. */
+            dividendEvents: components["schemas"]["StockDividendEventResult"][];
+            /** @description Persisted financial snapshots. */
+            financialSnapshots: components["schemas"]["StockFinancialSnapshotResult"][];
+            /** @description Failures collected during synchronization. */
+            failures: components["schemas"]["StockDataSyncFailure"][];
         };
         /** @description Persisted financial snapshot returned by the API. */
         StockFinancialSnapshotResult: {
@@ -2412,6 +2634,14 @@ export interface components {
         /** @description Requests one atomic update to all fixed stock data capability routes. */
         UpdateStockDataRoutesRequest: {
             routes: components["schemas"]["UpdateStockDataRouteRequest"][];
+        };
+        /** @description Updates the persisted daily stock synchronization schedule. */
+        UpdateStockDataSyncSettingsRequest: {
+            enabled: boolean;
+            timeZoneId: string;
+            runTimes: string[];
+            /** Format: int64 */
+            expectedRevision: number | string;
         };
         /** @description Requests connection verification for the last observed provider revision. */
         VerifyInferenceProviderRequest: {

@@ -32,4 +32,6 @@ public static class KnownConfigurationIds
     public static readonly Guid InferenceAzureOpenAiProvider = Guid.Parse("01a0929e-0a26-7d7c-a4f4-36f3e77abc32");
 
     public static readonly Guid InferenceOpenAiCompatibleProvider = Guid.Parse("01a0929e-0a27-7f4a-8b5c-47a8b02c6d19");
+
+    public static readonly Guid StockDataSyncSettings = Guid.Parse("01a0929e-0a28-7d0f-9b6e-58b9c13d7e20");
 }

@@ -22,6 +22,8 @@ public sealed class StockDataSyncJobConfiguration : IEntityTypeConfiguration<Sto
             .HasMaxLength(32).IsRequired();
         builder.Property(job => job.DeduplicationKey).HasColumnName("deduplication_key")
             .HasMaxLength(100);
+        builder.Property(job => job.BatchId).HasColumnName("batch_id").IsRequired();
+        builder.Property(job => job.SecurityId).HasColumnName("security_id").IsRequired();
         builder.Property(job => job.CreatedAtUtc).HasColumnName("created_at_utc");
         builder.Property(job => job.AvailableAtUtc).HasColumnName("available_at_utc");
         builder.Property(job => job.StartedAtUtc).HasColumnName("started_at_utc");
@@ -35,5 +37,14 @@ public sealed class StockDataSyncJobConfiguration : IEntityTypeConfiguration<Sto
             .HasDatabaseName("uq_stock_data_sync_jobs_deduplication_key").IsUnique();
         builder.HasIndex(job => new { job.StatusCode, job.AvailableAtUtc, job.CreatedAtUtc })
             .HasDatabaseName("ix_stock_data_sync_jobs_claim");
+        builder.HasIndex(job => new { job.BatchId, job.CreatedAtUtc })
+            .HasDatabaseName("ix_stock_data_sync_jobs_batch");
+        builder.HasIndex(job => job.SecurityId)
+            .HasDatabaseName("ix_stock_data_sync_jobs_security");
+        builder.HasOne<Security>()
+            .WithMany()
+            .HasForeignKey(job => job.SecurityId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .HasConstraintName("fk_stock_data_sync_jobs_securities_security_id");
     }
 }

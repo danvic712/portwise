@@ -27,6 +27,7 @@ public static class ApplicationErrorCodes
     public const string ModelParameterVersionAlreadyExists = "model_parameter_version_already_exists";
     public const string StockAnalysisValidationFailed = "stock_analysis_validation_failed";
     public const string StockDataSyncValidationFailed = "stock_data_sync_validation_failed";
+    public const string StockDataSyncSettingsRevisionConflict = "stock_data_sync_settings_revision_conflict";
     public const string StockDataProviderUnavailable = "stock_data_provider_unavailable";
     public const string StockDataUnavailable = "stock_data_unavailable";
     public const string StockMarketDataUnavailable = "stock_market_data_unavailable";
@@ -69,6 +70,7 @@ public static class ApplicationErrorCodes
         ModelParameterVersionAlreadyExists,
         StockAnalysisValidationFailed,
         StockDataSyncValidationFailed,
+        StockDataSyncSettingsRevisionConflict,
         StockDataProviderUnavailable,
         StockDataUnavailable,
         StockMarketDataUnavailable,

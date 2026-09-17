@@ -113,7 +113,7 @@ public sealed class InitializationAppService(
 
         await uow.Get<ApplicationPreference>().AddAsync(preference, cancellationToken);
         await uow.Get<PortfolioEntity>().AddAsync(portfolio, cancellationToken);
-        await SaveInitialStocksAsync(
+        var initialSecurities = await SaveInitialStocksAsync(
             initialStockValues,
             portfolio.Id,
             cancellationToken);
@@ -149,9 +149,18 @@ public sealed class InitializationAppService(
 
         if (initialStockValues.Count > 0)
         {
-            await uow.Get<StockDataSyncJob>().AddAsync(
-                StockDataSyncJob.Create("initialization", now, "initialization"),
-                cancellationToken);
+            var batchId = Guid.CreateVersion7();
+            foreach (var security in initialSecurities)
+            {
+                await uow.Get<StockDataSyncJob>().AddAsync(
+                    StockDataSyncJob.Create(
+                        "initialization",
+                        batchId,
+                        security.Id,
+                        now,
+                        $"initialization:{security.Id}"),
+                    cancellationToken);
+            }
         }
 
         try
@@ -455,11 +464,12 @@ public sealed class InitializationAppService(
         return values;
     }
 
-    private async Task SaveInitialStocksAsync(
+    private async Task<IReadOnlyList<Security>> SaveInitialStocksAsync(
         IReadOnlyList<(AShareReference Reference, int HeldShares)> values,
         Guid portfolioId,
         CancellationToken cancellationToken)
     {
+        var securities = new List<Security>(values.Count);
         foreach (var (reference, heldShares) in values)
         {
             var security = new Security
@@ -484,7 +494,10 @@ public sealed class InitializationAppService(
                     AverageCostPerShare = 0m
                 },
                 cancellationToken);
+            securities.Add(security);
         }
+
+        return securities;
     }
 
     private static bool TryParsePreferences(

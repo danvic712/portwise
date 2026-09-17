@@ -1,12 +1,12 @@
-import { KeyRound, Save, ShieldCheck } from "lucide-react"
+import { Database, KeyRound, Route, Save, ShieldCheck } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { useActionFeedback } from "@/app/providers/ActionFeedbackContext"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert"
 import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/Button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/Card"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/Field"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card"
+import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/Field"
 import { Input } from "@/components/ui/Input"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
 import { getApiErrorMessage } from "@/shared/http/api-errors"
@@ -64,6 +64,7 @@ export function StockDataProviders({ onUpdated }: { onUpdated: () => void }) {
   const definition = useMemo(() => data?.definitions.find((item) => item.id === selectedDefinitionId), [data, selectedDefinitionId])
   const provider = data?.providers.find((item) => item.providerDefinitionId === selectedDefinitionId)
   const statusLabel = (code: string) => code === "configured-unverified" ? copy.configuredUnverified : code === "recently-verified" ? copy.recentlyVerified : code === "currently-unavailable" ? copy.currentlyUnavailable : copy.unconfigured
+  const statusVariant = (code: string) => code === "currently-unavailable" ? "destructive" as const : code === "unconfigured" ? "outline" as const : code === "configured-unverified" ? "attention" as const : "accent" as const
 
   async function saveProvider() {
     if (!definition || !definition.isEnabled) return
@@ -108,31 +109,94 @@ export function StockDataProviders({ onUpdated }: { onUpdated: () => void }) {
     } finally { setBusy(false) }
   }
 
-  return <div className="settings-tab-content">
+  return <div className="settings-stock-tab-content">
     {error && <Alert ref={feedbackRef} variant="destructive" className="settings-subpage-feedback settings-subpage-feedback-error"><AlertTitle>{copy.feedbackErrorTitle}</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
 
     {loading && !data && !routes ? <SettingsFormSkeleton kind="stock" label={copy.loading} /> : !data || !routes ? <div className="settings-load-error"><p>{copy.loadFailed}</p><Button variant="outline" onClick={load}>{copy.retry}</Button></div> : <div className="settings-subpage-sections">
-      <Card className="settings-subpage-card">
-        <CardHeader><div><p className="settings-form-kicker">{copy.connectionEyebrow}</p><h2>{copy.providerTitle}</h2><p>{copy.providerHint}</p></div><Badge variant={provider?.runtimeStatusCode === "currently-unavailable" ? "destructive" : !provider || provider.runtimeStatusCode === "unconfigured" ? "outline" : provider.runtimeStatusCode === "configured-unverified" ? "attention" : "accent"}>{statusLabel(provider?.runtimeStatusCode ?? "unconfigured")}</Badge></CardHeader>
-        <CardContent><FieldGroup className="settings-provider-fields">
-          <Field><FieldLabel>{copy.providerLabel}</FieldLabel><Select value={selectedDefinitionId ?? undefined} onValueChange={(value) => { setSelectedDefinitionId(value); setKey(""); setError(null) }}><SelectTrigger aria-label={copy.providerLabel}><SelectValue>{definition?.displayName ?? copy.providerPlaceholder}</SelectValue></SelectTrigger><SelectContent><SelectGroup>{data.definitions.map((item) => <SelectItem value={item.id} key={item.id} disabled={!item.isEnabled && !data.providers.some((providerItem) => providerItem.providerDefinitionId === item.id)}>{item.displayName}</SelectItem>)}</SelectGroup></SelectContent></Select></Field>
-          <Field><FieldLabel htmlFor="stock-provider-key"><KeyRound size={14} aria-hidden="true" />{copy.keyLabel}</FieldLabel><Input id="stock-provider-key" type="password" value={key} placeholder={provider?.secretState.stateCode === "configured" ? copy.keyConfigured : copy.keyPlaceholder} onChange={(event) => setKey(event.target.value)} autoComplete="new-password" /></Field>
-        </FieldGroup></CardContent>
-        <CardFooter><Button onClick={() => void saveProvider()} disabled={busy || !definition?.isEnabled}><Save data-icon="inline-start" />{copy.save}</Button>{provider && <Button variant="outline" onClick={() => void verify()} disabled={busy}><ShieldCheck data-icon="inline-start" />{copy.verify}</Button>}</CardFooter>
-      </Card>
+      <div className="settings-stock-tab-intro">
+        <span className="settings-stock-tab-intro-mark"><Database size={18} aria-hidden="true" /></span>
+        <div className="settings-stock-tab-intro-copy">
+          <p className="settings-stock-tab-kicker"><span aria-hidden="true" />{copy.eyebrow}<span aria-hidden="true" /></p>
+          <h2>{copy.title}</h2>
+          <span>{copy.description}</span>
+        </div>
+      </div>
 
-      <Card className="settings-subpage-card">
-        <CardHeader><div><p className="settings-form-kicker">{copy.routesEyebrow}</p><h2>{copy.routesTitle}</h2><p>{copy.routeHint}</p></div></CardHeader>
-        <CardContent className="settings-route-list">{routes?.routes.map((route) => {
+      <div className="settings-stock-capability-rail" aria-label={copy.routesTitle}>
+        {routes.routes.map((route) => {
           const label = messages.settings.ui.overview.capabilities[route.capabilityCode as keyof typeof messages.settings.ui.overview.capabilities] ?? route.capabilityCode
           const routeProvider = data.providers.find((item) => item.id === selected[route.capabilityCode])
-          return <div className="settings-route-row" key={route.capabilityCode}>
-            <div><strong>{label}</strong><Badge variant={route.runtimeStatusCode === "currently-unavailable" ? "destructive" : route.runtimeStatusCode === "unconfigured" ? "outline" : route.runtimeStatusCode === "configured-unverified" ? "attention" : "accent"}>{statusLabel(route.runtimeStatusCode)}</Badge></div>
-            <Select value={selected[route.capabilityCode] ?? "none"} onValueChange={(value) => setSelected((current) => ({ ...current, [route.capabilityCode]: value === "none" || value === null ? null : value }))}><SelectTrigger aria-label={`${label} · ${copy.routesTitle}`}><SelectValue>{routeProvider?.name ?? copy.unconfigured}</SelectValue></SelectTrigger><SelectContent><SelectGroup><SelectItem value="none">{copy.unconfigured}</SelectItem>{data.providers.map((item) => <SelectItem value={item.id} key={item.id}>{item.name}</SelectItem>)}</SelectGroup></SelectContent></Select>
+          return <div className="settings-stock-capability-item" key={route.capabilityCode}>
+            <span className="settings-stock-capability-mark"><span className="settings-stock-capability-dot" /></span>
+            <div>
+              <strong>{label}</strong>
+              <span>{routeProvider?.name ?? copy.unconfigured}</span>
+            </div>
+            <Badge variant={statusVariant(route.runtimeStatusCode)}>{statusLabel(route.runtimeStatusCode)}</Badge>
           </div>
-        })}</CardContent>
-        <CardFooter><Button onClick={() => void saveRoutes()} disabled={busy || !routes}><Save data-icon="inline-start" />{copy.saveRoutes}</Button></CardFooter>
-      </Card>
+        })}
+      </div>
+
+      <div className="settings-stock-config-grid">
+        <Card className="settings-stock-source-card">
+          <CardHeader>
+            <div className="settings-stock-card-heading">
+              <span className="settings-stock-card-icon"><Database size={17} aria-hidden="true" /></span>
+              <div><p className="settings-form-kicker">{copy.connectionEyebrow}</p><CardTitle>{copy.providerTitle}</CardTitle><CardDescription>{copy.providerHint}</CardDescription></div>
+            </div>
+            <Badge variant={statusVariant(provider?.runtimeStatusCode ?? "unconfigured")}>{statusLabel(provider?.runtimeStatusCode ?? "unconfigured")}</Badge>
+          </CardHeader>
+          <CardContent>
+            <FieldGroup className="settings-stock-fields">
+              <Field>
+                <FieldLabel htmlFor="stock-provider-source">{copy.providerLabel}</FieldLabel>
+                <Select value={selectedDefinitionId ?? undefined} onValueChange={(value) => { setSelectedDefinitionId(value); setKey(""); setError(null) }}>
+                  <SelectTrigger id="stock-provider-source" aria-label={copy.providerLabel}><SelectValue>{definition?.displayName ?? copy.providerPlaceholder}</SelectValue></SelectTrigger>
+                  <SelectContent><SelectGroup>{data.definitions.map((item) => <SelectItem value={item.id} key={item.id} disabled={!item.isEnabled && !data.providers.some((providerItem) => providerItem.providerDefinitionId === item.id)}>{item.displayName}</SelectItem>)}</SelectGroup></SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="stock-provider-key"><KeyRound size={14} aria-hidden="true" />{copy.keyLabel}</FieldLabel>
+                <Input id="stock-provider-key" type="password" value={key} placeholder={provider?.secretState.stateCode === "configured" ? copy.keyConfigured : copy.keyPlaceholder} onChange={(event) => setKey(event.target.value)} autoComplete="new-password" />
+              </Field>
+            </FieldGroup>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={() => void saveProvider()} disabled={busy || !definition?.isEnabled}><Save data-icon="inline-start" />{copy.save}</Button>
+            {provider && <Button variant="outline" onClick={() => void verify()} disabled={busy}><ShieldCheck data-icon="inline-start" />{copy.verify}</Button>}
+          </CardFooter>
+        </Card>
+
+        <Card className="settings-stock-routes-card">
+          <CardHeader>
+            <div className="settings-stock-card-heading">
+              <span className="settings-stock-card-icon settings-stock-card-icon-route"><Route size={17} aria-hidden="true" /></span>
+              <div><p className="settings-form-kicker">{copy.routesEyebrow}</p><CardTitle>{copy.routesTitle}</CardTitle><CardDescription>{copy.routeHint}</CardDescription></div>
+            </div>
+            <span className="settings-stock-route-count">{routes.routes.length}</span>
+          </CardHeader>
+          <CardContent>
+            <FieldSet className="settings-stock-route-fields">
+              <FieldLegend className="sr-only">{copy.routesTitle}</FieldLegend>
+              {routes.routes.map((route) => {
+                const label = messages.settings.ui.overview.capabilities[route.capabilityCode as keyof typeof messages.settings.ui.overview.capabilities] ?? route.capabilityCode
+                const routeProvider = data.providers.find((item) => item.id === selected[route.capabilityCode])
+                return <Field orientation="vertical" className="settings-stock-route-field" key={route.capabilityCode}>
+                  <FieldContent>
+                    <FieldLabel htmlFor={`stock-route-${route.capabilityCode}`}>{label}</FieldLabel>
+                    <FieldDescription><Badge variant={statusVariant(route.runtimeStatusCode)}>{statusLabel(route.runtimeStatusCode)}</Badge></FieldDescription>
+                  </FieldContent>
+                  <Select value={selected[route.capabilityCode] ?? "none"} onValueChange={(value) => setSelected((current) => ({ ...current, [route.capabilityCode]: value === "none" || value === null ? null : value }))}>
+                    <SelectTrigger id={`stock-route-${route.capabilityCode}`} aria-label={`${label} · ${copy.routesTitle}`}><SelectValue>{routeProvider?.name ?? copy.unconfigured}</SelectValue></SelectTrigger>
+                    <SelectContent><SelectGroup><SelectItem value="none">{copy.unconfigured}</SelectItem>{data.providers.map((item) => <SelectItem value={item.id} key={item.id}>{item.name}</SelectItem>)}</SelectGroup></SelectContent>
+                  </Select>
+                </Field>
+              })}
+            </FieldSet>
+          </CardContent>
+          <CardFooter><Button onClick={() => void saveRoutes()} disabled={busy || !routes}><Save data-icon="inline-start" />{copy.saveRoutes}</Button></CardFooter>
+        </Card>
+      </div>
     </div>}
   </div>
 }

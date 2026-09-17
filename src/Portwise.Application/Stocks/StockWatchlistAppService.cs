@@ -109,8 +109,14 @@ public sealed class StockWatchlistAppService(
 
         await securityRepository.AddAsync(security, cancellationToken);
         await uow.Get<PortfolioPosition>().AddAsync(position, cancellationToken);
+        var batchId = Guid.CreateVersion7();
         await uow.Get<StockDataSyncJob>().AddAsync(
-            StockDataSyncJob.Create("watchlist", timeProvider.GetUtcNow()),
+            StockDataSyncJob.Create(
+                "watchlist",
+                batchId,
+                security.Id,
+                timeProvider.GetUtcNow(),
+                $"watchlist:{security.Id}"),
             cancellationToken);
         try
         {
